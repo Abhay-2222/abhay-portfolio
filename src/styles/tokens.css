@@ -70,9 +70,9 @@
   --shadow-sm:      0 8px 24px rgba(0, 0, 0, 0.08);
   --shadow-glow:    0 0 40px rgba(0, 0, 0, 0.06);
 
-  --serif:          'Instrument Serif', Georgia, serif;
-  --sans:           'DM Sans', system-ui, sans-serif;
-  --mono:           'DM Mono', 'Courier New', monospace;
+  --serif:          'Geist Sans', system-ui, sans-serif;
+  --sans:           'Geist Sans', system-ui, sans-serif;
+  --mono:           'Geist Mono', 'Courier New', monospace;
 }
 
 /* ─── Scale tokens (theme-independent) ─── */

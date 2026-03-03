@@ -1,29 +1,23 @@
 /**
  * CustomCursor.jsx
- * Replaces the default browser cursor with two layered elements:
- *   - A small dot that snaps instantly to the mouse position.
- *   - A larger ring that follows with spring-based lag (Framer Motion).
- * Dot is accent orange. Ring grows on hover over interactive elements.
- * Hidden on touch/mobile devices.
+ * Plain matte orange ball — no gradient, no ring, no glow.
+ * Snaps instantly to mouse. Grows slightly on hover.
+ * Consistent everywhere including inside project overlays.
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, useMotionValue } from 'framer-motion';
 
-/* Elements that trigger cursor grow */
 const HOVER_SELECTORS = 'a, button, [role="button"], [data-cursor-hover]';
+const ORANGE = '#F97316';
 
 function CustomCursor() {
   const [isHovering, setIsHovering] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
+  const [isVisible,  setIsVisible]  = useState(false);
+  const [isTouch,    setIsTouch]    = useState(false);
 
-  const dotX = useMotionValue(0);
-  const dotY = useMotionValue(0);
-
-  const springConfig = { stiffness: 180, damping: 22, mass: 0.5 };
-  const ringX = useSpring(dotX, springConfig);
-  const ringY = useSpring(dotY, springConfig);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
 
   useEffect(() => {
     if (window.matchMedia('(hover: none)').matches) {
@@ -33,99 +27,55 @@ function CustomCursor() {
 
     document.body.classList.add('custom-cursor-active');
 
-    const moveCursor = (e) => {
-      dotX.set(e.clientX);
-      dotY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
-    };
+    const move  = (e) => { x.set(e.clientX); y.set(e.clientY); if (!isVisible) setIsVisible(true); };
+    const over  = (e) => { if (e.target.closest(HOVER_SELECTORS)) setIsHovering(true);  };
+    const out   = (e) => { if (e.target.closest(HOVER_SELECTORS)) setIsHovering(false); };
+    const leave = ()  => setIsVisible(false);
+    const enter = ()  => setIsVisible(true);
 
-    const handleEnterHover = (e) => {
-      if (e.target.closest(HOVER_SELECTORS)) setIsHovering(true);
-    };
-    const handleLeaveHover = (e) => {
-      if (e.target.closest(HOVER_SELECTORS)) setIsHovering(false);
-    };
-
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
-
-    window.addEventListener('mousemove', moveCursor, { passive: true });
-    document.addEventListener('mouseover', handleEnterHover, { passive: true });
-    document.addEventListener('mouseout', handleLeaveHover, { passive: true });
-    document.addEventListener('mouseleave', handleMouseLeave);
-    document.addEventListener('mouseenter', handleMouseEnter);
+    window.addEventListener('mousemove',    move,  { passive: true });
+    document.addEventListener('mouseover',  over,  { passive: true });
+    document.addEventListener('mouseout',   out,   { passive: true });
+    document.addEventListener('mouseleave', leave);
+    document.addEventListener('mouseenter', enter);
 
     return () => {
       document.body.classList.remove('custom-cursor-active');
-      window.removeEventListener('mousemove', moveCursor);
-      document.removeEventListener('mouseover', handleEnterHover);
-      document.removeEventListener('mouseout', handleLeaveHover);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-      document.removeEventListener('mouseenter', handleMouseEnter);
+      window.removeEventListener('mousemove',    move);
+      document.removeEventListener('mouseover',  over);
+      document.removeEventListener('mouseout',   out);
+      document.removeEventListener('mouseleave', leave);
+      document.removeEventListener('mouseenter', enter);
     };
-  }, [dotX, dotY, isVisible]);
+  }, [x, y, isVisible]);
 
   if (isTouch) return null;
 
-  const dotSize = isHovering ? 20 : 8;
-  const ringSize = isHovering ? 52 : 36;
+  const size = isHovering ? 22 : 14;
 
   return (
-    <div className="cursor-layer" aria-hidden="true">
-      {/* Dot — snaps immediately */}
-      <motion.div
-        style={{
-          x: dotX,
-          y: dotY,
-          opacity: isVisible ? 1 : 0,
-        }}
-        animate={{ width: dotSize, height: dotSize }}
-        transition={{ duration: 0.15 }}
-        className="cursor-dot"
-      />
-
-      {/* Ring — spring lag */}
-      <motion.div
-        style={{
-          x: ringX,
-          y: ringY,
-          opacity: isVisible ? 0.7 : 0,
-        }}
-        animate={{ width: ringSize, height: ringSize }}
-        transition={{ duration: 0.2 }}
-        className="cursor-ring"
-      />
-
+    <>
       <style>{`
-        .cursor-dot,
-        .cursor-ring {
-          position: absolute;
+        .cursor-ball {
+          position: fixed;
           top: 0;
           left: 0;
           border-radius: 50%;
           pointer-events: none;
+          background: ${ORANGE};
           transform: translate(-50%, -50%);
-          transition: opacity 0.2s ease;
           will-change: transform;
-        }
-
-        .cursor-dot {
-          background: var(--accent);
-          z-index: 2;
-        }
-
-        .cursor-ring {
-          border: 1.5px solid var(--accent-border);
-          background: transparent;
-          z-index: 1;
-        }
-
-        body.overlay-open .cursor-dot,
-        body.overlay-open .cursor-ring {
-          opacity: 0 !important;
+          z-index: 99999;
         }
       `}</style>
-    </div>
+
+      <motion.div
+        className="cursor-ball"
+        style={{ x, y, opacity: isVisible ? 1 : 0 }}
+        animate={{ width: size, height: size }}
+        transition={{ duration: 0.12, ease: 'easeOut' }}
+      />
+    </>
   );
 }
 

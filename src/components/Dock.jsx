@@ -20,7 +20,7 @@ const DOCK_META = {
 };
 
 /* ─── Single dock item ─── */
-const DockItem = memo(function DockItem({ project, onProjectClick, isActive }) {
+const DockItem = memo(function DockItem({ project, onProjectClick, onProjectHover, isActive }) {
   const [hovered, setHovered] = useState(false);
   const [comingSoon, setComingSoon] = useState(false);
   const meta = DOCK_META[project.id] ?? { name: project.title, color: project.accentColor };
@@ -71,8 +71,8 @@ const DockItem = memo(function DockItem({ project, onProjectClick, isActive }) {
       {/* Item button */}
       <button
         onClick={handleClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={() => { setHovered(true); onProjectHover?.(project); }}
+        onMouseLeave={() => { setHovered(false); onProjectHover?.(null); }}
         data-cursor-hover
         aria-label={`Open ${project.title}`}
         style={{
@@ -106,13 +106,10 @@ const DockItem = memo(function DockItem({ project, onProjectClick, isActive }) {
         {/* Project short name */}
         <span style={{
           fontFamily:    '"Geist Sans", system-ui, sans-serif',
-          fontSize:      11,
+          fontSize:      10,
           fontWeight:    500,
           color:         hovered ? '#0A0A0A' : 'rgba(0,0,0,0.6)',
           whiteSpace:    'nowrap',
-          maxWidth:      80,
-          overflow:      'hidden',
-          textOverflow:  'ellipsis',
           transition:    'color 0.15s ease',
           letterSpacing: '-0.01em',
         }}>
@@ -123,8 +120,66 @@ const DockItem = memo(function DockItem({ project, onProjectClick, isActive }) {
   );
 });
 
+/* ─── Playground dock button ─── */
+function PlaygroundButton({ onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div style={{ position: 'relative' }}>
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            key="pg-tip"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%',
+              transform: 'translateX(-50%)', whiteSpace: 'nowrap',
+              fontFamily: '"Geist Mono", monospace', fontSize: 10,
+              color: 'rgba(0,0,0,0.45)', background: 'rgba(255,255,255,0.9)',
+              border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6,
+              padding: '3px 8px', backdropFilter: 'blur(12px)',
+              pointerEvents: 'none', zIndex: 1000,
+            }}
+          >Playground</motion.div>
+        )}
+      </AnimatePresence>
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        data-cursor-hover
+        aria-label="Open Playground"
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 4, padding: '8px 14px', borderRadius: 10,
+          cursor: 'pointer', border: 'none',
+          background: hovered ? 'rgba(0,0,0,0.05)' : 'transparent',
+          transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+          transition: 'background 0.2s ease, transform 0.2s ease',
+          color: hovered ? '#0A0A0A' : 'rgba(0,0,0,0.45)',
+        }}
+      >
+        {/* Grid icon */}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <rect x="0" y="0" width="5" height="5" rx="1"/>
+          <rect x="7" y="0" width="5" height="5" rx="1"/>
+          <rect x="0" y="7" width="5" height="5" rx="1"/>
+          <rect x="7" y="7" width="5" height="5" rx="1"/>
+        </svg>
+        <span style={{
+          fontFamily: '"Geist Sans", system-ui, sans-serif',
+          fontSize: 10, fontWeight: 500, whiteSpace: 'nowrap',
+          letterSpacing: '-0.01em', color: 'inherit', transition: 'color 0.15s ease',
+        }}>Play</span>
+      </button>
+    </div>
+  );
+}
+
 /* ─── Main Dock ─── */
-function Dock({ onProjectClick, activeProjectId }) {
+function Dock({ onProjectClick, onProjectHover, activeProjectId, onPlaygroundClick }) {
   return (
     <motion.div
       className="dock-layer"
@@ -141,7 +196,7 @@ function Dock({ onProjectClick, activeProjectId }) {
         WebkitBackdropFilter: 'blur(32px) saturate(180%)',
         border:              '1px solid rgba(0,0,0,0.08)',
         borderRadius:        14,
-        padding:             '6px 8px',
+        padding:             '6px 16px',
         boxShadow:           '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06)',
       }}>
         {projects.map((project) => (
@@ -149,9 +204,12 @@ function Dock({ onProjectClick, activeProjectId }) {
             key={project.id}
             project={project}
             onProjectClick={onProjectClick}
+            onProjectHover={onProjectHover}
             isActive={activeProjectId === project.id}
           />
         ))}
+        <div style={{ width: 1, height: 24, background: 'rgba(0,0,0,0.08)', margin: '0 6px', flexShrink: 0 }} />
+        <PlaygroundButton onClick={onPlaygroundClick} />
       </div>
     </motion.div>
   );

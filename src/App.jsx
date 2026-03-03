@@ -7,16 +7,19 @@
 
 import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 
-import ScrollReactive from './components/ScrollReactive.jsx';
 import CustomCursor from './components/CustomCursor.jsx';
-import MenuBar from './components/MenuBar.jsx';
+import CornerButtons from './components/CornerButtons.jsx';
+import DockHints from './components/DockHints.jsx';
 import Desktop from './components/Desktop.jsx';
 import Dock from './components/Dock.jsx';
 import IntroSequence from './components/IntroSequence.jsx';
+import ProjectHeroPreview from './components/ProjectHeroPreview.jsx';
 
 // Lazy-loaded for performance
-const ProjectOverlay = lazy(() => import('./components/ProjectOverlay.jsx'));
+const ProjectOverlay    = lazy(() => import('./components/ProjectOverlay.jsx'));
+const PlaygroundOverlay = lazy(() => import('./components/PlaygroundOverlay.jsx'));
 const MeatInspectorPage = lazy(() => import('./pages/MeatInspector.jsx'));
 const HealthcarePage    = lazy(() => import('./pages/Healthcare.jsx'));
 const TrailARPage       = lazy(() => import('./pages/TrailAR.jsx'));
@@ -60,6 +63,8 @@ function PlaceholderPage() {
 function DesktopView() {
   const [activeProject, setActiveProject] = useState(null);
   const [originRect, setOriginRect] = useState(null);
+  const [hoveredProject, setHoveredProject] = useState(null);
+  const [playgroundOpen, setPlaygroundOpen] = useState(false);
   const overlayCloseRef = useRef(null);
 
   const handleProjectClick = useCallback((id, rect) => {
@@ -94,20 +99,28 @@ function DesktopView() {
       <IntroSequence />
 
       <div id="desktop-content">
-        {/* Scroll-reactive bg + meter */}
-        <ScrollReactive />
-
-        {/* Cursor + MenuBar live OUTSIDE portfolio-world so blur never affects them.
-            MenuBar z-index 1001 sits above the overlay (1000). */}
+        {/* Cursor + CornerButtons + DockHints live OUTSIDE portfolio-world so blur never affects them. */}
         <CustomCursor />
-        <MenuBar onLogoClick={handleLogoClick} />
+        <CornerButtons onLogoClick={handleLogoClick} />
+        <DockHints hidden={!!activeProject} />
+
+        {/* Project hero preview — sits at z-5, below all UI layers */}
+        <ProjectHeroPreview
+          project={hoveredProject}
+          visible={!!hoveredProject && !activeProject}
+        />
 
         {/* portfolio-world is blurred when an overlay is open */}
         <div className="portfolio-world">
-          <Desktop />
+          {/* Desktop hero fades out while a project preview is shown */}
+          <div className={hoveredProject && !activeProject ? 'desktop-preview-active' : 'desktop-preview-idle'}>
+            <Desktop />
+          </div>
           <Dock
             onProjectClick={handleProjectClick}
+            onProjectHover={setHoveredProject}
             activeProjectId={activeProject}
+            onPlaygroundClick={() => setPlaygroundOpen(true)}
           />
         </div>
 
@@ -122,6 +135,11 @@ function DesktopView() {
               closeRef={overlayCloseRef}
             />
           )}
+          <AnimatePresence>
+            {playgroundOpen && (
+              <PlaygroundOverlay onClose={() => setPlaygroundOpen(false)} />
+            )}
+          </AnimatePresence>
         </Suspense>
       </div>
     </>

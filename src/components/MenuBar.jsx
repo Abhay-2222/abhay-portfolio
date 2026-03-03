@@ -6,6 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 function MenuBar({ onLogoClick }) {
   return (
@@ -28,20 +29,10 @@ function MenuBar({ onLogoClick }) {
         userSelect:          'none',
       }}
     >
-      {/* Left: name */}
-      <span
-        onClick={onLogoClick}
-        style={{
-          fontFamily:    '"Geist Sans", system-ui, sans-serif',
-          fontSize:      14,
-          fontWeight:    500,
-          color:         '#0A0A0A',
-          letterSpacing: '-0.01em',
-          cursor:        'default',
-        }}
-      >
-        Abhay Sharma
-      </span>
+      {/* Left: AS monogram → home */}
+      <Link to="/" onClick={onLogoClick} className="nav-monogram">
+        AS
+      </Link>
 
       {/* Right: Resume */}
       <a
@@ -54,6 +45,16 @@ function MenuBar({ onLogoClick }) {
       </a>
 
       <style>{`
+        .nav-monogram {
+          font-family: 'Geist Sans', system-ui, sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          color: rgba(0,0,0,0.70);
+          text-decoration: none;
+          transition: color 0.15s;
+        }
+        .nav-monogram:hover { color: #0A0A0A; }
         .nav-resume {
           font-family: 'Geist Sans', system-ui, sans-serif;
           font-size: 13px;

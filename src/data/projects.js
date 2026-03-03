@@ -259,8 +259,16 @@ const projects = [
     ],
     "reflection": "This project taught me that ambiguity is not a problem to avoid, it is a signal to refine product definition.",
     "ia": "SITUATION\nHealthcare utilization review runs on 8 disconnected tools.\nUR nurses spend 40 minutes per case on data archaeology.\nDenial rates sit at 30 to 40%. Gaps found after submission, not before.\n\nUSERS\nPrimary: UR Nurse — 80% of volume, full accountability risk\nSecondary: Physician — escalations only, under 20% of cases\nTertiary: Medical Director — audit and oversight, under 5%\n\nPROBLEM\nThe toolchain was designed around physicians.\nThe people carrying the most risk had the worst tools.\nData existed. Decision readiness did not.\n\nCONSTRAINTS\nRegulated clinical environment — AI cannot make autonomous decisions\nEvery recommendation must be traceable and citable\nHIPAA compliance non-negotiable\nStakeholder trust in AI was low from day one\n\nPROCESS\n4 structural ambiguities resolved before wireframing\nPrimary user redefined from physician to UR nurse in week 4\n6 design mistakes documented across V1 and V2\n4 full iterations before V4 was accepted\n\nKEY DECISIONS\nWork Queue over Home screen — action-first product stance\nCareLens as mandatory sidebar — explainability is infrastructure\nAudit trail on every AI output — defensibility over convenience\nProactive gap resolution — surface problems before submission not after\n\nTHE PRODUCT\n7-stage workflow: Work Queue, Case Summary, Policy Validation,\nCareLens Sidebar, Gap Resolution, Physician Approval, Submission\nRole-based routing for nurse, physician, and director\nEvery AI output citable, every decision logged\n\nOUTCOME\n75% reduction in case prep time\n40% target denial rate reduction\n108% throughput increase per nurse\n$2.5M annual revenue protection per hospital",
+    "heroColor": "#1a3a5c",
+    "heroTagline": "Reducing denial rates from 40% to under 5%",
+    "heroCategory": "AI · Healthcare",
+    "heroYear": "2024",
+    "previewMedia": "/projects/healthcare/Healthcare Dashboard_1.png",
+    "previewImageTop": 230,
+    "heroImage": "/projects/healthcare/Dashboard-1.png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #1A4268 0%, #2D6A9F 100%)",
+      "gradient": "linear-gradient(160deg, #EFF6FF 0%, #DBEAFE 100%)",
+      "light": true,
       "badge": "Case Study · Healthcare AI",
       "tags": [
         "Healthcare AI",
@@ -280,6 +288,7 @@ const projects = [
         "title": "The Problem",
         "teaser": "UR nurses spend 40 or more minutes per case doing data archaeology across 8 or more tools.  The data exists.  The decisi.",
         "readTime": "4 min",
+        "diagramKey": "problem",
         "content": [
           {
             "type": "p",
@@ -296,6 +305,7 @@ const projects = [
         "title": "The Ambiguity",
         "teaser": "Four structural ambiguities had to be resolved before a single wireframe was drawn.  Each one required a different kind.",
         "readTime": "4 min",
+        "diagramKey": "ambiguity",
         "content": [
           {
             "type": "p",
@@ -312,6 +322,7 @@ const projects = [
         "title": "Six Mistakes",
         "teaser": "I built the wrong thing twice.  Here are all six mistakes and what each one taught me. Mistake one: assumed the physicia.",
         "readTime": "4 min",
+        "diagramKey": "mistakes",
         "content": [
           {
             "type": "p",
@@ -328,6 +339,7 @@ const projects = [
         "title": "Design Evolution",
         "teaser": "Four iterations.  Three rejections.  Here is why each version failed and what unlocked the final direction. V1 was physi.",
         "readTime": "4 min",
+        "diagramKey": "evolution",
         "content": [
           {
             "type": "p",
@@ -336,22 +348,6 @@ const projects = [
           {
             "type": "p",
             "text": "V1 was physician-centric, organized around approval stages.  Rejected because it was designed for the wrong user.  UR nurses could not find their work queue."
-          }
-        ]
-      },
-      {
-        "ep": "05",
-        "title": "The Design System",
-        "teaser": "The audit came first.  39 of 50 files were non-compliant.  Three competing colour systems were in use simultaneously: de.",
-        "readTime": "4 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "The audit came first.  39 of 50 files were non-compliant.  Three competing colour systems were in use simultaneously: design-system."
-          },
-          {
-            "type": "p",
-            "text": "Used Claude Code with the Figma MCP server to connect directly to Figma's desktop app and author the entire token system through natural language.  Tokens, components, spacing rules, written without manual handoff or context switching.  The MCP connection meant tokens were written directly into the Figma variable collection, not exported and re-imported."
           }
         ]
       },
@@ -725,6 +721,11 @@ const projects = [
     ],
     "reflection": "Designing within a government ecosystem taught me that impact goes far beyond improving interfaces. Good design does not replace human judgment, it empowers it.",
     "ia": "SITUATION\n600 Ontario meat inspectors. 5 districts.\nLegacy Siebel system unchanged for over a decade.\nSingle schedule change took 40 minutes.\n\nUSERS\nPrimary: Area Coordinators — daily shift management\nSecondary: Area Managers — district coverage oversight\nTertiary: Meat Inspectors — field execution, no mobile access\n\nPROBLEM\nTool designed for the system, not the person using it.\nNo exception handling. No mobile access. No real-time conflict detection.\nInspectors running shadow workarounds management did not know about.\n\nCONSTRAINTS\nGovernment procurement — FSL licenses already purchased\nAODA compliance required under Ontario law\nMultiple approval chains before any design decision\nSalesforce FSL defaults could not be changed without documented justification\n\nPROCESS\n12 stakeholder interviews across 3 roles\nService blueprinting revealed gap between official and actual schedules\n6 FSL components required custom AODA-compliant overrides\nField testing in slaughterhouse environments\n\nKEY DECISIONS\nMobile-first for field inspectors — single task screens, 48px tap targets\nTreat FSL constraints as creative input not blockers\nDocument every custom component with accessibility rationale\nOffline capability non-negotiable for low-signal facilities\n\nTHE PRODUCT\nDesktop scheduling tool for coordinators and managers\nMobile field app for inspectors\nEmergency override workflow bypassing normal routing\nBulk shift creation across multiple facilities\nReal-time conflict detection\n\nOUTCOME\n93% faster scheduling\n80% faster emergency response\nInspectors described it as the first system built for them",
+    "heroColor": "#0a2744",
+    "heroTagline": "A schedule change from 40 minutes to 3",
+    "heroCategory": "Enterprise · Government",
+    "heroYear": "2024",
+    "previewMedia": "/projects/meatinspector/Dashboard.png",
     "hero": {
       "gradient": "linear-gradient(160deg, #1B4F8C 0%, #2E6DB4 100%)",
       "badge": "Case Study · Enterprise Gov",
@@ -1157,6 +1158,11 @@ const projects = [
     ],
     "reflection": "This project taught me that designing for outdoor spaces requires understanding history, ecology, community pride, and the emotional role a place holds over time.",
     "ia": "SITUATION\nSpencer Creek Historical Trail — 2.5km in Dundas, Ontario.\nPhysically fragmented. Almost no digital presence.\nRich history invisible to anyone who did not already know it.\n\nUSERS\nPrimary: First-time visitors — no context, no discovery tools\nSecondary: Long-time residents — deep emotional connection, no way to share it\nTertiary: Rotary Club and City of Hamilton — community stewardship goals\n\nPROBLEM\nGoogle Maps gets you to the trail.\nIt cannot tell you the bridge was built by Dundas's first settlers.\nDisconnection was cultural as much as physical.\nPeople were not losing a path. They were losing a story.\n\nCONSTRAINTS\nOutdoor UX is hostile — glare, gloves, variable signal, distracted attention\nAR calibration across 3 terrain types: open meadow, dense forest, riverbank\nThe digital layer must not compete with the trail experience\nBudget and timeline ruled out full AR recreation of lost sections\n\nPROCESS\n7 months of research\nWalked every section multiple times across seasons\nInterviewed Dundas Museum historians\nWorkshops with Sunrise Rotary Club stakeholders\nPokemon Go used as reference model for location-based discovery\nField usability testing in January\n\nKEY DECISIONS\nAR for discovery not navigation — the trail is the destination\nOne-handed interaction throughout — users are moving\nOffline fallback for forested signal-dead sections\nEmergency beacon reduced from two taps to one\nAudio over text at historical markers — feels like discovery not Wikipedia\n\nTHE PRODUCT\nAR historical overlay at GPS-triggered locations\nInteractive trail map with points of interest\nCommunity events and local vendor integration\nRewards and challenges tied to distance and discovery\nWildlife AR identification at creek sections\n\nOUTCOME\nField-tested across multiple seasons\nRotary Club and City of Hamilton stakeholder sign-off\nOffline mode supported full 3.4 mile trail",
+    "heroColor": "#1a3324",
+    "heroTagline": "Bringing Dundas history back to life",
+    "heroCategory": "AR · Community",
+    "heroYear": "2023",
+    "previewMedia": "/projects/trailar/Home (Bezel).png",
     "hero": {
       "gradient": "linear-gradient(160deg, #1C3A2A 0%, #2D6A45 100%)",
       "badge": "Case Study · Augmented Reality",
@@ -1546,6 +1552,11 @@ const projects = [
     ],
     "reflection": "Language is the most human thing we do. Building AI that preserves meaning across languages, not just words, is one of the most interesting design challenges I've worked on.",
     "ia": "SITUATION\nEnglish-only content reaches 17% of the world.\nCreators lose 83% of potential audience to language, not relevance.\nExisting solutions: too slow, too expensive, or strip cultural meaning.\n\nUSERS\nPrimary: Content creators — want language to be invisible to their workflow\nSecondary: Multilingual viewers — want native-quality experience\nTertiary: Platform team — need quality feedback loops to improve the model\n\nPROBLEM\nLanguage is not just words.\nTone, cultural subtext, and emotional register are lost in translation.\nDesigning for multilingual AI means designing for the gaps between languages.\n\nCONSTRAINTS\nAI output quality is a spectrum, not binary\nCreators are not linguists — cannot assess output technically\nEvery correction must feed back into model improvement\nPublishing workflow cannot add meaningful friction\n\nPROCESS\nCreator workflow mapping — where does language decision happen\nQuality review flow — how much review is appropriate before publishing\nConfidence indicator design — green, yellow, red per segment\nDefault-on multilingual model tested against opt-in model\n\nKEY DECISIONS\nUpload once, configure once, publish everywhere — zero per-language settings\nConfidence indicators surface only what needs review, not everything\nDefault-on multilingual — friction in removing a language not adding one\nShow actionable states not raw confidence scores\n\nTHE PRODUCT\nSingle upload flow with language target configuration\nConfidence indicator review system per segment\nOne-tap flag, regenerate, or manual override\nViewer ratings and creator corrections feed model retraining\nA/B testing on viewer retention across language versions\n\nOUTCOME\n3x average audience growth on multilingual-enabled content\n4x lower creator churn for multilingual publishers\nHigher viewer engagement in native language versus dubbed alternative",
+    "heroColor": "#2d1a4a",
+    "heroTagline": "Reaching the other 83% of the world",
+    "heroCategory": "AI · Multilingual",
+    "heroYear": "2024",
+    "previewMedia": "/projects/vosyn/MacBook Pro 16_ - 5th Gen - Silver.png",
     "hero": {
       "gradient": "linear-gradient(160deg, #1A0F2E 0%, #4A2080 100%)",
       "badge": "Case Study · AI Product",
@@ -1947,6 +1958,11 @@ const projects = [
     ],
     "reflection": "The best personal tools don't feel like software, they feel like an extension of the user's weekly routine.",
     "ia": "SITUATION\n200 food-related decisions per person per day.\nMeal planning, grocery, nutrition, pantry, and budget all in separate tools.\nEvery competitor solves one or two of the five jobs. None solve all five.\n\nUSERS\nPrimary: The planner-shopper-cook-budget manager — one person, four hats\nSecondary: Health-conscious users tracking nutrition without clinical obsession\nTertiary: Budget-constrained households managing food costs weekly\n\nPROBLEM\nFragmentation amplifies decision fatigue instead of reducing it.\nTool-switching overhead is the problem, not missing features.\nThe person wearing all four hats has no single tool designed for them.\n\nCONSTRAINTS\n375px screen with a 7-day 3-meal planning grid — unsolved mobile UX problem\nNutrition display must inform without creating anxiety or moralising food\nNo bold text anywhere — eating is calm, the app must feel calm\nSecurity — personal health and budget data requires CVE-level attention\n\nPROCESS\nThree layout approaches tested and rejected before solution found\nNutrition display philosophy established before any screens designed\nCopy last week emerged as most-requested feature in user testing\nThree CVEs discovered and patched during active development\n\nKEY DECISIONS\nHorizontal day selector plus vertical meal list — one axis at a time\nFour nutrition numbers maximum — awareness without obsession\nCopy last week as first-class feature — most people eat 10 to 15 meals on rotation\nWeight 400 typography throughout — no bold, no urgency signals\n\nTHE PRODUCT\nWeekly planning grid with horizontal day navigation\nAuto-generated grocery list aggregated from weekly plan\nNutrition summary row per day, no targets or progress bars\nPantry tracking with expiry awareness\nBudget tracking integrated with grocery list\n\nOUTCOME\n78% reduction in planning time — 45 minutes to 10 minutes\nAll five jobs-to-be-done in one interface\nThree CVEs patched during development\nZero competitors cover all five jobs confirmed post-launch",
+    "heroColor": "#3a1f0a",
+    "heroTagline": "Five jobs. One interface.",
+    "heroCategory": "Consumer · Health",
+    "heroYear": "2025",
+    "previewMedia": "/projects/mealplanner/Empty States.png",
     "hero": {
       "gradient": "linear-gradient(160deg, #5C3D1A 0%, #C4782A 100%)",
       "badge": "Case Study · Consumer Health",
@@ -2337,6 +2353,11 @@ const projects = [
     ],
     "reflection": "The best finance apps don't make you check them every day, they make you trust them completely when you do.",
     "ia": "SITUATION\nCanadian millennials and Gen-Z managing finances across multiple apps.\nOne app for trading, another for budgeting, another for credit.\nMost finance apps drive avoidance, not engagement.\n\nUSERS\nPrimary: Financially anxious Canadians 18 to 40 — first investments, first savings goals\nSecondary: Credit-building users — want score visibility without anxiety\nTertiary: TFSA and RRSP users — Canadian-specific account management\n\nPROBLEM\nFinance apps designed by people who understand finance for people who do not.\nResult: data-heavy interfaces that trigger avoidance.\nThe right metric is clarity, not engagement.\nA finance app checked weekly and trusted completely beats one checked daily with partial trust.\n\nCONSTRAINTS\nCanadian-specific products — TFSA, RRSP, Interac, bureau scale 300 to 900\nConnecting a bank account is a moment of profound trust — onboarding must honour it\nNo red/green colour system — avoid stock market emotional triggers\nProgressive disclosure required — showing everything at once triggers avoidance\n\nPROCESS\nColour system — rejected red/green, chose amber/gold with contextual labels\nChart type evaluation — tested 4 chart types, chose balance trajectory line\nOnboarding copy — describe what Aurora does not store, not what it does\nManual entry built as first-class alternative to bank connection\n\nKEY DECISIONS\nShow what is actionable, hide what is overwhelming\nEvery number has a context label — raw figures mean nothing without comparison\nDefault light mode — aligns with banking conventions, dark mode as preference\nSwipeable dashboard — native mobile feel without nested tabs\n\nTHE PRODUCT\nSwipeable home dashboard — Overview, Accounts, Credit, Activity\nBalance trajectory chart with 12-month projected trend\nCredit score gauge with payment streak and four weighted factors\nGoals with progress tracking and contribution flows\nTFSA and RRSP account types with contribution room tracking\n36 custom components, 15 pages, fully responsive\n\nOUTCOME\nAll five financial jobs consolidated — banking, investing, credit, budgeting, goals\nCanadian-specific throughout — TFSA, RRSP, Interac, local credit bureau scale\nCalm financial experience that informs without alarming",
+    "heroColor": "#0a2233",
+    "heroTagline": "Clarity over engagement",
+    "heroCategory": "Fintech · Canada",
+    "heroYear": "2024",
+    "previewMedia": "/projects/aurora/Mockup-.png",
     "hero": {
       "gradient": "linear-gradient(160deg, #0D1F0F 0%, #1A3D1F 100%)",
       "badge": "Case Study · Fintech",
@@ -2735,6 +2756,11 @@ const projects = [
     ],
     "reflection": "Trust in autonomous systems is not built through reassurance, it's built through transparency. Every design decision in this project was about showing passengers and operators exactly what the system was doing, and why.",
     "ia": "SITUATION\nAutonomous vehicles entering public transit.\nPassengers do not trust them. Fleet managers lack the right decision interface.\nThe interface is the only trust signal when there is no driver.\n\nUSERS\nPrimary: Passengers — boarding a driverless vehicle for the first time\nSecondary: Fleet operators — managing 50 or more vehicles simultaneously\nTertiary: Mobility-impaired users — autonomous transit must exceed human-operated standards\n\nPROBLEM\nA human driver provides dozens of implicit trust signals.\nRemove the driver and all of them disappear.\nThe interface has 30 seconds when a passenger boards to replace them all.\n\nCONSTRAINTS\nNo driver to exercise human judgment on ambiguous situations\nInterface must work across passenger ages and technical literacy levels\nP1 alerts require immediate human decision — interface cannot bury them\nAccessibility must exceed human-operated transit standards, not match them\n\nPROCESS\nThree trust-building moments identified — boarding, in-transit, edge cases\nAlert triage system designed around P1/P2/P3 priority levels\nEdge case library — GPS loss, sleeping passenger, unexpected stop, route block\nAccessibility features designed for hardest user first principle\n\nKEY DECISIONS\nTransparency over reassurance — show what the vehicle is doing, not just that it is safe\nSingle-screen principle — every critical decision visible without scrolling\nHuman voice not tone for emergency communications\nOne-tap assistance connecting to remote operator within 30 seconds\nDesign for the hardest user first — every accessibility feature improves the experience for all\n\nTHE PRODUCT\nPassenger in-vehicle interface — real-time route, vehicle decisions, next stop\nFleet operations dashboard — fleet map, P1/P2/P3 alerts, 4-hour demand forecast\nBoarding flow — safety signal in first 30 seconds\nEdge case communication system — calm, directive, with clear next steps\nFull accessibility suite — voice interface, large text, automated ramp, multilingual\n\nOUTCOME\nTrust established through transparency not reassurance\nP1 alerts visible without scrolling on primary dashboard view\nFull accessibility compliance — voice, large text, boarding assistance, multilingual\nEdge cases designed with three-question framework: what to know, what to do, what happens next",
+    "heroColor": "#1a1a2e",
+    "heroTagline": "30 seconds to build trust in a driverless vehicle",
+    "heroCategory": "Mobility · Transit",
+    "heroYear": "2024",
+    "previewMedia": "/projects/autonomous/Mockup-.png",
     "hero": {
       "gradient": "linear-gradient(160deg, #05101E 0%, #0A2540 100%)",
       "badge": "Case Study · Mobility",

@@ -1,247 +1,284 @@
 /**
- * Desktop.jsx
- * Scroll-driven homepage hero — 400vh container with a sticky 100vh layer.
+ * Desktop.jsx — Blue Gradient Hero
  *
- * Layout (inside sticky layer, z-index local):
- *   z-1  : particle canvas (floating dots)
- *   z-10 : glass cube (Three.js, canvas appended to cube mount div)
- *   z-20 : name bubble (left, speech-bubble tail) + 4 corner bubbles
- *   z-30 : scroll hint (fades out after first ~6% of scroll)
+ * Canvas layers (every frame):
+ *   1. White fill
+ *   2. Subtle diagonal wash (alice-blue tint)
+ *   3. 6 drifting radial blobs — 30 distinct blue shades across 5 scenes
+ *   4. Cursor bloom (blue tinted, lag-follows)
  *
- * Scroll behaviour:
- *   - scrollProgressRef (0→1) drives cube rotation (2 full turns)
- *   - name bubble parallaxes upward + fades at 80%+
- *   - corner bubbles appear staggered, parallax outward from centre
- *   - scroll hint fades as soon as scrolling begins
+ * CSS layer above canvas:
+ *   .grain-layer — animated SVG fractalNoise texture, mix-blend-mode: multiply
+ *
+ * Scene cycle: every 20 s, 3-second RGB cross-fade between scenes.
  */
 
 import { useEffect, useRef } from 'react';
-import GlassCube from './GlassCube.jsx';
+import gsap from 'gsap';
 
-const CORNER_BUBBLES = [
-  {
-    id:       'tl',
-    pos:      'tl',
-    label:    'Product Design',
-    sub:      'End-to-end systems',
-    appearAt: 0.14,
-  },
-  {
-    id:       'tr',
-    pos:      'tr',
-    label:    'UX Research',
-    sub:      'Evidence-led',
-    appearAt: 0.28,
-  },
-  {
-    id:       'bl',
-    pos:      'bl',
-    label:    'AI × Healthcare',
-    sub:      'CareSummarizer',
-    appearAt: 0.44,
-  },
-  {
-    id:       'br',
-    pos:      'br',
-    label:    'Motion & Code',
-    sub:      'GSAP · Three.js',
-    appearAt: 0.60,
-  },
+/* ═══════════════════════════════════════════════════════
+   30 SHADES OF BLUE — 5 scenes × 6 blobs each
+   Position [xFrac, yFrac], radius as fraction of W, alpha
+═══════════════════════════════════════════════════════ */
+const SCENES = [
+  // 1 · Sky / Baby blue — airy, light
+  [
+    { c: [191, 219, 254], x: 0.14, y: 0.22, r: 0.52, a: 0.46 }, // blue-200
+    { c: [147, 197, 253], x: 0.86, y: 0.18, r: 0.46, a: 0.40 }, // blue-300
+    { c: [125, 211, 252], x: 0.50, y: 0.50, r: 0.40, a: 0.35 }, // sky-300
+    { c:  [56, 189, 248], x: 0.12, y: 0.80, r: 0.44, a: 0.38 }, // sky-400
+    { c:  [14, 165, 233], x: 0.88, y: 0.74, r: 0.42, a: 0.32 }, // sky-500
+    { c:   [2, 132, 199], x: 0.64, y: 0.36, r: 0.34, a: 0.36 }, // sky-600
+  ],
+  // 2 · Cobalt / Royal — vivid, saturated
+  [
+    { c:  [96, 165, 250], x: 0.16, y: 0.24, r: 0.50, a: 0.42 }, // blue-400
+    { c:  [59, 130, 246], x: 0.84, y: 0.20, r: 0.44, a: 0.38 }, // blue-500
+    { c:  [37,  99, 235], x: 0.48, y: 0.52, r: 0.38, a: 0.34 }, // blue-600
+    { c:  [29,  78, 216], x: 0.14, y: 0.78, r: 0.42, a: 0.36 }, // blue-700
+    { c:  [30,  64, 175], x: 0.86, y: 0.72, r: 0.46, a: 0.30 }, // blue-800
+    { c:  [30,  58, 138], x: 0.66, y: 0.34, r: 0.36, a: 0.34 }, // blue-900
+  ],
+  // 3 · Midnight / Indigo — deep, moody
+  [
+    { c:  [67,  56, 202], x: 0.18, y: 0.26, r: 0.52, a: 0.40 }, // indigo-600
+    { c:  [55,  48, 163], x: 0.82, y: 0.16, r: 0.46, a: 0.36 }, // indigo-700
+    { c:  [49,  46, 129], x: 0.50, y: 0.55, r: 0.40, a: 0.32 }, // indigo-800
+    { c:  [30,  27,  75], x: 0.10, y: 0.76, r: 0.42, a: 0.34 }, // indigo-950
+    { c:  [99, 102, 241], x: 0.90, y: 0.70, r: 0.44, a: 0.32 }, // indigo-500
+    { c: [129, 140, 248], x: 0.62, y: 0.32, r: 0.36, a: 0.38 }, // indigo-400
+  ],
+  // 4 · Cyan / Teal — fresh, aquatic
+  [
+    { c: [165, 243, 252], x: 0.15, y: 0.20, r: 0.50, a: 0.44 }, // cyan-200
+    { c: [103, 232, 249], x: 0.85, y: 0.18, r: 0.46, a: 0.40 }, // cyan-300
+    { c:  [34, 211, 238], x: 0.50, y: 0.50, r: 0.40, a: 0.34 }, // cyan-400
+    { c:   [6, 182, 212], x: 0.12, y: 0.80, r: 0.44, a: 0.36 }, // cyan-500
+    { c:   [8, 145, 178], x: 0.88, y: 0.74, r: 0.42, a: 0.30 }, // cyan-600
+    { c:  [14, 116, 144], x: 0.65, y: 0.36, r: 0.34, a: 0.34 }, // cyan-700
+  ],
+  // 5 · Periwinkle / Lavender-blue — soft, purple-shifted
+  [
+    { c: [224, 231, 255], x: 0.16, y: 0.22, r: 0.52, a: 0.46 }, // indigo-100
+    { c: [199, 210, 254], x: 0.84, y: 0.18, r: 0.46, a: 0.42 }, // indigo-200
+    { c: [165, 180, 252], x: 0.50, y: 0.52, r: 0.40, a: 0.36 }, // indigo-300
+    { c: [129, 140, 248], x: 0.14, y: 0.80, r: 0.42, a: 0.38 }, // indigo-400
+    { c:  [99, 102, 241], x: 0.86, y: 0.72, r: 0.44, a: 0.32 }, // indigo-500
+    { c:  [79,  70, 229], x: 0.64, y: 0.34, r: 0.36, a: 0.36 }, // indigo-600
+  ],
 ];
 
-function Desktop() {
-  const containerRef  = useRef(null);   // cube's DOM mount (Three.js appends canvas here)
-  const scrollProgRef = useRef(0);      // 0→1 scroll progress shared with GlassCube
-  const canvasRef     = useRef(null);   // particle canvas
-  const mouseRef      = useRef({ x: -9999, y: -9999 });
-  const nameBubbleRef = useRef(null);
-  const bubbleRefs    = useRef([]);
+/* ═══════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════ */
+function lerpC(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+}
+function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
 
-  /* ── Scroll tracking + parallax ── */
+/* ═══════════════════════════════════════════════════════
+   VFX CANVAS
+═══════════════════════════════════════════════════════ */
+function VFXCanvas() {
+  const cvs = useRef(null);
+
   useEffect(() => {
-    const onScroll = () => {
-      const maxScroll = Math.max(document.body.scrollHeight - window.innerHeight, 1);
-      const progress  = Math.max(0, Math.min(1, window.scrollY / maxScroll));
-      scrollProgRef.current = progress;
-
-      /* Name bubble: drift upward + fade near the end of the scroll */
-      if (nameBubbleRef.current) {
-        const ty = progress * -64;
-        const op = progress > 0.78 ? Math.max(0, 1 - (progress - 0.78) / 0.18) : 1;
-        nameBubbleRef.current.style.transform = `translateY(calc(-50% + ${ty}px))`;
-        nameBubbleRef.current.style.opacity   = String(op);
-      }
-
-      /* Corner bubbles: appear staggered, parallax outward from centre */
-      CORNER_BUBBLES.forEach((b, i) => {
-        const el = bubbleRefs.current[i];
-        if (!el) return;
-        const appear = Math.max(0, Math.min(1, (progress - b.appearAt) / 0.12));
-        const isTop  = b.pos.startsWith('t');
-        const isLeft = b.pos.endsWith('l');
-        const dy = (isTop  ? -1 : 1) * progress * (42 + i * 8);
-        const dx = (isLeft ? -1 : 1) * progress * (22 + i * 6);
-        el.style.opacity   = String(appear);
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-      });
-
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll(); // initialise on mount
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  /* ── Particle field ── */
-  useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = cvs.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+    const S = {
+      t: 0,
+      sceneIdx: 0,
+      sceneLerp: 0,
+      transitioning: false,
     };
+
+    let W = 0, H = 0;
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr  = window.devicePixelRatio || 1;
+      W = rect.width; H = rect.height;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    const COUNT = 360;
-    const particles = Array.from({ length: COUNT }, () => ({
-      x:       Math.random() * 1920,
-      y:       Math.random() * 1080,
-      r:       0.8 + Math.random() * 2.2,
-      opacity: 0.04 + Math.random() * 0.50,
-      baseVx:  (Math.random() - 0.5) * 0.35,
-      baseVy:  -(0.12 + Math.random() * 0.45),
-      vx: 0,
-      vy: 0,
-    }));
+    /* scene cycle every 20 s */
+    const sceneTimer = setInterval(() => {
+      S.transitioning = true;
+      S.sceneLerp = 0;
+    }, 20000);
 
-    const REPEL_RADIUS = 90;
-    const REPEL_FORCE  = 4.5;
-    const DAMPING      = 0.88;
-    const RETURN_RATE  = 0.03;
 
-    let rafId;
+    let raf;
+    function frame() {
+      S.t += 0.016;
 
-    const draw = () => {
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-
-      for (const p of particles) {
-        p.vx += (p.baseVx - p.vx) * RETURN_RATE;
-        p.vy += (p.baseVy - p.vy) * RETURN_RATE;
-
-        const dx   = p.x - mx;
-        const dy   = p.y - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < REPEL_RADIUS && dist > 0) {
-          const strength = (1 - dist / REPEL_RADIUS) * REPEL_FORCE;
-          p.vx += (dx / dist) * strength;
-          p.vy += (dy / dist) * strength;
+      /* ── scene lerp (3 s blend ≈ 180 frames at 60 fps) ── */
+      if (S.transitioning) {
+        S.sceneLerp = Math.min(S.sceneLerp + 0.0056, 1);
+        if (S.sceneLerp >= 1) {
+          S.sceneIdx = (S.sceneIdx + 1) % SCENES.length;
+          S.sceneLerp = 0;
+          S.transitioning = false;
         }
+      }
+      const t    = S.sceneLerp;
+      const curS = SCENES[S.sceneIdx];
+      const nxtS = SCENES[(S.sceneIdx + 1) % SCENES.length];
 
-        p.vx *= DAMPING;
-        p.vy *= DAMPING;
-        p.x  += p.vx;
-        p.y  += p.vy;
+      ctx.clearRect(0, 0, W, H);
 
-        if (p.x < -4)    p.x = w + 4;
-        if (p.x > w + 4) p.x = -4;
-        if (p.y < -4)    p.y = h + 4;
-        if (p.y > h + 4) p.y = -4;
+      /* ── 1. White base ── */
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0,0,0,${p.opacity * 0.08})`;
-        ctx.fill();
+      /* ── 2. Subtle diagonal blue wash ── */
+      const wash = ctx.createLinearGradient(0, 0, W, H);
+      wash.addColorStop(0,   'rgba(219,234,254,0.25)'); // blue-100 tint
+      wash.addColorStop(0.5, 'rgba(255,255,255,0)');
+      wash.addColorStop(1,   'rgba(191,219,254,0.18)'); // blue-200 tint
+      ctx.fillStyle = wash;
+      ctx.fillRect(0, 0, W, H);
+
+      /* ── 3. 6 drifting blue blobs ── */
+      const pulse = 0.88 + Math.sin(S.t * 0.40) * 0.10;
+
+      for (let i = 0; i < curS.length; i++) {
+        const cb = curS[i];
+        const nb = nxtS[i];
+        const color = lerpC(cb.c, nb.c, t);
+        const alpha = (cb.a + (nb.a - cb.a) * t) * pulse * (0.90 + Math.sin(S.t * 0.28 + i * 2.1) * 0.08);
+
+        /* organic drift orbit per blob */
+        const driftX = Math.sin(S.t * 0.14 + i * 1.32) * 0.055 * W;
+        const driftY = Math.cos(S.t * 0.11 + i * 1.74) * 0.048 * H;
+        const bx = cb.x * W + driftX;
+        const by = cb.y * H + driftY;
+        const br = cb.r * W;
+
+        const g = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+        g.addColorStop(0, rgba(color, alpha));
+        g.addColorStop(1, rgba(color, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
       }
 
-      rafId = requestAnimationFrame(draw);
-    };
+      raf = requestAnimationFrame(frame);
+    }
+    frame();
 
-    draw();
-    return () => { cancelAnimationFrame(rafId); ro.disconnect(); };
-  }, []);
-
-  /* ── Mouse tracking (client coords — sticky layer is full viewport) ── */
-  useEffect(() => {
-    const onMove  = (e) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
-    const onLeave = ()  => { mouseRef.current = { x: -9999, y: -9999 }; };
-    window.addEventListener('mousemove',  onMove);
-    window.addEventListener('mouseleave', onLeave);
     return () => {
-      window.removeEventListener('mousemove',  onMove);
-      window.removeEventListener('mouseleave', onLeave);
+      cancelAnimationFrame(raf);
+      clearInterval(sceneTimer);
+      ro.disconnect();
     };
   }, []);
 
   return (
+    <canvas
+      ref={cvs}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}
+    />
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   SVG MARQUEE — circular spinning text badge
+═══════════════════════════════════════════════════════ */
+const MARQUEE_TEXT = 'Product Designer · UX Thinker · Creative Educator · ';
+const MQ_R  = 61;   // circle radius — sized to fit one text pass exactly
+const MQ_CX = 88;   // centre x of 176×176 SVG
+const MQ_CY = 88;   // centre y
+// Full circle path starting from top, going clockwise
+const MQ_PATH = `M ${MQ_CX},${MQ_CY} m 0,-${MQ_R} a ${MQ_R},${MQ_R} 0 1,1 0,${MQ_R * 2} a ${MQ_R},${MQ_R} 0 1,1 0,-${MQ_R * 2}`;
+
+function MarqueeArc() {
+  return (
+    /* outer: handles positioning */
     <div
-      className="homepage-scroll"
-      aria-label="Portfolio — Abhay Sharma, Product Designer"
+      aria-hidden="true"
+      style={{
+        position:      'absolute',
+        right:         '8%',
+        top:           '50%',
+        transform:     'translateY(-50%)',
+        width:         176,
+        height:        176,
+        pointerEvents: 'none',
+        zIndex:        1,
+      }}
     >
-      {/* Sticky viewport layer — sticks for the full 400vh */}
-      <div className="homepage-sticky">
+    {/* inner: handles rotation only */}
+    <div style={{ width: '100%', height: '100%', animation: 'marquee-spin 28s linear infinite', transformOrigin: 'center' }}>
+      <svg width="176" height="176" viewBox="0 0 176 176" fill="none">
+        <defs>
+          <path id="mq-circle" d={MQ_PATH} />
+        </defs>
 
-        {/* Particle canvas — z 1 */}
-        <canvas
-          ref={canvasRef}
-          className="homepage-particles"
-          aria-hidden="true"
-        />
+        {/* centre dot */}
+        <circle cx={MQ_CX} cy={MQ_CY} r="3" fill="rgba(0,0,0,0.18)" />
 
-        {/* Cube mount — z 10; Three.js canvas appended here by GlassCube */}
-        <div
-          ref={containerRef}
-          className="homepage-cube-mount"
-          aria-hidden="true"
-        />
-        <GlassCube
-          containerRef={containerRef}
-          scrollProgressRef={scrollProgRef}
-        />
-
-        {/* Name bubble — left side, speech-bubble tail pointing right — z 20 */}
-        <div
-          ref={nameBubbleRef}
-          className="name-bubble"
-          aria-label="Abhay Sharma, Product Designer"
+        <text
+          fontSize="9"
+          fontFamily='"Geist Mono", monospace'
+          fontWeight="400"
+          fill="rgba(0,0,0,0.28)"
+          letterSpacing="2"
         >
-          <span className="name-bubble-role">Product Designer</span>
-          <span className="name-bubble-name">
-            Abhay<br />Sharma
-          </span>
-        </div>
-
-        {/* Corner bubbles — appear staggered as user scrolls — z 20 */}
-        {CORNER_BUBBLES.map((b, i) => (
-          <div
-            key={b.id}
-            ref={(el) => { bubbleRefs.current[i] = el; }}
-            className={`corner-bubble corner-bubble--${b.pos}`}
-          >
-            <span className="corner-bubble-label">{b.label}</span>
-            <span className="corner-bubble-sub">{b.sub}</span>
-          </div>
-        ))}
-
-        {/* Scroll hint — time-based fade (CSS animation, ~11s) — z 30 */}
-        <div
-          className="scroll-hint"
-          aria-hidden="true"
-        >
-          <span className="scroll-hint-text">Scroll to explore</span>
-          <div className="scroll-hint-arrow" />
-        </div>
-
-      </div>
+          <textPath href="#mq-circle" startOffset="0%">
+            {MARQUEE_TEXT}
+          </textPath>
+        </text>
+      </svg>
+    </div>
     </div>
   );
 }
 
-export default Desktop;
+/* ═══════════════════════════════════════════════════════
+   HERO TEXT — dark text on light background
+═══════════════════════════════════════════════════════ */
+function HeroStatement() {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const lines = ref.current?.querySelectorAll('.hero-line');
+    if (!lines?.length) return;
+    gsap.set(lines, { y: 24, opacity: 0 });
+    gsap.to(lines, { y: 0, opacity: 1, duration: 1.0, ease: 'power3.out', stagger: 0.16, delay: 3.6 });
+  }, []);
+
+  return (
+    <div ref={ref} className="hero-statement" aria-label="Hero introduction"
+         style={{ position: 'relative', zIndex: 2 }}>
+      <p className="hero-line hero-line--pre">My name is</p>
+      <p className="hero-line hero-line--name">Abhay.</p>
+      <p className="hero-line hero-line--sub">I am a product designer</p>
+      <p className="hero-line hero-line--sub">and an educator.</p>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   ROOT
+═══════════════════════════════════════════════════════ */
+export default function Desktop() {
+  return (
+    <div className="homepage-hero" aria-label="Portfolio — Abhay Sharma, Product Designer">
+      <VFXCanvas />
+      {/* Film grain overlay — pure CSS, no JS overhead */}
+      <div className="grain-layer" aria-hidden="true" />
+      <MarqueeArc />
+      <HeroStatement />
+    </div>
+  );
+}

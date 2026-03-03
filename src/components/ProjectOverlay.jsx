@@ -5,9 +5,48 @@
  * Sections derived from existing episode data — no content changes.
  */
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState, lazy, Suspense } from 'react';
 import { gsap } from 'gsap';
 import projects from '../data/projects.js';
+
+/* ── Diagram components (lazy — only loaded for healthcare) ── */
+const DiagramProblem   = lazy(() => import('./diagrams/DiagramProblem.jsx'));
+const DiagramAmbiguity = lazy(() => import('./diagrams/DiagramAmbiguity.jsx'));
+const DiagramMistakes  = lazy(() => import('./diagrams/DiagramMistakes.jsx'));
+const DiagramEvolution = lazy(() => import('./diagrams/DiagramEvolution.jsx'));
+
+const DIAGRAM_MAP = {
+  problem:   { component: DiagramProblem,   height: 1000 },
+  ambiguity: { component: DiagramAmbiguity, height: 900  },
+  mistakes:  { component: DiagramMistakes,  height: 900  },
+  evolution: { component: DiagramEvolution, height: 900  },
+};
+
+/* ── Scales a fixed 1600×diagramHeight diagram to fill its container width ── */
+function DiagramWrapper({ component: Diagram, diagramHeight = 900 }) {
+  const wrapperRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0].contentRect.width;
+      setScale(w / 1600);
+    });
+    ro.observe(wrapperRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={wrapperRef} style={{ width: '100%', height: `${diagramHeight * scale}px`, overflow: 'hidden', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})` }}>
+        <Suspense fallback={<div style={{ width: 1600, height: diagramHeight, background: '#f5f5f5' }} />}>
+          <Diagram />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────────────────
    SECTION DERIVATION — episodes → case study sections
@@ -107,6 +146,7 @@ function deriveSections(project) {
       bodyBlocks,
       imageGradient: DARK_GRADIENTS[i % DARK_GRADIENTS.length],
       imageCaption: ep.title,
+      diagramKey: ep.diagramKey || null,
       callout: i === 0 ? (project.insight || null) : null,
       subsections: subsections.length > 0 ? subsections : [],
     };
@@ -165,15 +205,12 @@ function IADiagram({ iaText }) {
 ───────────────────────────────────────────────────────── */
 
 const OVERLAY_CSS = `
-  /* Overlay sits behind the global nav (z-index 1001).
-     padding-top: 44px reserves space for the nav bar. */
   .project-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    padding-top: 44px;
     border-radius: 0;
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(48px) saturate(180%);
@@ -183,13 +220,13 @@ const OVERLAY_CSS = `
     flex-direction: column;
     z-index: 1000;
     will-change: opacity, transform;
-    cursor: auto;
+    cursor: none;
   }
 
-  /* Cursor: use default inside overlay so native cursor is visible */
-  .project-overlay * { cursor: auto; }
+  /* Keep custom cursor active inside overlay */
+  .project-overlay * { cursor: none; }
   .sidebar-nav-item,
-  .overlay-back-to-top { cursor: pointer; }
+  .overlay-back-to-top { cursor: none; }
 
   /* ── Body: two-column ── */
   .overlay-body {
@@ -198,7 +235,7 @@ const OVERLAY_CSS = `
     flex: 1;
     overflow: hidden;
     width: 100%;
-    height: calc(100vh - 44px);
+    height: 100vh;
   }
 
   /* ── Sidebar ── */
@@ -225,7 +262,7 @@ const OVERLAY_CSS = `
     font-weight: 400;
     color: rgba(0, 0, 0, 0.35);
     letter-spacing: 0.02em;
-    cursor: pointer;
+    cursor: none;
     margin-bottom: 20px;
     padding: 4px 8px;
     transition: color 0.15s;
@@ -241,7 +278,7 @@ const OVERLAY_CSS = `
     font-size: 12px;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.35);
-    cursor: pointer;
+    cursor: none;
     transition: color 0.15s;
     padding-bottom: 4px;
   }
@@ -255,9 +292,9 @@ const OVERLAY_CSS = `
     color: rgba(0, 0, 0, 0.35);
     padding: 6px 10px;
     border-radius: 6px;
-    cursor: pointer;
+    cursor: none;
     transition: all 0.15s ease;
-    line-height: 1.4;
+    line-height: 1.2;
   }
 
   .sidebar-nav-item:hover {
@@ -295,7 +332,8 @@ const OVERLAY_CSS = `
   /* ── Hero ── */
   .case-study-hero {
     width: 100%;
-    height: 45vh;
+    min-height: 75vh;
+    height: 75vh;
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
@@ -342,7 +380,7 @@ const OVERLAY_CSS = `
 
   /* ── Project meta ── */
   .project-meta {
-    padding: 48px 64px 40px;
+    padding: 24px 64px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
 
@@ -439,31 +477,31 @@ const OVERLAY_CSS = `
   .meta-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 32px;
+    gap: 16px;
   }
 
   .meta-label {
     display: block;
     font-family: 'Geist Mono', monospace;
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.12em;
     color: rgba(0, 0, 0, 0.35);
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .meta-value {
     display: block;
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 400;
     color: #0A0A0A;
-    line-height: 1.4;
+    line-height: 1.2;
   }
 
   /* ── Content sections ── */
   .case-study-section {
-    padding: 64px 80px 72px;
+    padding: 48px 80px;
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
@@ -472,30 +510,34 @@ const OVERLAY_CSS = `
 
   .section-eyebrow {
     font-family: 'Geist Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.15em;
+    font-size: 11px;
+    letter-spacing: 0.14em;
     color: rgba(0, 0, 0, 0.30);
     text-transform: uppercase;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
   .section-headline {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: clamp(20px, 2.2vw, 28px);
-    font-weight: 500;
+    font-size: clamp(18px, 2vw, 24px);
+    font-weight: 400;
     color: #0A0A0A;
     letter-spacing: -0.02em;
-    line-height: 1.25;
-    margin-bottom: 20px;
+    line-height: 1.2;
+    margin-bottom: 12px;
   }
 
   .section-body {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.60);
-    line-height: 1.8;
-    margin-bottom: 48px;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+
+  .section-body + .section-body {
+    margin-top: 0;
   }
 
   /* Inline body list */
@@ -510,10 +552,10 @@ const OVERLAY_CSS = `
 
   .section-list li {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.60);
-    line-height: 1.7;
+    line-height: 1.2;
     padding-left: 16px;
     position: relative;
   }
@@ -532,13 +574,13 @@ const OVERLAY_CSS = `
     width: calc(100% + 160px);
     margin-left: -80px;
     margin-right: -80px;
-    margin-bottom: 48px;
+    margin-bottom: 24px;
     overflow: hidden;
   }
 
   .section-image-block .image-fill {
     width: 100%;
-    aspect-ratio: 16/9;
+    aspect-ratio: 21/9;
     border-radius: 0;
   }
 
@@ -568,25 +610,38 @@ const OVERLAY_CSS = `
 
   .subsection-body {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.58);
-    line-height: 1.75;
+    line-height: 1.2;
+  }
+
+  /* Overview section — compact intro, slightly smaller than episode sections */
+  #overview .section-headline {
+    font-size: clamp(16px, 1.8vw, 22px);
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  #overview .section-body {
+    font-size: 14px;
+    line-height: 1.2;
+    color: rgba(0, 0, 0, 0.50);
   }
 
   /* Callout — pulled quote */
   .section-callout {
     border-left: 3px solid #0A0A0A;
-    padding: 4px 0 4px 20px;
-    margin: 32px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
   }
 
   .section-callout p {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 17px;
+    font-size: 14px;
     font-weight: 500;
     color: #0A0A0A;
-    line-height: 1.6;
+    line-height: 1.2;
     font-style: italic;
   }
 
@@ -604,7 +659,7 @@ const OVERLAY_CSS = `
     font-size: 15px;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.45);
-    cursor: pointer;
+    cursor: none;
     transition: color 0.15s;
     background: none;
     border: none;
@@ -639,10 +694,10 @@ const OVERLAY_CSS = `
   @media (max-width: 800px) {
     .case-study-sidebar { display: none; }
     .hero-text { left: 24px; bottom: 24px; }
-    .project-meta { padding: 32px 24px; }
-    .meta-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .project-meta { padding: 16px 24px; }
+    .meta-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .ia-diagram-container { padding: 32px 24px 40px; }
-    .case-study-section { padding: 48px 24px 56px; }
+    .case-study-section { padding: 32px 24px; }
     .section-image-block {
       width: calc(100% + 48px);
       margin-left: -24px;
@@ -802,10 +857,10 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
       aria-modal="true"
       aria-label={project.title}
     >
-      {/* ── Two-column body (nav bar covers top 44px via overlay padding-top) ── */}
+      {/* ── Two-column body ── */}
       <div
         className="overlay-body"
-        style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden', width: '100%', height: 'calc(100vh - 44px)' }}
+        style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden', width: '100%', height: '100vh' }}
       >
 
         {/* Sidebar */}
@@ -829,6 +884,15 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
           <div className="sidebar-back-bottom" onClick={handleClose}>
             ← All Projects
           </div>
+          <a
+            href="/resume.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sidebar-back-bottom"
+            style={{ display: 'block', marginTop: 8, borderTop: 'none', paddingTop: 0 }}
+          >
+            Resume ↗
+          </a>
         </nav>
 
         {/* Scrollable content */}
@@ -844,10 +908,29 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
               className="hero-gradient"
               style={{ background: project.hero?.gradient ?? `linear-gradient(135deg, ${project.accentColor} 0%, #0a0a0a 100%)` }}
             />
+            {project.heroImage && (
+              <img
+                src={project.heroImage}
+                alt=""
+                style={{
+                  position:     'absolute',
+                  top:          '8%',
+                  right:        '5%',
+                  width:        '58%',
+                  borderRadius: '10px 10px 0 0',
+                  boxShadow:    '0 24px 80px rgba(0,0,0,0.15)',
+                  objectFit:    'cover',
+                  objectPosition: 'top',
+                  pointerEvents: 'none',
+                  maskImage:    'linear-gradient(to bottom, black 70%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+                }}
+              />
+            )}
             <div className="hero-text">
-              <p className="hero-project-label">{project.hero?.badge ?? project.org}</p>
-              <h1 className="hero-project-name">{project.title}</h1>
-              <p className="hero-meta-line">
+              <p className="hero-project-label" style={project.hero?.light ? { color: 'rgba(0,0,0,0.50)' } : undefined}>{project.hero?.badge ?? project.org}</p>
+              <h1 className="hero-project-name" style={project.hero?.light ? { color: '#1a1814', textShadow: 'none' } : undefined}>{project.title}</h1>
+              <p className="hero-meta-line" style={project.hero?.light ? { color: 'rgba(0,0,0,0.50)' } : undefined}>
                 {[meta.timeline, meta.role, meta.team].filter(Boolean).join(' · ')}
               </p>
             </div>
@@ -899,8 +982,10 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                 className="case-study-section"
                 style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
               >
-                <p className="section-eyebrow">{sec.eyebrow}</p>
-                <h2 className="section-headline">{sec.headline}</h2>
+                <p className="section-eyebrow" style={{ color: project.accentColor }}>{sec.eyebrow}</p>
+                {sec.headline.toUpperCase() !== sec.eyebrow && (
+                  <h2 className="section-headline">{sec.headline}</h2>
+                )}
 
                 {/* Body blocks: paragraphs + lists from episode content */}
                 {sec.bodyBlocks && sec.bodyBlocks.length > 0
@@ -922,13 +1007,22 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                   </div>
                 )}
 
-                {/* Image block */}
-                <div className="section-image-block">
-                  <div
-                    className="image-fill"
-                    style={{ background: sec.imageGradient }}
-                  />
-                  <p className="image-caption">{sec.imageCaption}</p>
+                {/* Image block — diagram component or gradient fallback */}
+                <div className="section-image-block" style={sec.diagramKey ? { marginTop: 32 } : undefined}>
+                  {sec.diagramKey && DIAGRAM_MAP[sec.diagramKey] ? (
+                    <DiagramWrapper
+                      component={DIAGRAM_MAP[sec.diagramKey].component}
+                      diagramHeight={DIAGRAM_MAP[sec.diagramKey].height}
+                    />
+                  ) : (
+                    <div
+                      className="image-fill"
+                      style={{ background: sec.imageGradient }}
+                    />
+                  )}
+                  {sec.imageCaption && (
+                    <p className="image-caption">{sec.imageCaption}</p>
+                  )}
                 </div>
 
                 {/* Subsections */}
