@@ -695,7 +695,7 @@ function _cpuTick(state,speed){
           return np;
         });
         const center=state.center.map((p,i)=>i===ci?[...p,top]:p);
-        const done=tab.every(p=>p.length===0)&&cpu.stock.length===0;
+        const done=tab.every(p=>p.length===0);
         return{...state,cpu:{...cpu,tableau:tab},center,phase:done?'pick-pile-cpu':'playing',message:''};
       }
     }
@@ -730,8 +730,9 @@ function _cpuTick(state,speed){
    CPU takes the other one. If either side ends up with 0 cards → true game over. */
 function _rebuildRound(game, playerPileIdx) {
   const cpuPileIdx = 1 - playerPileIdx;
-  const pCards = _shuffle([...game.center[playerPileIdx]]);
-  const cCards = _shuffle([...game.center[cpuPileIdx]]);
+  // Include remaining stock from each side — they carry over to the next round
+  const pCards = _shuffle([...game.center[playerPileIdx], ...game.player.stock]);
+  const cCards = _shuffle([...game.center[cpuPileIdx],   ...game.cpu.stock]);
   if (pCards.length === 0) return { ..._initGame(), phase:'won',  message:'You win the match!' };
   if (cCards.length === 0) return { ..._initGame(), phase:'lost', message:'CPU wins the match!' };
   const p = _buildSide(pCards);
@@ -1119,7 +1120,8 @@ function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
         if(!_canCenter(card,center[ci]))return prev;
         const tab=removeCard(player.tableau);
         const ctr=center.map((p,i)=>i===ci?[...p,card]:p);
-        const done=tab.every(p=>p.length===0)&&player.stock.length===0;
+        // Trigger pick-pile as soon as all tableau piles are empty (stock carries over)
+        const done=tab.every(p=>p.length===0);
         const next={...prev,player:{...player,tableau:tab},center:ctr,phase:done?'pick-pile':'playing',message:''};
         broadcast(next);return next;
       }

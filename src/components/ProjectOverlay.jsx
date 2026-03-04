@@ -285,6 +285,29 @@ const OVERLAY_CSS = `
 
   .sidebar-back-bottom:hover { color: #0A0A0A; }
 
+  /* Mobile overlay back button — hidden on desktop, shown on mobile */
+  .mobile-overlay-back {
+    display: none;
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 10;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.38);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85);
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   .sidebar-nav-item {
     font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 13px;
@@ -695,13 +718,19 @@ const OVERLAY_CSS = `
     .case-study-sidebar { display: none; }
     .hero-text { left: 20px; bottom: 24px; }
     .hero-project-name { font-size: clamp(24px, 6vw, 40px); }
-    /* Hero image: fill more of the screen on mobile */
+    /* Hero section — shorter so image and text sit closer together */
+    .case-study-hero { min-height: 52vh !important; height: 52vh !important; }
+    /* Hero image: fill width, sit near top, fade at bottom */
     .hero-image {
-      width: 90% !important;
+      width: 80% !important;
       right: 50% !important;
       transform: translateX(50%) !important;
-      top: 6% !important;
+      top: 4% !important;
+      max-height: 70% !important;
+      object-fit: contain !important;
     }
+    /* Mobile back button */
+    .mobile-overlay-back { display: flex !important; }
     .project-meta { padding: 16px 24px; }
     .meta-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .ia-diagram-container { padding: 32px 24px 40px; }
@@ -916,9 +945,15 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
               className="hero-gradient"
               style={{ background: project.hero?.gradient ?? `linear-gradient(135deg, ${project.accentColor} 0%, #0a0a0a 100%)` }}
             />
-            {project.heroImage && (
+
+            {/* Mobile back button — desktop uses sidebar ← All Projects */}
+            <button className="mobile-overlay-back" onClick={handleClose}>
+              ← Back
+            </button>
+
+            {(project.heroImage || project.previewMedia) && (
               <img
-                src={project.heroImage}
+                src={project.heroImage || project.previewMedia}
                 alt=""
                 className="hero-image"
                 style={{
