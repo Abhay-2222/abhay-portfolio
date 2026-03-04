@@ -596,48 +596,56 @@ button {
   .mobile-nav {
     display: block;
     position: fixed;
-    bottom: 0;
+    bottom: 8px;
     left: 0;
     right: 0;
     z-index: 200;
+    pointer-events: none; /* let clicks pass through the gap area */
   }
+  .mobile-nav-inner { pointer-events: all; }
 
   .mobile-nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    padding: 10px 8px calc(env(safe-area-inset-bottom, 0px) + 10px);
+    /* Floating pill — inset from screen edges */
+    margin: 0 12px;
+    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 22px;
+    padding: 10px 4px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 
   .mobile-nav-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
-    padding: 4px 20px;
+    gap: 4px;
+    padding: 4px 22px;
     background: none;
     border: none;
     cursor: pointer;
-    color: rgba(0, 0, 0, 0.42);
+    color: rgba(0, 0, 0, 0.38);
     text-decoration: none;
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 500;
     letter-spacing: -0.01em;
-    transition: color 0.15s;
+    transition: color 0.15s, transform 0.15s;
     -webkit-tap-highlight-color: transparent;
+    border-radius: 14px;
   }
 
-  .mobile-nav-btn:active,
-  .mobile-nav-btn--on { color: #0A0A0A; }
+  .mobile-nav-btn:active { transform: scale(0.93); }
+  .mobile-nav-btn--on    { color: #0A0A0A; }
 
   /* ── Hero layout on mobile ── */
   .homepage-hero {
-    padding-bottom: 72px;   /* mobile nav height */
+    padding-bottom: 90px;   /* floating pill nav height + gap */
     align-items: center;
   }
 
