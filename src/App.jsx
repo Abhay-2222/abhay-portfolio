@@ -1,12 +1,17 @@
 /**
  * App.jsx
  * Main application shell for the Abhay OS portfolio.
- * Sets up React Router, manages overlay state, and composes
- * all top-level layers: wallpaper, cursor, menubar, desktop, dock, overlay.
+ * Overlay state is URL-driven (useSearchParams) so the browser's
+ * native back button works correctly on all devices without any
+ * custom popstate listeners.
+ *
+ *   Landing page:        /
+ *   Project overlay:     /?p=<projectId>
+ *   Playground overlay:  /?pg=1
  */
 
 import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 import CustomCursor from './components/CustomCursor.jsx';
@@ -62,66 +67,56 @@ function PlaceholderPage() {
 
 /* ─── Desktop OS View ─── */
 function DesktopView() {
-  const [activeProject, setActiveProject] = useState(null);
-  const [originRect, setOriginRect] = useState(null);
+  const navigate        = useNavigate();
+  const [searchParams]  = useSearchParams();
+
+  // Overlay state is fully URL-driven — browser back/forward just works.
+  const activeProject  = searchParams.get('p')  ?? null;
+  const playgroundOpen = searchParams.get('pg') === '1';
+
+  const [originRect,     setOriginRect]     = useState(null);
   const [hoveredProject, setHoveredProject] = useState(null);
-  const [playgroundOpen, setPlaygroundOpen] = useState(false);
   const overlayCloseRef = useRef(null);
 
+  /* ── Open project overlay ── */
   const handleProjectClick = useCallback((id, rect) => {
     setOriginRect(rect ?? null);
-    setActiveProject(id);
-  }, []);
+    navigate(`?p=${id}`);
+  }, [navigate]);
 
+  /* ── Close project overlay → back to landing ── */
   const handleCloseOverlay = useCallback(() => {
-    setActiveProject(null);
     setOriginRect(null);
-  }, []);
+    navigate('/');
+  }, [navigate]);
 
+  /* ── Next project (replace so back skips intermediate) ── */
   const handleNextProject = useCallback((id) => {
     setOriginRect(null);
-    setActiveProject(id);
-  }, []);
+    navigate(`?p=${id}`, { replace: true });
+  }, [navigate]);
 
-  // Suppress custom cursor when overlay is open
+  /* ── Open / close playground ── */
+  const openPlayground  = useCallback(() => navigate('?pg=1'),  [navigate]);
+  const closePlayground = useCallback(() => navigate('/'),       [navigate]);
+
+  /* ── Suppress custom cursor when overlay is open ── */
   useEffect(() => {
     document.body.classList.toggle('overlay-open', !!activeProject);
   }, [activeProject]);
 
+  /* ── Logo click closes whichever overlay is open ── */
   const handleLogoClick = useCallback(() => {
-    if (overlayCloseRef.current) {
-      overlayCloseRef.current();
-    }
+    if (overlayCloseRef.current) overlayCloseRef.current();
   }, []);
-
-  /* ── Browser back button support ── */
-  // Push a history entry whenever an overlay opens
-  useEffect(() => {
-    if (activeProject) window.history.pushState({ overlay: activeProject }, '');
-  }, [activeProject]);
-
-  useEffect(() => {
-    if (playgroundOpen) window.history.pushState({ playground: true }, '');
-  }, [playgroundOpen]);
-
-  // On browser back, close whichever overlay is open
-  useEffect(() => {
-    const handler = () => {
-      if (activeProject)   { setActiveProject(null); setOriginRect(null); }
-      else if (playgroundOpen) { setPlaygroundOpen(false); }
-    };
-    window.addEventListener('popstate', handler);
-    return () => window.removeEventListener('popstate', handler);
-  }, [activeProject, playgroundOpen]);
 
   return (
     <>
       <IntroSequence />
 
       <div id="desktop-content">
-        {/* Cursor + CornerButtons + DockHints live OUTSIDE portfolio-world so blur never affects them. */}
+        {/* Cursor + CornerButtons + DockHints live OUTSIDE portfolio-world so blur never affects them */}
         <CustomCursor />
-        {/* Corner buttons visible on desktop only */}
         <div className="corner-buttons-desktop">
           <CornerButtons onLogoClick={handleLogoClick} />
         </div>
@@ -135,7 +130,6 @@ function DesktopView() {
 
         {/* portfolio-world is blurred when an overlay is open */}
         <div className="portfolio-world">
-          {/* Desktop hero fades out while a project preview is shown */}
           <div className={hoveredProject && !activeProject ? 'desktop-preview-active' : 'desktop-preview-idle'}>
             <Desktop />
           </div>
@@ -143,11 +137,11 @@ function DesktopView() {
             onProjectClick={handleProjectClick}
             onProjectHover={setHoveredProject}
             activeProjectId={activeProject}
-            onPlaygroundClick={() => setPlaygroundOpen(true)}
+            onPlaygroundClick={openPlayground}
           />
           <MobileNav
             onProjectClick={handleProjectClick}
-            onPlaygroundClick={() => setPlaygroundOpen(true)}
+            onPlaygroundClick={openPlayground}
           />
         </div>
 
@@ -164,7 +158,7 @@ function DesktopView() {
           )}
           <AnimatePresence>
             {playgroundOpen && (
-              <PlaygroundOverlay onClose={() => setPlaygroundOpen(false)} />
+              <PlaygroundOverlay onClose={closePlayground} />
             )}
           </AnimatePresence>
         </Suspense>
