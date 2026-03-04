@@ -206,6 +206,7 @@ function MarqueeArc() {
     /* outer: handles positioning */
     <div
       aria-hidden="true"
+      className="marquee-arc-wrap"
       style={{
         position:      'absolute',
         right:         '8%',

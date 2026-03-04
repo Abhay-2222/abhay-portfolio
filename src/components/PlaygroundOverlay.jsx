@@ -1,111 +1,642 @@
 /**
  * PlaygroundOverlay.jsx
- * Playground tabs: Gravity Drops · Cursor Web · Spit card game
+ * Playground tabs: Earworm Studio · Spit card game
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TABS = [
-  { id: 'gravity',       label: 'Gravity Drops' },
-  { id: 'constellation', label: 'Cursor Web'    },
-  { id: 'spit',          label: 'Spit'          },
+  { id: 'earworm', label: 'Mashup' },
+  { id: 'spit',    label: 'Spit'  },
 ];
 
 /* ══════════════════════════════════════════════════════════════
-   1. GRAVITY DROPS
+   1. EARWORM STUDIO — 16-step beat sequencer
 ══════════════════════════════════════════════════════════════ */
-const BALL_COLORS = [
-  {base:'#F97316',hi:'#FED7AA'},{base:'#2D6A9F',hi:'#BAE6FD'},
-  {base:'#10B981',hi:'#A7F3D0'},{base:'#8B5CF6',hi:'#DDD6FE'},
-  {base:'#EC4899',hi:'#FBCFE8'},{base:'#F59E0B',hi:'#FDE68A'},
-  {base:'#EF4444',hi:'#FCA5A5'},{base:'#06B6D4',hi:'#A5F3FC'},
-];
-function GravityDrops() {
-  const cvs=useRef(null),balls=useRef([]),raf=useRef(null),mouse=useRef({x:0,y:0,down:false,downTime:0,downX:0,downY:0});
-  const spawn=useCallback((x,y,vx=0,vy=0)=>{
-    const c=BALL_COLORS[Math.floor(Math.random()*BALL_COLORS.length)];
-    balls.current.push({x,y,vx:vx+(Math.random()-.5)*2,vy:vy+(Math.random()-.5)*2-2,r:Math.random()*18+10,base:c.base,hi:c.hi,e:.55+Math.random()*.25});
-    if(balls.current.length>50)balls.current.shift();
+
+const E_INST  = ['Drums','Bass','Synth','Strings','Drop','Vocals','FX','Piano','Tabla'];
+const E_STEPS = 16;
+const E_ROWS  = 6;
+
+const E_COLORS = {
+  Drums:   '#FF6B35',
+  Bass:    '#7B2CBF',
+  Synth:   '#00D9FF',
+  Strings: '#FFB627',
+  Drop:    '#FF006E',
+  Vocals:  '#00F5A0',
+  FX:      '#A4508B',
+  Piano:   '#F4C95D',
+  Tabla:   '#E07A5F',
+};
+
+const E_ROW_LABELS = {
+  Drums:   ['KICK','SNARE','HH·C','HH·O','CLAP','TOM'],
+  Bass:    ['G2','A2','B2','D3','E3','G3'],
+  Synth:   ['G4','A4','B4','C5','D5','E5'],
+  Strings: ['G4','A4','B4','C5','D5','E5'],
+  Drop:    ['G1','A1','B1','C2','D2','E2'],
+  Vocals:  ['VOC·1','VOC·2','VOC·3','VOC·4','VOC·5','VOC·6'],
+  FX:      ['RISE','SWEEP','IMPCT','DRONE','NOISE','CLICK'],
+  Piano:   ['C4','D4','E4','F4','G4','A4'],
+  Tabla:   ['DYN·1','DYN·2','DYN·3','BYN·1','BYN·2','BYN·3'],
+};
+const E_FREQS = {
+  Bass:    [98,110,123.47,146.83,164.81,196],
+  Synth:   [392,440,493.88,523.25,587.33,659.25],
+  Strings: [392,440,493.88,523.25,587.33,659.25],
+  Drop:    [49,55,61.74,65.41,73.42,82.41],
+  Vocals:  [392,440,493.88,523.25,587.33,659.25],
+  Piano:   [261.63,293.66,329.63,349.23,392.00,440.00],
+};
+const E_DEMO = {
+  Drums:  [[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]],
+  Bass:   [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  Synth:  [[1,0,0,1,0,0,1,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0],[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]],
+  Strings:[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  Drop:   [[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  Vocals: Array.from({length:6},()=>Array(16).fill(0)),
+  FX:     Array.from({length:6},()=>Array(16).fill(0)),
+  Piano:  Array.from({length:6},()=>Array(16).fill(0)),
+  Tabla:  Array.from({length:6},()=>Array(16).fill(0)),
+};
+
+/* ── Web Audio singleton ── */
+let _actx = null;
+function getACtx() {
+  if (!_actx || _actx.state === 'closed')
+    _actx = new (window.AudioContext || window.webkitAudioContext)();
+  return _actx;
+}
+
+/* ── Reverb impulse response ── */
+function makeReverb(ctx, dur=1.8, decay=2.2) {
+  const len=ctx.sampleRate*dur, buf=ctx.createBuffer(2,len,ctx.sampleRate);
+  for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}
+  const conv=ctx.createConvolver(); conv.buffer=buf; return conv;
+}
+
+/* ── Drum synthesis ── */
+function triggerDrum(ctx, row, t, dest) {
+  if(row===0){// Kick
+    const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(dest);
+    o.type='sine';o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(0.5,t+0.4);
+    g.gain.setValueAtTime(1.3,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.4);o.start(t);o.stop(t+0.4);
+  }else if(row===1){// Snare
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.2,ctx.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=1800;
+    const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.8,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.18);n.start(t);n.stop(t+0.18);
+    const o=ctx.createOscillator(),og=ctx.createGain();o.connect(og);og.connect(dest);
+    o.type='triangle';o.frequency.value=185;og.gain.setValueAtTime(0.4,t);og.gain.exponentialRampToValueAtTime(0.01,t+0.1);o.start(t);o.stop(t+0.1);
+  }else if(row===2){// Closed HH
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.05,ctx.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=9000;
+    const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.4,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.05);n.start(t);n.stop(t+0.05);
+  }else if(row===3){// Open HH
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.35,ctx.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=6000;
+    const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.35);n.start(t);n.stop(t+0.35);
+  }else if(row===4){// Clap
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.12,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(Math.exp(-i/ctx.sampleRate*45)+0.5*Math.exp(-(i/ctx.sampleRate-0.02)*45)*(i/ctx.sampleRate>0.02?1:0));
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1200;f.Q.value=0.5;
+    const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(1.0,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.12);n.start(t);n.stop(t+0.12);
+  }else if(row===5){// Tom
+    const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(dest);
+    o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(35,t+0.3);
+    g.gain.setValueAtTime(1.0,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.3);o.start(t);o.stop(t+0.3);
+  }
+}
+
+/* ── FX synthesis ── */
+function triggerFX(ctx, row, t, dest) {
+  if(row===0){// RISE
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sawtooth';o.frequency.setValueAtTime(80,t);o.frequency.exponentialRampToValueAtTime(2000,t+0.7);
+    g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.7);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.7);
+  }else if(row===1){// SWEEP
+    const buf=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*0.55),ctx.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=2;
+    f.frequency.setValueAtTime(200,t);f.frequency.exponentialRampToValueAtTime(7000,t+0.5);
+    const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.5);
+    n.start(t);n.stop(t+0.55);
+  }else if(row===2){// IMPACT
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(80,t);o.frequency.exponentialRampToValueAtTime(18,t+0.5);
+    g.gain.setValueAtTime(1.4,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.5);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.5);
+  }else if(row===3){// DRONE
+    const o=ctx.createOscillator();
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=280;
+    const g=ctx.createGain();o.type='sawtooth';o.frequency.value=55;
+    o.connect(lp);lp.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(0.35,t+0.12);
+    g.gain.exponentialRampToValueAtTime(0.01,t+0.65);o.start(t);o.stop(t+0.65);
+  }else if(row===4){// NOISE burst
+    const buf=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*0.14),ctx.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const g=ctx.createGain();n.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.65,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.12);
+    n.start(t);n.stop(t+0.14);
+  }else if(row===5){// CLICK
+    const buf=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*0.008),ctx.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(1-i/d.length)*0.8;
+    const n=ctx.createBufferSource();n.buffer=buf;
+    const g=ctx.createGain();n.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(1.0,t);n.start(t);n.stop(t+0.01);
+  }
+}
+
+/* ── Pitched synthesis ── */
+function triggerPitched(ctx, inst, freq, t, dest) {
+  if(inst==='Bass'){
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='triangle';o.frequency.value=freq;o.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.75,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.35);o.start(t);o.stop(t+0.35);
+  }else if(inst==='Synth'){
+    const o1=ctx.createOscillator(),o2=ctx.createOscillator();
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2600;
+    const g=ctx.createGain();
+    o1.type='sawtooth';o1.frequency.value=freq;
+    o2.type='sawtooth';o2.frequency.value=freq*1.005;
+    o1.connect(lp);o2.connect(lp);lp.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.55,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.22);
+    o1.start(t);o1.stop(t+0.22);o2.start(t);o2.stop(t+0.22);
+  }else if(inst==='Strings'){
+    const o=ctx.createOscillator();
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1600;
+    const g=ctx.createGain();
+    o.type='triangle';o.frequency.value=freq;o.connect(lp);lp.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(0.5,t+0.08);
+    g.gain.exponentialRampToValueAtTime(0.01,t+0.55);o.start(t);o.stop(t+0.55);
+  }else if(inst==='Drop'){
+    const o=ctx.createOscillator();
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=130;
+    const g=ctx.createGain();
+    o.type='sine';o.frequency.value=freq;o.connect(lp);lp.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(1.4,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.5);o.start(t);o.stop(t+0.5);
+  }else if(inst==='Vocals'){
+    const o=ctx.createOscillator();
+    const lp=ctx.createBiquadFilter();lp.type='bandpass';lp.frequency.value=freq*1.5;lp.Q.value=4;
+    const g=ctx.createGain();o.type='sine';
+    o.frequency.setValueAtTime(freq*0.98,t);
+    o.frequency.linearRampToValueAtTime(freq,t+0.04);
+    o.frequency.setValueAtTime(freq*1.02,t+0.09);
+    o.frequency.linearRampToValueAtTime(freq,t+0.16);
+    o.connect(lp);lp.connect(g);g.connect(dest);
+    g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(0.65,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.01,t+0.28);o.start(t);o.stop(t+0.28);
+  }
+}
+
+/* ── Piano synthesis ── */
+function triggerPiano(ctx,freq,t,dest){
+  const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain(),g2=ctx.createGain();
+  o.type='triangle';o.frequency.value=freq;
+  o2.type='sine';o2.frequency.value=freq*2;g2.gain.value=0.25;
+  o.connect(g);o2.connect(g2);g2.connect(g);g.connect(dest);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(0.55,t+0.005);
+  g.gain.exponentialRampToValueAtTime(0.22,t+0.12);
+  g.gain.exponentialRampToValueAtTime(0.01,t+1.6);
+  o.start(t);o.stop(t+1.6);o2.start(t);o2.stop(t+1.6);
+}
+
+/* ── Tabla synthesis ── */
+function triggerTabla(ctx,row,t,dest){
+  const isDayan=row<3;
+  if(isDayan){
+    const freqs=[360,280,440];
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(freqs[row%3]*1.3,t);
+    o.frequency.exponentialRampToValueAtTime(freqs[row%3]*0.65,t+0.09);
+    g.gain.setValueAtTime(0.75,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.28);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.3);
+  }else{
+    const freqs=[75,55,95];const freq=freqs[(row-3)%3];
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    const bLen=ctx.sampleRate*0.12;const bBuf=ctx.createBuffer(1,bLen,ctx.sampleRate);
+    const bData=bBuf.getChannelData(0);for(let i=0;i<bLen;i++)bData[i]=(Math.random()*2-1)*0.28;
+    const noise=ctx.createBufferSource();noise.buffer=bBuf;
+    const ng=ctx.createGain();ng.gain.setValueAtTime(0.35,t);ng.gain.exponentialRampToValueAtTime(0.01,t+0.12);
+    noise.connect(ng);ng.connect(dest);
+    o.type='sine';o.frequency.setValueAtTime(freq*1.6,t);o.frequency.exponentialRampToValueAtTime(freq,t+0.12);
+    g.gain.setValueAtTime(1.0,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.45);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.5);noise.start(t);noise.stop(t+0.15);
+  }
+}
+
+/* ── Grid helpers ── */
+function makeEmptyGrid(){return Object.fromEntries(E_INST.map(i=>[i,Array.from({length:E_ROWS},()=>Array(E_STEPS).fill(false))]));}
+function applyDemo(){return Object.fromEntries(E_INST.map(i=>[i,E_DEMO[i].map(r=>r.map(v=>!!v))]));}
+
+/* ── Duration formatter ── */
+function fmtDur(s){const m=Math.floor(s/60),sec=Math.floor(s%60);return`${m}:${sec.toString().padStart(2,'0')}`;}
+
+/* ── Mashup splash screen ── */
+function MashupSplash({onEnter}){
+  return(
+    <motion.div
+      initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0,scale:0.97}}
+      transition={{duration:0.35,ease:[0.22,1,0.36,1]}}
+      style={{position:'absolute',inset:0,zIndex:20,background:'linear-gradient(145deg,#060a0f 0%,#03050a 60%,#020304 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',fontFamily:'"Geist Mono",monospace',overflow:'hidden'}}
+    >
+      {/* Dot grid */}
+      <div aria-hidden="true" style={{position:'absolute',inset:0,backgroundImage:'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)',backgroundSize:'28px 28px',pointerEvents:'none'}}/>
+      {/* Vignette */}
+      <div aria-hidden="true" style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 50% 50%,transparent 40%,rgba(0,0,0,0.60) 100%)',pointerEvents:'none'}}/>
+
+      {/* Instrument colour bars */}
+      <motion.div style={{display:'flex',gap:6,marginBottom:40,position:'relative',zIndex:1}}>
+        {E_INST.map((inst,i)=>(
+          <motion.div key={inst}
+            initial={{scaleX:0,opacity:0}} animate={{scaleX:1,opacity:1}}
+            transition={{delay:0.14+i*0.055,duration:0.45,ease:[0.22,1,0.36,1]}}
+            style={{width:32,height:4,borderRadius:2,background:E_COLORS[inst],boxShadow:`0 0 12px ${E_COLORS[inst]}80`,transformOrigin:'left'}}
+          />
+        ))}
+      </motion.div>
+
+      {/* Title */}
+      <motion.div
+        initial={{y:20,opacity:0}} animate={{y:0,opacity:1}}
+        transition={{delay:0.26,duration:0.60,ease:[0.22,1,0.36,1]}}
+        style={{textAlign:'center',position:'relative',zIndex:1}}
+      >
+        <div style={{fontSize:9,letterSpacing:'0.24em',color:'rgba(255,255,255,0.32)',textTransform:'uppercase',marginBottom:18}}>Playground · Sequencer</div>
+        <div style={{fontFamily:'"Geist Sans",system-ui',fontSize:'clamp(48px,9vw,80px)',fontWeight:700,color:'#ffffff',letterSpacing:'-0.045em',lineHeight:0.95,marginBottom:20}}>Mashup</div>
+        <div style={{fontSize:10,color:'rgba(255,255,255,0.32)',letterSpacing:'0.08em',lineHeight:1.7}}>
+          7 instruments &nbsp;·&nbsp; 16 steps &nbsp;·&nbsp; upload any audio
+        </div>
+      </motion.div>
+
+      {/* CTA */}
+      <motion.button
+        onClick={onEnter}
+        initial={{y:16,opacity:0}} animate={{y:0,opacity:1}}
+        transition={{delay:0.46,duration:0.50,ease:[0.22,1,0.36,1]}}
+        whileHover={{scale:1.06,y:-3}} whileTap={{scale:0.94}}
+        style={{marginTop:48,padding:'12px 36px',borderRadius:10,border:'1.5px solid rgba(255,255,255,0.16)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.88)',fontFamily:'"Geist Mono",monospace',fontSize:11,fontWeight:600,letterSpacing:'0.18em',cursor:'pointer',textTransform:'uppercase',outline:'none',position:'relative',zIndex:1}}
+        onFocus={e=>{e.currentTarget.style.outline='2px solid rgba(255,255,255,0.50)';e.currentTarget.style.outlineOffset='3px';}}
+        onBlur={e=>{e.currentTarget.style.outline='none';}}
+      >
+        Make Beats →
+      </motion.button>
+    </motion.div>
+  );
+}
+
+/* ── Mashup component ── */
+function EarwormStudio() {
+  const [activeInst,setActiveInst]       = useState('Drums');
+  const [grid,setGrid]                   = useState(makeEmptyGrid);
+  const [playing,setPlaying]             = useState(false);
+  const [tempo,setTempo]                 = useState(120);
+  const [currentStep,setCurrentStep]     = useState(-1);
+  const [uploadedName,setUploadedName]   = useState(null);
+  const [trackDuration,setTrackDuration] = useState(null);
+  const [trackVol,setTrackVol]           = useState(80);
+  const [seqVol,setSeqVol]               = useState(80);
+  const [hoveredCell,setHoveredCell]     = useState(null);
+  const [popCell,setPopCell]             = useState(null);
+  const [theme,setTheme]                 = useState(()=>{try{return localStorage.getItem('mashup-theme')||'dark';}catch(_){return'dark';}});
+  const [showSplash,setShowSplash]       = useState(true);
+
+  const gridRef      = useRef(grid);
+  const tempoRef     = useRef(tempo);
+  const stepRef      = useRef(0);
+  const timerRef     = useRef(null);
+  const playingRef   = useRef(false);
+  const seqGainRef   = useRef(null);
+  const trackGainRef = useRef(null);
+  const uploadBuf    = useRef(null);
+  const uploadSrc    = useRef(null);
+  const trackVolRef  = useRef(80);
+  const seqVolRef    = useRef(80);
+  const cellRefs     = useRef({});
+
+  useEffect(()=>{gridRef.current=grid;},[grid]);
+  useEffect(()=>{tempoRef.current=tempo;},[tempo]);
+  useEffect(()=>{trackVolRef.current=trackVol;if(trackGainRef.current)trackGainRef.current.gain.value=trackVol/100;},[trackVol]);
+  useEffect(()=>{seqVolRef.current=seqVol;if(seqGainRef.current)seqGainRef.current.gain.value=seqVol/100;},[seqVol]);
+
+  const isDark = theme==='dark';
+  const T = {
+    bg:         isDark?'linear-gradient(135deg,#0a0e12 0%,#050708 100%)':'#FAFAFA',
+    text:       isDark?'rgba(255,255,255,0.90)':'#1A1A1A',
+    textMed:    isDark?'rgba(255,255,255,0.72)':'#333',
+    textDim:    isDark?'rgba(255,255,255,0.52)':'#6B6B6B',
+    border:     isDark?'rgba(255,255,255,0.09)':'rgba(0,0,0,0.10)',
+    cellBg:     isDark?'rgba(255,255,255,0.05)':'#FFFFFF',
+    cellBorder: isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.10)',
+    scanline:   isDark?'rgba(0,0,0,0.10)':'rgba(0,0,0,0.015)',
+    btnBg:      isDark?'transparent':'rgba(0,0,0,0.03)',
+    btnBorder:  isDark?'rgba(255,255,255,0.14)':'rgba(0,0,0,0.16)',
+    btnText:    isDark?'rgba(255,255,255,0.60)':'rgba(0,0,0,0.65)',
+    uploadBdr:  isDark?'rgba(255,255,255,0.28)':'rgba(0,0,0,0.28)',
+    uploadTxt:  isDark?'rgba(255,255,255,0.60)':'rgba(0,0,0,0.65)',
+    trackBg:    isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)',
+  };
+
+  const toggleTheme=()=>{
+    const next=isDark?'light':'dark';
+    setTheme(next);
+    try{localStorage.setItem('mashup-theme',next);}catch(_){}
+  };
+
+  const ensureCtx=useCallback(()=>{
+    const ctx=getACtx();
+    if(ctx.state==='suspended')ctx.resume();
+    if(!seqGainRef.current){const sg=ctx.createGain();sg.gain.value=seqVolRef.current/100;sg.connect(ctx.destination);seqGainRef.current=sg;}
+    return ctx;
   },[]);
-  useEffect(()=>{
-    const canvas=cvs.current;if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};
-    resize();window.addEventListener('resize',resize);
-    const tick=()=>{
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      const bs=balls.current,m=mouse.current;
-      if(m.down){
-        const p=Math.sin(Date.now()*.009)*.5+.5;
-        ctx.beginPath();ctx.arc(m.x,m.y,16+p*10,0,Math.PI*2);ctx.strokeStyle=`rgba(249,115,22,${.15+p*.15})`;ctx.lineWidth=1.5;ctx.stroke();
-        ctx.beginPath();ctx.arc(m.x,m.y,4,0,Math.PI*2);ctx.fillStyle='rgba(249,115,22,.6)';ctx.fill();
-        bs.forEach(b=>{const dx=m.x-b.x,dy=m.y-b.y,d=Math.hypot(dx,dy);if(d>5&&d<300){const f=.85/(d*.05+1);b.vx+=(dx/d)*f;b.vy+=(dy/d)*f;}});
-      }
-      for(let i=0;i<bs.length;i++)for(let j=i+1;j<bs.length;j++){
-        const a=bs[i],b=bs[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),md=a.r+b.r;
-        if(d<md&&d>0){const nx=dx/d,ny=dy/d,ov=(md-d)/2;a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
-          const dot=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;if(dot>0){const e=(a.e+b.e)/2;a.vx-=dot*nx*e;a.vy-=dot*ny*e;b.vx+=dot*nx*e;b.vy+=dot*ny*e;}}
-      }
-      bs.forEach(b=>{
-        b.vy+=.42;b.x+=b.vx;b.y+=b.vy;
-        if(b.x-b.r<0){b.x=b.r;b.vx=Math.abs(b.vx)*b.e;}
-        if(b.x+b.r>canvas.width){b.x=canvas.width-b.r;b.vx=-Math.abs(b.vx)*b.e;}
-        if(b.y+b.r>canvas.height){b.y=canvas.height-b.r;b.vy=-Math.abs(b.vy)*b.e;b.vx*=.97;}
-        const g=ctx.createRadialGradient(b.x-b.r*.32,b.y-b.r*.36,0,b.x,b.y,b.r);
-        g.addColorStop(0,b.hi);g.addColorStop(1,b.base);
-        ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-        ctx.beginPath();ctx.arc(b.x-b.r*.28,b.y-b.r*.3,b.r*.26,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.3)';ctx.fill();
+
+  const tick=useCallback(()=>{
+    const ctx=ensureCtx();
+    const s=stepRef.current;
+    setCurrentStep(s);
+    const t=ctx.currentTime+0.01;
+    const dest=seqGainRef.current;
+    E_INST.forEach(inst=>{
+      gridRef.current[inst].forEach((row,ri)=>{
+        if(row[s]){
+          if(inst==='Drums') triggerDrum(ctx,ri,t,dest);
+          else if(inst==='FX') triggerFX(ctx,ri,t,dest);
+          else if(inst==='Piano') triggerPiano(ctx,E_FREQS.Piano?.[ri]??261,t,dest);
+          else if(inst==='Tabla') triggerTabla(ctx,ri,t,dest);
+          else triggerPitched(ctx,inst,E_FREQS[inst]?.[ri]??440,t,dest);
+        }
       });
-      raf.current=requestAnimationFrame(tick);
-    };tick();
-    const gp=e=>{const r=canvas.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top];};
-    const mv=e=>{const[x,y]=gp(e);mouse.current.x=x;mouse.current.y=y;};
-    const dn=e=>{const[x,y]=gp(e);mouse.current={...mouse.current,down:true,downTime:Date.now(),downX:x,downY:y,x,y};};
-    const up=e=>{const[x,y]=gp(e),dt=Date.now()-mouse.current.downTime;
-      if(dt<220)spawn(x,y);else{const dx=x-mouse.current.downX,dy=y-mouse.current.downY;spawn(x,y,Math.max(-16,Math.min(16,(dx/Math.max(dt,40))*10)),Math.max(-16,Math.min(16,(dy/Math.max(dt,40))*10)));}
-      mouse.current.down=false;};
-    canvas.addEventListener('mousemove',mv);canvas.addEventListener('mousedown',dn);canvas.addEventListener('mouseup',up);
-    return()=>{cancelAnimationFrame(raf.current);window.removeEventListener('resize',resize);canvas.removeEventListener('mousemove',mv);canvas.removeEventListener('mousedown',dn);canvas.removeEventListener('mouseup',up);};
-  },[spawn]);
-  return <div style={{width:'100%',height:'100%',position:'relative'}}><canvas ref={cvs} style={{width:'100%',height:'100%',display:'block',cursor:'crosshair'}}/><p style={HINT}>click to drop · drag to throw · hold to attract</p></div>;
-}
+    });
+    stepRef.current=(s+1)%E_STEPS;
+    timerRef.current=setTimeout(tick,(60000/tempoRef.current)/4);
+  },[ensureCtx]);
 
-/* ══════════════════════════════════════════════════════════════
-   2. CURSOR CONSTELLATION
-══════════════════════════════════════════════════════════════ */
-function CursorConstellation() {
-  const cvs=useRef(null),pts=useRef([]),raf=useRef(null),last=useRef({x:0,y:0});
-  useEffect(()=>{
-    const canvas=cvs.current;if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    const resize=()=>{canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;};
-    resize();window.addEventListener('resize',resize);
-    const add=(x,y,spd=0,burst=false)=>{
-      const r=Math.round(45+spd*204),g=Math.round(106+spd*9),b=Math.round(159-spd*137);
-      pts.current.push({x,y,age:0,life:burst?60:110,color:`${r},${g},${b}`,r:burst?Math.random()*2+1:2.5});
-      if(pts.current.length>240)pts.current.shift();
-    };
-    const mv=e=>{const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;add(x,y,Math.min(Math.hypot(x-last.current.x,y-last.current.y)/28,1));last.current={x,y};};
-    const cl=e=>{const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;for(let i=0;i<14;i++){const a=(i/14)*Math.PI*2,d=Math.random()*36+8;add(x+Math.cos(a)*d,y+Math.sin(a)*d,Math.random(),true);}};
-    canvas.addEventListener('mousemove',mv);canvas.addEventListener('click',cl);
-    const tick=()=>{
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      pts.current.forEach(p=>p.age++);pts.current=pts.current.filter(p=>p.age<p.life);
-      for(let i=0;i<pts.current.length;i++)for(let j=i+1;j<pts.current.length;j++){
-        const a=pts.current[i],b=pts.current[j],d=Math.hypot(a.x-b.x,a.y-b.y);
-        if(d<120){ctx.strokeStyle=`rgba(${a.color},${(1-d/120)*(1-a.age/a.life)*.38})`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  const togglePlay=useCallback(()=>{
+    if(playingRef.current){
+      clearTimeout(timerRef.current);
+      try{uploadSrc.current?.stop();}catch(_){}
+      uploadSrc.current=null;
+      setPlaying(false);setCurrentStep(-1);stepRef.current=0;playingRef.current=false;
+    } else {
+      const ctx=ensureCtx();
+      if(uploadBuf.current){
+        if(!trackGainRef.current){const tg=ctx.createGain();tg.gain.value=trackVolRef.current/100;tg.connect(ctx.destination);trackGainRef.current=tg;}
+        const src=ctx.createBufferSource();src.buffer=uploadBuf.current;src.loop=true;
+        src.connect(trackGainRef.current);src.start();uploadSrc.current=src;
       }
-      pts.current.forEach(p=>{const t=1-p.age/p.life;ctx.beginPath();ctx.arc(p.x,p.y,p.r*t,0,Math.PI*2);ctx.fillStyle=`rgba(${p.color},${t*.9})`;ctx.fill();});
-      raf.current=requestAnimationFrame(tick);
-    };tick();
-    return()=>{cancelAnimationFrame(raf.current);canvas.removeEventListener('mousemove',mv);canvas.removeEventListener('click',cl);window.removeEventListener('resize',resize);};
+      playingRef.current=true;setPlaying(true);tick();
+    }
+  },[tick,ensureCtx]);
+
+  useEffect(()=>()=>clearTimeout(timerRef.current),[]);
+
+  const toggleCell=useCallback((inst,ri,si)=>{
+    setGrid(prev=>{
+      const ng={...prev,[inst]:prev[inst].map((r,i)=>i!==ri?r:r.map((v,j)=>j!==si?v:!v))};
+      gridRef.current=ng;return ng;
+    });
   },[]);
-  return <div style={{width:'100%',height:'100%',position:'relative'}}><canvas ref={cvs} style={{width:'100%',height:'100%',display:'block'}}/><p style={HINT}>move cursor · click to burst</p></div>;
+
+  const handleCellClick=useCallback((inst,ri,si)=>{
+    toggleCell(inst,ri,si);
+    const key=`${ri}-${si}`;
+    setPopCell(key);
+    setTimeout(()=>setPopCell(p=>p===key?null:p),150);
+  },[toggleCell]);
+
+  const handleCellKey=useCallback((e,inst,ri,si)=>{
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();handleCellClick(inst,ri,si);return;}
+    let nr=ri,ns=si;
+    if(e.key==='ArrowRight'){e.preventDefault();ns=Math.min(E_STEPS-1,si+1);}
+    else if(e.key==='ArrowLeft'){e.preventDefault();ns=Math.max(0,si-1);}
+    else if(e.key==='ArrowDown'){e.preventDefault();nr=Math.min(E_ROWS-1,ri+1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();nr=Math.max(0,ri-1);}
+    else return;
+    cellRefs.current[`${nr}-${ns}`]?.focus();
+  },[handleCellClick]);
+
+  const handleUpload=useCallback(async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    if(uploadSrc.current){try{uploadSrc.current.stop();}catch(_){} uploadSrc.current=null;}
+    const ctx=ensureCtx();
+    setUploadedName(file.name);
+    const ab=await file.arrayBuffer();
+    const buf=await ctx.decodeAudioData(ab);
+    uploadBuf.current=buf;
+    setTrackDuration(fmtDur(buf.duration));
+    if(playingRef.current){
+      if(!trackGainRef.current){const tg=ctx.createGain();tg.gain.value=trackVolRef.current/100;tg.connect(ctx.destination);trackGainRef.current=tg;}
+      const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
+      src.connect(trackGainRef.current);src.start();uploadSrc.current=src;
+    }
+    e.target.value='';
+  },[ensureCtx]);
+
+  const clearTrack=useCallback(()=>{
+    if(uploadSrc.current){try{uploadSrc.current.stop();}catch(_){} uploadSrc.current=null;}
+    if(trackGainRef.current){try{trackGainRef.current.disconnect();}catch(_){} trackGainRef.current=null;}
+    uploadBuf.current=null;setUploadedName(null);setTrackDuration(null);
+  },[]);
+
+  const color  = E_COLORS[activeInst];
+  const groups = [0,1,2,3];
+  const beats  = [0,1,2,3];
+
+  const focusStyle  = (c)=>({onFocus:e=>{e.currentTarget.style.outline=`2px solid ${c}`;e.currentTarget.style.outlineOffset='2px';},onBlur:e=>{e.currentTarget.style.outline='none';}});
+
+  return(
+    <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',background:T.bg,color:T.text,fontFamily:'"Geist Mono",monospace',position:'relative',overflow:'hidden'}}>
+      {/* Scanlines */}
+      <div aria-hidden="true" style={{position:'absolute',inset:0,backgroundImage:`repeating-linear-gradient(0deg,transparent,transparent 2px,${T.scanline} 2px,${T.scanline} 4px)`,pointerEvents:'none',zIndex:0}}/>
+
+      {/* Splash */}
+      <AnimatePresence>
+        {showSplash&&<MashupSplash onEnter={()=>setShowSplash(false)}/>}
+      </AnimatePresence>
+
+      {/* ── Top bar ── */}
+      <div className="earworm-topbar" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px',borderBottom:`1px solid ${T.border}`,flexShrink:0,zIndex:2,gap:12}}>
+        <div style={{flexShrink:0}}>
+          <div style={{fontSize:10,letterSpacing:'0.16em',color:T.textMed,textTransform:'uppercase',fontWeight:600}}>Mashup</div>
+          <div style={{fontSize:10,color:T.textDim,marginTop:1,letterSpacing:'0.04em'}}>16-step sequencer</div>
+        </div>
+
+        <div role="tablist" aria-label="Select instrument" className="earworm-inst-tabs" style={{display:'flex',gap:4,flex:1,justifyContent:'center',flexWrap:'wrap'}}>
+          {E_INST.map(inst=>{
+            const ic=E_COLORS[inst];const isActive=activeInst===inst;
+            return(
+              <button key={inst} role="tab" aria-selected={isActive} onClick={()=>setActiveInst(inst)}
+                style={{padding:'5px 12px',borderRadius:5,border:`1px solid ${isActive?ic:T.btnBorder}`,background:isActive?`${ic}1A`:T.btnBg,color:isActive?ic:T.btnText,fontSize:10,letterSpacing:'0.07em',cursor:'pointer',transition:'all .12s',fontFamily:'"Geist Mono",monospace',outline:'none'}}
+                onMouseEnter={e=>{if(!isActive){e.currentTarget.style.borderColor=isDark?'rgba(255,255,255,0.30)':'rgba(0,0,0,0.30)';e.currentTarget.style.color=isDark?'rgba(255,255,255,0.80)':'rgba(0,0,0,0.80)';}}}
+                onMouseLeave={e=>{if(!isActive){e.currentTarget.style.borderColor=T.btnBorder;e.currentTarget.style.color=T.btnText;}}}
+                {...focusStyle(ic)}>
+                {inst}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+          <label aria-label="Upload background audio track"
+            style={{display:'flex',alignItems:'center',gap:5,padding:'5px 11px',borderRadius:6,border:`1px dashed ${T.uploadBdr}`,color:T.uploadTxt,fontSize:9,cursor:'pointer',transition:'border-style .12s,color .12s',letterSpacing:'0.06em',whiteSpace:'nowrap'}}
+            onMouseEnter={e=>{e.currentTarget.style.borderStyle='solid';e.currentTarget.style.color=isDark?'rgba(255,255,255,0.90)':'rgba(0,0,0,0.85)';}}
+            onMouseLeave={e=>{e.currentTarget.style.borderStyle='dashed';e.currentTarget.style.color=T.uploadTxt;}}>
+            + Upload Track
+            <input type="file" accept=".mp3,.mp4,.wav,.ogg,.m4a,.aac,.flac,audio/*"
+              onChange={handleUpload} aria-label="Select audio file" style={{display:'none'}}/>
+          </label>
+          <button onClick={toggleTheme} aria-label={isDark?'Switch to light mode':'Switch to dark mode'}
+            style={{width:28,height:28,borderRadius:6,border:`1px solid ${T.btnBorder}`,background:T.btnBg,cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .12s',outline:'none'}}
+            {...focusStyle(color)}>
+            {isDark?'☀️':'🌙'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Track info bar (shown once a file is uploaded) ── */}
+      {uploadedName&&(
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'7px 16px',borderBottom:`1px solid ${T.border}`,background:T.trackBg,flexShrink:0,zIndex:2}}>
+          <span aria-hidden="true" style={{fontSize:12}}>🎵</span>
+          <span style={{fontSize:10,color:T.textMed,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{uploadedName}</span>
+          {trackDuration&&<span aria-label={`Duration: ${trackDuration}`} style={{fontSize:9,color:T.textDim,flexShrink:0,letterSpacing:'0.04em'}}>{trackDuration}</span>}
+          <button onClick={clearTrack} aria-label="Remove uploaded track"
+            style={{background:'none',border:`1px solid ${T.btnBorder}`,borderRadius:4,color:T.textDim,cursor:'pointer',fontSize:10,padding:'2px 7px',flexShrink:0,transition:'all .12s',outline:'none'}}
+            onMouseEnter={e=>{e.currentTarget.style.color=isDark?'rgba(255,255,255,0.85)':'rgba(0,0,0,0.85)';e.currentTarget.style.borderColor=isDark?'rgba(255,255,255,0.30)':'rgba(0,0,0,0.30)';}}
+            onMouseLeave={e=>{e.currentTarget.style.color=T.textDim;e.currentTarget.style.borderColor=T.btnBorder;}}
+            onFocus={e=>{e.currentTarget.style.outline='2px solid #EF4444';e.currentTarget.style.outlineOffset='2px';}}
+            onBlur={e=>{e.currentTarget.style.outline='none';}}>✕</button>
+        </div>
+      )}
+
+      {/* ── Grid ── */}
+      <div role="grid" aria-label="Beat sequencer" className="earworm-grid"
+        style={{flex:1,display:'flex',flexDirection:'column',padding:'20px 24px 12px',gap:8,overflow:'hidden',zIndex:2}}>
+        {Array.from({length:E_ROWS},(_,ri)=>(
+          <div key={ri} role="row" className="earworm-grid-row" style={{display:'flex',alignItems:'stretch',gap:8,flex:1}}>
+            <div aria-hidden="true" style={{width:44,textAlign:'right',fontSize:10,letterSpacing:'0.06em',color:T.textDim,textTransform:'uppercase',alignSelf:'center',flexShrink:0,fontWeight:500}}>
+              {E_ROW_LABELS[activeInst][ri]}
+            </div>
+            {groups.map(g=>(
+              <div key={g} style={{display:'flex',flex:1,gap:8}}>
+                {beats.map(b=>{
+                  const si=g*4+b;
+                  const on=grid[activeInst][ri][si];
+                  const isCur=playing&&si===currentStep;
+                  const isHov=hoveredCell===`${ri}-${si}`;
+                  const isPop=popCell===`${ri}-${si}`;
+                  return(
+                    <div key={si}
+                      className="earworm-cell"
+                      role="gridcell" tabIndex={0}
+                      aria-label={`${E_ROW_LABELS[activeInst][ri]} step ${si+1}`}
+                      aria-pressed={on}
+                      ref={el=>{if(el)cellRefs.current[`${ri}-${si}`]=el;}}
+                      onClick={()=>handleCellClick(activeInst,ri,si)}
+                      onKeyDown={e=>handleCellKey(e,activeInst,ri,si)}
+                      onMouseEnter={()=>setHoveredCell(`${ri}-${si}`)}
+                      onMouseLeave={()=>setHoveredCell(null)}
+                      onFocus={e=>{e.currentTarget.style.outline=`2px solid ${color}`;e.currentTarget.style.outlineOffset='2px';}}
+                      onBlur={e=>{e.currentTarget.style.outline='none';}}
+                      style={{
+                        flex:1,borderRadius:5,cursor:'pointer',minHeight:20,
+                        background:on?color:isCur?'rgba(255,255,255,0.18)':isHov?`${color}28`:T.cellBg,
+                        border:`1.5px solid ${on?`${color}99`:isCur?'rgba(255,255,255,0.45)':isHov?`${color}60`:T.cellBorder}`,
+                        boxShadow:on?`0 0 10px ${color}55`:isCur?'0 0 8px rgba(255,255,255,0.15)':'none',
+                        transform:isPop?'scale(1.14)':'scale(1)',
+                        transition:'transform 0.1s, background 0.06s, border-color 0.06s, box-shadow 0.06s',
+                        outline:'none',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        ))}
+        {/* Playhead dots */}
+        <div aria-hidden="true" style={{display:'flex',gap:8,paddingLeft:52,marginTop:4}}>
+          {groups.map(g=>(
+            <div key={g} style={{display:'flex',flex:1,gap:8}}>
+              {beats.map(b=>{const si=g*4+b;return(
+                <div key={si} style={{flex:1,height:3,borderRadius:2,background:playing&&si===currentStep?color:T.cellBorder,transition:'background .05s'}}/>
+              );})}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Bottom controls ── */}
+      <div style={{display:'flex',flexDirection:'column',padding:'10px 16px',borderTop:`1px solid ${T.border}`,flexShrink:0,zIndex:2,gap:8}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <motion.button onClick={togglePlay} whileHover={{scale:1.10}} whileTap={{scale:.90}}
+            aria-label={playing?'Pause sequencer':'Play sequencer'}
+            style={{width:42,height:42,borderRadius:'50%',flexShrink:0,border:`2px solid ${playing?'#ef4444':color}`,background:playing?'rgba(239,68,68,0.14)':`${color}1E`,color:playing?'#ef4444':color,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'border-color .14s, background .14s, box-shadow .14s',boxShadow:playing?'0 0 20px rgba(239,68,68,0.35)':`0 0 20px ${color}55`,outline:'none'}}
+            onFocus={e=>{e.currentTarget.style.outline=`2px solid ${playing?'#ef4444':color}`;e.currentTarget.style.outlineOffset='3px';}}
+            onBlur={e=>{e.currentTarget.style.outline='none';}}>
+            {playing?(
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true"><rect x="1.5" y="1" width="3.5" height="11" rx="1"/><rect x="8" y="1" width="3.5" height="11" rx="1"/></svg>
+            ):(
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true"><polygon points="2.5,1 12.5,6.5 2.5,12"/></svg>
+            )}
+          </motion.button>
+          <button aria-label="Clear all steps" onClick={()=>{const g=makeEmptyGrid();setGrid(g);gridRef.current=g;}}
+            style={{padding:'6px 12px',borderRadius:6,border:`1px solid ${T.btnBorder}`,background:T.btnBg,color:T.btnText,fontSize:10,letterSpacing:'0.10em',cursor:'pointer',fontFamily:'"Geist Mono",monospace',outline:'none'}}
+            {...focusStyle(color)}>CLEAR</button>
+          <button aria-label="Load demo pattern" onClick={()=>{const g=applyDemo();setGrid(g);gridRef.current=g;}}
+            style={{padding:'6px 12px',borderRadius:6,border:`1px solid ${T.btnBorder}`,background:T.btnBg,color:T.btnText,fontSize:10,letterSpacing:'0.10em',cursor:'pointer',fontFamily:'"Geist Mono",monospace',outline:'none'}}
+            {...focusStyle(color)}>DEMO</button>
+          <div style={{flex:1}}/>
+          <div style={{display:'flex',alignItems:'center',gap:7}}>
+            <span style={{fontSize:8,letterSpacing:'0.14em',color:T.textDim,textTransform:'uppercase'}}>BPM</span>
+            <button aria-label="Decrease tempo" onClick={()=>setTempo(t=>Math.max(60,t-5))}
+              style={{width:24,height:24,borderRadius:4,border:`1px solid ${T.btnBorder}`,background:T.btnBg,color:T.btnText,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'"Geist Mono",monospace',lineHeight:1,padding:0,outline:'none'}}
+              {...focusStyle(color)}>−</button>
+            <span aria-live="polite" aria-label={`${tempo} beats per minute`} style={{fontSize:15,fontWeight:700,color:T.text,minWidth:32,textAlign:'center',letterSpacing:'-0.02em'}}>{tempo}</span>
+            <button aria-label="Increase tempo" onClick={()=>setTempo(t=>Math.min(200,t+5))}
+              style={{width:24,height:24,borderRadius:4,border:`1px solid ${T.btnBorder}`,background:T.btnBg,color:T.btnText,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'"Geist Mono",monospace',lineHeight:1,padding:0,outline:'none'}}
+              {...focusStyle(color)}>+</button>
+          </div>
+        </div>
+
+        {/* Volume sliders — only visible when a track is loaded */}
+        {uploadedName&&(
+          <div style={{display:'flex',gap:20,paddingTop:8,borderTop:`1px solid ${T.border}`}}>
+            {[{label:'Track Vol',val:trackVol,set:setTrackVol,aria:'Track volume'},{label:'Seq Vol',val:seqVol,set:setSeqVol,aria:'Sequencer volume'}].map(({label,val,set,aria})=>(
+              <div key={label} style={{display:'flex',alignItems:'center',gap:8,flex:1}}>
+                <span style={{fontSize:8,letterSpacing:'0.11em',color:T.textDim,textTransform:'uppercase',whiteSpace:'nowrap'}}>{label}</span>
+                <input type="range" min={0} max={100} value={val} onChange={e=>set(+e.target.value)}
+                  aria-label={aria} aria-valuetext={`${val}%`} style={{flex:1,accentColor:color,cursor:'pointer'}}/>
+                <span aria-live="polite" style={{fontSize:9,color:T.textDim,minWidth:28,textAlign:'right'}}>{val}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════
-   3. SPIT — proper rules, 5-pile pyramid, drag-to-play
+   2. SPIT — proper rules, 5-pile pyramid, drag-to-play
 ══════════════════════════════════════════════════════════════ */
 
 /* ── Card engine ── */
@@ -266,8 +797,8 @@ function TableauPile({pile,pileIdx,owner,canReceive,draggingId,onGrab,onFlip,onD
           <div key={cardObj.id} style={{position:'absolute',top:i*STRIP,zIndex:i+1,width:CW,height:isTop?CH:STRIP,overflow:isTop?'visible':'hidden'}}>
             {cardObj.faceUp?(
               <div
-                onMouseDown={isGrabable?(e)=>{e.preventDefault();e.stopPropagation();onGrab(e,cardObj,pileIdx);}:undefined}
-                style={{cursor:isGrabable?'grab':'default',opacity:isDragged?.20:1,transition:'opacity .1s'}}
+                onPointerDown={isGrabable?(e)=>{e.preventDefault();e.stopPropagation();onGrab(e,cardObj,pileIdx);}:undefined}
+                style={{cursor:isGrabable?'grab':'default',opacity:isDragged?.20:1,transition:'opacity .1s',touchAction:'none'}}
               >
                 <PlayingCard card={cardObj}/>
               </div>
@@ -444,9 +975,9 @@ function Lobby({onStartCPU,onStartFriend}){
       <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0,rgba(255,255,255,0.012) 1px,transparent 1px,transparent 4px)',pointerEvents:'none'}}/>
       {/* Title */}
       <div style={{textAlign:'center'}}>
-        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,letterSpacing:'0.16em',color:'rgba(255,255,255,0.26)',textTransform:'uppercase',marginBottom:8}}>Playground · Card Table</div>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,letterSpacing:'0.16em',color:'rgba(255,255,255,0.55)',textTransform:'uppercase',marginBottom:8}}>Playground · Card Table</div>
         <h1 style={{fontFamily:'"Geist Sans",system-ui',fontSize:34,fontWeight:700,color:'#F9F8F3',margin:0,letterSpacing:'-0.03em'}}>Spit</h1>
-        <p style={{fontFamily:'"Geist Sans",system-ui',fontSize:12,color:'rgba(255,255,255,0.30)',margin:'7px 0 0'}}>also known as Speed — real-time card shedding</p>
+        <p style={{fontFamily:'"Geist Sans",system-ui',fontSize:12,color:'rgba(255,255,255,0.60)',margin:'7px 0 0'}}>also known as Speed — real-time card shedding</p>
       </div>
       {/* Fanned cards */}
       <div style={{display:'flex',pointerEvents:'none',marginTop:-10}}>
@@ -471,11 +1002,11 @@ function Lobby({onStartCPU,onStartFriend}){
         )}
         {mode==='cpu'&&(
           <motion.div key="cpu" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
-            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,letterSpacing:'0.12em',color:'rgba(255,255,255,0.30)',textTransform:'uppercase'}}>Select difficulty</div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,letterSpacing:'0.12em',color:'rgba(255,255,255,0.60)',textTransform:'uppercase'}}>Select difficulty</div>
             <div style={{display:'flex',gap:10}}>
               {CPU_LEVELS.map(lvl=>(
                 <motion.button key={lvl.id} whileHover={{scale:1.04}} whileTap={{scale:.96}} onClick={()=>setDiff(lvl.id)}
-                  style={{padding:'11px 18px',borderRadius:9,cursor:'pointer',background:diff===lvl.id?'rgba(249,115,22,0.14)':'rgba(255,255,255,0.05)',border:`1px solid ${diff===lvl.id?'rgba(249,115,22,0.50)':'rgba(255,255,255,0.10)'}`,color:diff===lvl.id?'#F97316':'rgba(255,255,255,0.50)',fontFamily:'"Geist Sans",system-ui',textAlign:'left',transition:'all .15s'}}>
+                  style={{padding:'11px 18px',borderRadius:9,cursor:'pointer',background:diff===lvl.id?'rgba(249,115,22,0.14)':'rgba(255,255,255,0.05)',border:`1px solid ${diff===lvl.id?'rgba(249,115,22,0.50)':'rgba(255,255,255,0.20)'}`,color:diff===lvl.id?'#F97316':'rgba(255,255,255,0.80)',fontFamily:'"Geist Sans",system-ui',textAlign:'left',transition:'all .15s'}}>
                   <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>{lvl.label}</div>
                   <div style={{fontSize:11,opacity:.65}}>{lvl.desc}</div>
                 </motion.button>
@@ -494,7 +1025,7 @@ function Lobby({onStartCPU,onStartFriend}){
               <div style={{padding:'9px 12px',fontFamily:'"Geist Mono",monospace',fontSize:10,color:'rgba(255,255,255,0.40)',background:'rgba(255,255,255,0.04)',maxWidth:240,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{link}</div>
               <button onClick={copy} style={{padding:'9px 14px',border:'none',background:copied?'rgba(16,185,129,0.22)':'rgba(255,255,255,0.07)',color:copied?'#10B981':'rgba(255,255,255,0.60)',fontFamily:'"Geist Mono",monospace',fontSize:10,cursor:'pointer',transition:'all .2s',whiteSpace:'nowrap'}}>{copied?'✓ Copied':'Copy'}</button>
             </div>
-            <p style={{fontFamily:'"Geist Sans",system-ui',fontSize:12,color:'rgba(255,255,255,0.28)',margin:0,maxWidth:300,lineHeight:1.65}}>Send to a friend. Open in another tab to connect and play real-time.</p>
+            <p style={{fontFamily:'"Geist Sans",system-ui',fontSize:12,color:'rgba(255,255,255,0.60)',margin:0,maxWidth:300,lineHeight:1.65}}>Open this link in a second tab on the same browser to play together in real-time.</p>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setMode(null)} style={LOBBY_BTN}>← Back</button>
               <motion.button whileHover={{scale:1.04}} whileTap={{scale:.96}} onClick={()=>onStartFriend(link)} style={{padding:'9px 22px',borderRadius:8,border:'none',background:'#10B981',color:'#fff',fontFamily:'"Geist Mono",monospace',fontSize:11,fontWeight:600,letterSpacing:'0.08em',cursor:'pointer'}}>I'm Host →</motion.button>
@@ -505,7 +1036,7 @@ function Lobby({onStartCPU,onStartFriend}){
     </div>
   );
 }
-const LOBBY_BTN={padding:'9px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.10)',background:'transparent',color:'rgba(255,255,255,0.32)',fontFamily:'"Geist Mono",monospace',fontSize:11,cursor:'pointer',letterSpacing:'0.06em'};
+const LOBBY_BTN={padding:'9px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.25)',background:'transparent',color:'rgba(255,255,255,0.80)',fontFamily:'"Geist Mono",monospace',fontSize:11,cursor:'pointer',letterSpacing:'0.06em'};
 
 /* ══ GameTable — main board with pointer-drag ══ */
 function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
@@ -556,7 +1087,7 @@ function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
 
   /* ── Drag handlers ── */
   const onGrab=useCallback((e,card,pileIdx)=>{
-    if(e.button!==0)return;
+    if(e.pointerType!=='touch'&&e.button!==0)return;
     const info={card,srcPileIdx:pileIdx};
     dragInfoRef.current=info;
     setDrag(info);
@@ -606,18 +1137,20 @@ function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
     });
   },[broadcast]);
 
-  // Pointer move — update ghost + check hovered zone (pointer-events:none on ghost means e.target is underneath)
+  // Pointer move — use elementFromPoint so touch works correctly (touch locks e.target to start element)
   const onPointerMove=useCallback((e)=>{
     if(!dragInfoRef.current)return;
     setDragPos({x:e.clientX,y:e.clientY});
-    const zoneId=e.target?.closest?.('[data-drop]')?.getAttribute?.('data-drop')??null;
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const zoneId=el?.closest?.('[data-drop]')?.getAttribute?.('data-drop')??null;
     setHovered(zoneId);
   },[]);
 
   const onPointerUp=useCallback((e)=>{
     const info=dragInfoRef.current;
     if(!info)return;
-    const zoneId=e.target?.closest?.('[data-drop]')?.getAttribute?.('data-drop')??null;
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const zoneId=el?.closest?.('[data-drop]')?.getAttribute?.('data-drop')??null;
     if(zoneId)executeDrop(info,zoneId);
     dragInfoRef.current=null;
     setDrag(null);setHovered(null);
@@ -676,7 +1209,7 @@ function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
       {/* Top bar */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 16px',flexShrink:0,borderBottom:'1px solid rgba(255,255,255,0.06)',zIndex:10,background:'rgba(0,0,0,0.18)'}}>
         <button onClick={onReturnLobby} style={TOP_BTN}>← Lobby</button>
-        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'0.14em',color:'rgba(255,255,255,0.26)',textTransform:'uppercase'}}>Spit · vs {cpuLabel}</div>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'0.14em',color:'rgba(255,255,255,0.70)',textTransform:'uppercase'}}>Spit · vs {cpuLabel}</div>
         <button onClick={()=>setGuide(true)} style={TOP_BTN}>Guide</button>
       </div>
 
@@ -838,7 +1371,7 @@ function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
     </div>
   );
 }
-const TOP_BTN={padding:'5px 11px',borderRadius:6,border:'1px solid rgba(255,255,255,0.10)',background:'transparent',color:'rgba(255,255,255,0.35)',fontFamily:'"Geist Mono",monospace',fontSize:10,cursor:'pointer',letterSpacing:'0.06em'};
+const TOP_BTN={padding:'5px 11px',borderRadius:6,border:'1px solid rgba(255,255,255,0.25)',background:'transparent',color:'rgba(255,255,255,0.80)',fontFamily:'"Geist Mono",monospace',fontSize:10,cursor:'pointer',letterSpacing:'0.06em'};
 
 /* ══ SpitGame — screen router ══ */
 function SpitGame(){
@@ -871,19 +1404,20 @@ const HINT={position:'absolute',bottom:24,left:'50%',transform:'translateX(-50%)
    MAIN OVERLAY
 ══════════════════════════════════════════════════════════════ */
 export default function PlaygroundOverlay({onClose}){
-  const[activeTab,setActiveTab]=useState('gravity');
+  const[activeTab,setActiveTab]=useState('earworm');
   useEffect(()=>{const ok=e=>{if(e.key==='Escape')onClose();};window.addEventListener('keydown',ok);return()=>window.removeEventListener('keydown',ok);},[onClose]);
   return(
     <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} transition={{duration:.28,ease:[.22,1,.36,1]}}
       style={{position:'fixed',inset:0,zIndex:1000,background:'#fafafa',display:'flex',flexDirection:'column',fontFamily:'"Geist Sans",system-ui,sans-serif'}}>
       {/* Header */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',borderBottom:'1px solid rgba(0,0,0,0.06)',flexShrink:0,background:'rgba(255,255,255,0.80)',backdropFilter:'blur(12px)'}}>
+      <div className="playground-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',borderBottom:'1px solid rgba(0,0,0,0.06)',flexShrink:0,background:'rgba(255,255,255,0.80)',backdropFilter:'blur(12px)'}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <span style={{fontSize:12,fontWeight:600,color:'#1a1814',letterSpacing:'-0.01em'}}>Playground</span>
           <div style={{width:1,height:14,background:'rgba(0,0,0,0.10)'}}/>
-          <div style={{display:'flex',gap:2}}>
+          <div className="playground-tabs" style={{display:'flex',gap:2}}>
             {TABS.map(t=>(
               <button key={t.id} onClick={()=>setActiveTab(t.id)} data-cursor-hover
+                className={`playground-tab${activeTab===t.id?' playground-tab--active':''}`}
                 style={{padding:'4px 12px',borderRadius:6,border:'none',background:activeTab===t.id?'#1a1814':'transparent',color:activeTab===t.id?'#ffffff':'rgba(0,0,0,0.45)',fontSize:11,fontFamily:'"Geist Sans",system-ui',fontWeight:activeTab===t.id?500:400,cursor:'pointer',transition:'all .15s',letterSpacing:'-0.01em'}}>
                 {t.label}
               </button>
@@ -891,6 +1425,7 @@ export default function PlaygroundOverlay({onClose}){
           </div>
         </div>
         <button onClick={onClose} data-cursor-hover aria-label="Close playground"
+          className="playground-close"
           style={{width:26,height:26,borderRadius:'50%',background:'rgba(0,0,0,0.06)',border:'none',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(0,0,0,0.45)'}}>
           ×
         </button>
@@ -899,9 +1434,8 @@ export default function PlaygroundOverlay({onClose}){
       <div style={{flex:1,overflow:'hidden',position:'relative'}}>
         <AnimatePresence mode="wait">
           <motion.div key={activeTab} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.18}} style={{width:'100%',height:'100%'}}>
-            {activeTab==='gravity'       &&<GravityDrops/>}
-            {activeTab==='constellation' &&<CursorConstellation/>}
-            {activeTab==='spit'          &&<SpitGame/>}
+            {activeTab==='earworm' &&<EarwormStudio/>}
+            {activeTab==='spit'    &&<SpitGame/>}
           </motion.div>
         </AnimatePresence>
       </div>

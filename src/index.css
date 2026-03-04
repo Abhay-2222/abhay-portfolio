@@ -276,7 +276,8 @@ button {
 .hero-line--name {
   font-family: var(--sans);
   font-size: clamp(60px, 9.5vw, 108px);
-  font-weight: 700;
+  font-weight: 200;
+  font-variation-settings: 'wght' 200;
   color: var(--text-primary);
   letter-spacing: -0.035em;
   line-height: 0.95;
@@ -573,4 +574,111 @@ button {
   77%  { background-position:  24px  32px; }
   88%  { background-position: -32px -16px; }
   100% { background-position:   0px   0px; }
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE NAVIGATION  (≤ 768 px)
+═══════════════════════════════════════════════ */
+
+/* Mobile nav — hidden by default (desktop shows Dock) */
+.mobile-nav { display: none; }
+
+/* Desktop-only wrapper — shown on desktop, hidden on mobile */
+.corner-buttons-desktop { display: block; }
+
+@media (max-width: 768px) {
+
+  /* ── Hide desktop navigation ── */
+  .dock-layer             { display: none !important; }
+  .corner-buttons-desktop { display: none; }
+
+  /* ── Show mobile nav ── */
+  .mobile-nav {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+  }
+
+  .mobile-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 10px 8px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.42);
+    text-decoration: none;
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-nav-btn:active,
+  .mobile-nav-btn--on { color: #0A0A0A; }
+
+  /* ── Hero layout on mobile ── */
+  .homepage-hero {
+    padding-bottom: 72px;   /* mobile nav height */
+    align-items: center;
+  }
+
+  /* ── Hide the spinning text ring (overlaps hero on narrow screens) ── */
+  .marquee-arc-wrap { display: none; }
+
+  /* ── Tighten hero name spacing ── */
+  .hero-line--name { margin-bottom: 16px; }
+
+  /* ── Playground overlay nav — larger touch targets ── */
+  .playground-header { padding: 10px 16px !important; }
+  .playground-tab { padding: 8px 18px !important; font-size: 13px !important; }
+  .playground-close { width: 36px !important; height: 36px !important; font-size: 20px !important; }
+
+  /* ── Mashup top bar — wrap nicely on phone ── */
+  .earworm-topbar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  /* ── Instrument tabs — horizontal scroll instead of wrap ── */
+  .earworm-inst-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex: 1 1 100% !important;
+    padding-bottom: 2px;
+  }
+  .earworm-inst-tabs::-webkit-scrollbar { display: none; }
+  .earworm-inst-tabs button { flex-shrink: 0 !important; padding: 7px 14px !important; font-size: 11px !important; }
+
+  /* ── Beat grid — horizontal scroll to fit all 16 steps ── */
+  .earworm-grid {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 12px 12px 8px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .earworm-grid-row { min-width: 480px !important; }
+  .earworm-cell { min-height: 32px !important; }
 }

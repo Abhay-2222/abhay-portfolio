@@ -14,6 +14,7 @@ import CornerButtons from './components/CornerButtons.jsx';
 import DockHints from './components/DockHints.jsx';
 import Desktop from './components/Desktop.jsx';
 import Dock from './components/Dock.jsx';
+import MobileNav from './components/MobileNav.jsx';
 import IntroSequence from './components/IntroSequence.jsx';
 import ProjectHeroPreview from './components/ProjectHeroPreview.jsx';
 
@@ -88,11 +89,30 @@ function DesktopView() {
   }, [activeProject]);
 
   const handleLogoClick = useCallback(() => {
-    // If overlay is open, run its close animation (clears GSAP blur before unmount)
     if (overlayCloseRef.current) {
       overlayCloseRef.current();
     }
   }, []);
+
+  /* ── Browser back button support ── */
+  // Push a history entry whenever an overlay opens
+  useEffect(() => {
+    if (activeProject) window.history.pushState({ overlay: activeProject }, '');
+  }, [activeProject]);
+
+  useEffect(() => {
+    if (playgroundOpen) window.history.pushState({ playground: true }, '');
+  }, [playgroundOpen]);
+
+  // On browser back, close whichever overlay is open
+  useEffect(() => {
+    const handler = () => {
+      if (activeProject)   { setActiveProject(null); setOriginRect(null); }
+      else if (playgroundOpen) { setPlaygroundOpen(false); }
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, [activeProject, playgroundOpen]);
 
   return (
     <>
@@ -101,7 +121,10 @@ function DesktopView() {
       <div id="desktop-content">
         {/* Cursor + CornerButtons + DockHints live OUTSIDE portfolio-world so blur never affects them. */}
         <CustomCursor />
-        <CornerButtons onLogoClick={handleLogoClick} />
+        {/* Corner buttons visible on desktop only */}
+        <div className="corner-buttons-desktop">
+          <CornerButtons onLogoClick={handleLogoClick} />
+        </div>
         <DockHints hidden={!!activeProject} />
 
         {/* Project hero preview — sits at z-5, below all UI layers */}
@@ -120,6 +143,10 @@ function DesktopView() {
             onProjectClick={handleProjectClick}
             onProjectHover={setHoveredProject}
             activeProjectId={activeProject}
+            onPlaygroundClick={() => setPlaygroundOpen(true)}
+          />
+          <MobileNav
+            onProjectClick={handleProjectClick}
             onPlaygroundClick={() => setPlaygroundOpen(true)}
           />
         </div>

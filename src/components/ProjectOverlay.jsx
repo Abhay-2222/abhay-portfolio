@@ -693,7 +693,15 @@ const OVERLAY_CSS = `
   /* Responsive: hide sidebar below 800px */
   @media (max-width: 800px) {
     .case-study-sidebar { display: none; }
-    .hero-text { left: 24px; bottom: 24px; }
+    .hero-text { left: 20px; bottom: 24px; }
+    .hero-project-name { font-size: clamp(24px, 6vw, 40px); }
+    /* Hero image: fill more of the screen on mobile */
+    .hero-image {
+      width: 90% !important;
+      right: 50% !important;
+      transform: translateX(50%) !important;
+      top: 6% !important;
+    }
     .project-meta { padding: 16px 24px; }
     .meta-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .ia-diagram-container { padding: 32px 24px 40px; }
@@ -912,6 +920,7 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
               <img
                 src={project.heroImage}
                 alt=""
+                className="hero-image"
                 style={{
                   position:     'absolute',
                   top:          '8%',
