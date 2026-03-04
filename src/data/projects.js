@@ -727,7 +727,8 @@ const projects = [
     "heroYear": "2024",
     "previewMedia": "/projects/meatinspector/Dashboard.png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #1B4F8C 0%, #2E6DB4 100%)",
+      "gradient": "linear-gradient(160deg, #EFF6FF 0%, #DBEAFE 100%)",
+      "light": true,
       "badge": "Case Study · Enterprise Gov",
       "tags": [
         "Enterprise Gov",
@@ -1164,7 +1165,8 @@ const projects = [
     "heroYear": "2023",
     "previewMedia": "/projects/trailar/Home (Bezel).png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #1C3A2A 0%, #2D6A45 100%)",
+      "gradient": "linear-gradient(160deg, #F0FDF4 0%, #DCFCE7 100%)",
+      "light": true,
       "badge": "Case Study · Augmented Reality",
       "tags": [
         "AR + Mobile",
@@ -1558,7 +1560,8 @@ const projects = [
     "heroYear": "2024",
     "previewMedia": "/projects/vosyn/MacBook Pro 16_ - 5th Gen - Silver.png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #1A0F2E 0%, #4A2080 100%)",
+      "gradient": "linear-gradient(160deg, #FAF5FF 0%, #EDE9FE 100%)",
+      "light": true,
       "badge": "Case Study · AI Product",
       "tags": [
         "Multilingual AI",
@@ -1964,7 +1967,8 @@ const projects = [
     "heroYear": "2025",
     "previewMedia": "/projects/mealplanner/Empty States.png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #5C3D1A 0%, #C4782A 100%)",
+      "gradient": "linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 100%)",
+      "light": true,
       "badge": "Case Study · Consumer Health",
       "tags": [
         "Consumer Mobile",
@@ -2359,7 +2363,8 @@ const projects = [
     "heroYear": "2024",
     "previewMedia": "/projects/aurora/Mockup-.png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #0D1F0F 0%, #1A3D1F 100%)",
+      "gradient": "linear-gradient(160deg, #FFFBEB 0%, #FEF3C7 100%)",
+      "light": true,
       "badge": "Case Study · Fintech",
       "tags": [
         "Personal Finance",
@@ -2762,7 +2767,8 @@ const projects = [
     "heroYear": "2024",
     "previewMedia": "/projects/autonomous/Mockup-.png",
     "hero": {
-      "gradient": "linear-gradient(160deg, #05101E 0%, #0A2540 100%)",
+      "gradient": "linear-gradient(160deg, #F0F9FF 0%, #E0F2FE 100%)",
+      "light": true,
       "badge": "Case Study · Mobility",
       "tags": [
         "Autonomous Transit",

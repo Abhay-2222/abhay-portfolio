@@ -404,7 +404,6 @@ const OVERLAY_CSS = `
   /* ── Project meta ── */
   .project-meta {
     padding: 24px 64px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   /* ── Sidebar IA item ── */
@@ -417,7 +416,6 @@ const OVERLAY_CSS = `
   /* ── IA diagram ── */
   .ia-diagram-container {
     padding: 40px 80px 56px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     overflow-x: auto;
   }
 
@@ -528,7 +526,6 @@ const OVERLAY_CSS = `
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   .section-eyebrow {
@@ -620,7 +617,6 @@ const OVERLAY_CSS = `
   .subsection {
     margin-top: 48px;
     padding-top: 40px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .subsection-title {
@@ -674,7 +670,6 @@ const OVERLAY_CSS = `
     align-items: flex-start;
     justify-content: space-between;
     padding: 56px 80px 72px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .bottom-nav-btn {
@@ -958,16 +953,19 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                 className="hero-image"
                 style={{
                   position:     'absolute',
-                  top:          '8%',
-                  right:        '5%',
-                  width:        '58%',
+                  top:          '6%',
+                  right:        '4%',
+                  width:        'auto',
+                  maxWidth:     '56%',
+                  height:       'auto',
+                  maxHeight:    '88%',
                   borderRadius: '10px 10px 0 0',
-                  boxShadow:    '0 24px 80px rgba(0,0,0,0.15)',
-                  objectFit:    'cover',
-                  objectPosition: 'top',
+                  boxShadow:    '0 24px 80px rgba(0,0,0,0.12)',
+                  objectFit:    'contain',
+                  objectPosition: 'top right',
                   pointerEvents: 'none',
-                  maskImage:    'linear-gradient(to bottom, black 70%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+                  maskImage:    'linear-gradient(to bottom, black 75%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
                 }}
               />
             )}

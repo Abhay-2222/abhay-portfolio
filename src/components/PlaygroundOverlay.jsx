@@ -1322,11 +1322,19 @@ function GameTable({cpuLevel,mode,roomLink,onReturnLobby}){
                     <div style={{
                       width:90,height:120,borderRadius:12,position:'relative',flexShrink:0,
                       background:topCard?'#F9F8F3':'rgba(255,255,255,0.06)',
-                      border:`2.5px solid ${canPick&&isSmaller?'rgba(16,185,129,0.80)':'rgba(255,255,255,0.16)'}`,
-                      boxShadow:canPick&&isSmaller?'0 0 30px rgba(16,185,129,0.40),0 8px 24px rgba(0,0,0,0.65)':'0 8px 22px rgba(0,0,0,0.55)',
+                      border:`2.5px solid ${canPick&&isSmaller?'rgba(16,185,129,0.90)':'rgba(255,255,255,0.16)'}`,
+                      boxShadow:canPick&&isSmaller?'0 0 30px rgba(16,185,129,0.50),0 8px 24px rgba(0,0,0,0.65)':'0 8px 22px rgba(0,0,0,0.55)',
                       display:'flex',alignItems:'center',justifyContent:'center',
                       transition:'border-color .18s,box-shadow .18s',
                     }}>
+                      {/* Pulsing glow ring for the smaller pile */}
+                      {canPick&&isSmaller&&(
+                        <motion.div
+                          animate={{opacity:[0.5,1,0.5],scale:[0.92,1.10,0.92]}}
+                          transition={{duration:1.1,repeat:Infinity,ease:'easeInOut'}}
+                          style={{position:'absolute',inset:-6,borderRadius:16,border:'2px solid rgba(16,185,129,0.65)',pointerEvents:'none',zIndex:0}}
+                        />
+                      )}
                       {topCard&&(
                         <div style={{textAlign:'center'}}>
                           <div style={{fontFamily:'"Geist Mono",monospace',fontSize:32,fontWeight:700,color:_RED(topCard.suit)?'#B83030':'#1a1a1a',lineHeight:1}}>{_RANK(topCard.rank)}</div>
