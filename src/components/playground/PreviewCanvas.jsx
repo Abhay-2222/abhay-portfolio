@@ -22,6 +22,7 @@ import {
   getContrastRatio, wcagLevel, auditTokens, getAutoFix, computeVibeScore,
   getColorBase,
 } from './dsEngine';
+import { COMPONENT_DOCS } from './componentDocs';
 
 /* ─────────────────────────────────────────────────────────
    SCOPED CSS VAR BUILDER
@@ -115,15 +116,171 @@ function SectionLabel({ children }) {
   return <div style={{ fontSize:9,fontFamily:'var(--ds-font-mono)',color:'var(--ds-text-muted)',letterSpacing:'0.08em',marginBottom:8 }}>{children.toUpperCase()}</div>;
 }
 
+/* ── Inline Component Docs Panel ── */
+const DOC_TABS = ['Anatomy', 'Usage', 'Tokens', 'A11y'];
+
+function DocPanel({ doc, onClose }) {
+  const [tab, setTab] = useState('Anatomy');
+  if (!doc) return null;
+  return (
+    <div style={{
+      marginBottom: 20, borderRadius: 10,
+      border: '1px solid var(--ds-border)',
+      background: 'var(--ds-bg-elevated)',
+      overflow: 'hidden', fontSize: 12,
+      fontFamily: 'var(--ds-font-body)',
+    }}>
+      {/* Tab bar */}
+      <div style={{ display:'flex', borderBottom:'1px solid var(--ds-border)', alignItems:'center' }}>
+        {DOC_TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding:'9px 14px', fontSize:11,
+            fontFamily:'var(--ds-font-mono)', background:'none', border:'none',
+            borderBottom: tab===t ? '2px solid var(--ds-primary)' : '2px solid transparent',
+            color: tab===t ? 'var(--ds-primary)' : 'var(--ds-text-muted)',
+            cursor:'pointer', fontWeight: tab===t ? 600 : 400, marginBottom:-1,
+          }}>{t}</button>
+        ))}
+        <button onClick={onClose} style={{
+          marginLeft:'auto', padding:'9px 14px', background:'none', border:'none',
+          color:'var(--ds-text-muted)', cursor:'pointer', fontSize:16, lineHeight:1,
+        }}>×</button>
+      </div>
+      {/* Panel content */}
+      <div style={{ padding:'14px 16px', maxHeight:300, overflowY:'auto' }}>
+
+        {tab === 'Anatomy' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {doc.anatomy.length === 0
+              ? <span style={{ color:'var(--ds-text-muted)' }}>No anatomy documented yet.</span>
+              : doc.anatomy.map(a => (
+                <div key={a.label} style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
+                  <span style={{
+                    minWidth:20, height:20, borderRadius:4,
+                    background:'var(--ds-primary-l)', color:'var(--ds-primary)',
+                    fontSize:10, fontWeight:700, flexShrink:0,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:'var(--ds-font-mono)',
+                  }}>{a.label}</span>
+                  <div>
+                    <span style={{ fontWeight:600, color:'var(--ds-fg)', fontSize:12 }}>{a.name}</span>
+                    {!a.required && <span style={{ fontSize:10, color:'var(--ds-text-muted)', marginLeft:6, fontStyle:'italic' }}>optional</span>}
+                    <div style={{ color:'var(--ds-text-muted)', fontSize:11.5, lineHeight:1.6, marginTop:1 }}>{a.desc}</div>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {tab === 'Usage' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {doc.usage.when?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>USE WHEN</div>
+                {doc.usage.when.map((s,i) => <div key={i} style={{ display:'flex', gap:7, color:'var(--ds-text-muted)', fontSize:11.5, lineHeight:1.6, marginBottom:3 }}><span style={{ color:'var(--ds-primary)', flexShrink:0 }}>✓</span>{s}</div>)}
+              </div>
+            )}
+            {doc.usage.whenNot?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>AVOID</div>
+                {doc.usage.whenNot.map((s,i) => <div key={i} style={{ display:'flex', gap:7, color:'var(--ds-text-muted)', fontSize:11.5, lineHeight:1.6, marginBottom:3 }}><span style={{ color:'#dc2626', flexShrink:0 }}>✕</span>{s}</div>)}
+              </div>
+            )}
+            {doc.usage.dos?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>DO</div>
+                {doc.usage.dos.map((s,i) => <div key={i} style={{ display:'flex', gap:7, color:'var(--ds-text-muted)', fontSize:11.5, lineHeight:1.6, marginBottom:3 }}><span style={{ color:'var(--ds-primary)', flexShrink:0 }}>↑</span>{s}</div>)}
+              </div>
+            )}
+            {doc.usage.donts?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>DON'T</div>
+                {doc.usage.donts.map((s,i) => <div key={i} style={{ display:'flex', gap:7, color:'var(--ds-text-muted)', fontSize:11.5, lineHeight:1.6, marginBottom:3 }}><span style={{ color:'#dc2626', flexShrink:0 }}>↓</span>{s}</div>)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'Tokens' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
+            {doc.tokenKeys.length === 0
+              ? <span style={{ color:'var(--ds-text-muted)' }}>No tokens documented yet.</span>
+              : doc.tokenKeys.map((t,i) => (
+                <div key={i} style={{ display:'flex', gap:12, alignItems:'flex-start', padding:'7px 0', borderBottom:'1px solid var(--ds-border)' }}>
+                  <code style={{
+                    fontSize:10.5, fontFamily:'var(--ds-font-mono)', color:'var(--ds-primary)',
+                    minWidth:180, flexShrink:0, background:'var(--ds-primary-l)',
+                    padding:'2px 6px', borderRadius:4,
+                  }}>{t.key}</code>
+                  <span style={{ fontSize:11.5, color:'var(--ds-text-muted)', lineHeight:1.6 }}>{t.desc}</span>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {tab === 'A11y' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {doc.a11y.keyboard?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>KEYBOARD</div>
+                {doc.a11y.keyboard.map((k,i) => (
+                  <div key={i} style={{ display:'flex', gap:10, marginBottom:5, alignItems:'flex-start' }}>
+                    <kbd style={{ fontSize:10, fontFamily:'var(--ds-font-mono)', background:'var(--ds-bg-subtle)', border:'1px solid var(--ds-border)', borderRadius:4, padding:'1px 7px', whiteSpace:'nowrap', flexShrink:0, color:'var(--ds-fg)' }}>{k.key}</kbd>
+                    <span style={{ fontSize:11.5, color:'var(--ds-text-muted)', lineHeight:1.6 }}>{k.action}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {doc.a11y.aria?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>ARIA</div>
+                {doc.a11y.aria.map((s,i) => <div key={i} style={{ fontSize:11.5, color:'var(--ds-text-muted)', lineHeight:1.6, marginBottom:4, paddingLeft:10, borderLeft:'2px solid var(--ds-border)' }}>{s}</div>)}
+              </div>
+            )}
+            {doc.a11y.notes?.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', marginBottom:6 }}>NOTES</div>
+                {doc.a11y.notes.map((s,i) => <div key={i} style={{ fontSize:11.5, color:'var(--ds-text-muted)', lineHeight:1.6, marginBottom:4 }}>— {s}</div>)}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 /* ── Editorial Section Header with description ── */
 function DSSection({ category, title, desc, children }) {
+  const doc = COMPONENT_DOCS[title];
+  const [docsOpen, setDocsOpen] = useState(false);
   return (
     <div>
       <div style={{ marginBottom:22 }}>
         <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:7, opacity:0.85 }}>{category}</div>
-        <div style={{ fontSize:20, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.025em', lineHeight:1.2, marginBottom: desc ? 9 : 0 }}>{title}</div>
-        {desc && <div style={{ fontSize:12, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.7, maxWidth:520 }}>{desc}</div>}
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+          <div style={{ fontSize:20, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.025em', lineHeight:1.2 }}>{title}</div>
+          {doc && (
+            <button
+              onClick={() => setDocsOpen(o => !o)}
+              title={docsOpen ? 'Hide component docs' : 'Show component docs'}
+              style={{
+                padding:'3px 9px', borderRadius:5, cursor:'pointer',
+                border: `1px solid ${docsOpen ? 'var(--ds-primary)' : 'var(--ds-border)'}`,
+                background: docsOpen ? 'var(--ds-primary-l)' : 'transparent',
+                color: docsOpen ? 'var(--ds-primary)' : 'var(--ds-text-muted)',
+                fontSize:10, fontFamily:'var(--ds-font-mono)', fontWeight:600,
+                letterSpacing:'0.03em', flexShrink:0, transition:'all 0.12s',
+              }}
+            >{docsOpen ? 'docs ×' : '[i] docs'}</button>
+          )}
+        </div>
+        {desc && <div style={{ fontSize:12, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.7, maxWidth:520, marginTop:9 }}>{desc}</div>}
       </div>
+      {doc && docsOpen && <DocPanel doc={doc} onClose={() => setDocsOpen(false)} />}
       {children}
     </div>
   );
