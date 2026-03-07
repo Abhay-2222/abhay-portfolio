@@ -41,18 +41,18 @@ const DEFAULT_LOCKS = { colors:false, colorSlots:{}, typography:false, spacing:f
    DESIGN TOKENS — dark sidebar
 ───────────────────────────────────────────────────────── */
 const P = {
-  bg:           '#f2f1ed',
-  bgCard:       '#ffffff',
-  bgHover:      '#eae8e2',
-  border:       '#dbd9d1',
-  borderStrong: '#b8b5ad',
-  text:         '#1b1a17',
-  textMuted:    '#6d6b64',
-  textDim:      '#a09c95',
+  bg:           '#191919',
+  bgCard:       '#232323',
+  bgHover:      '#2a2a2a',
+  border:       '#303030',
+  borderStrong: '#484848',
+  text:         '#e2e2e2',
+  textMuted:    '#888888',
+  textDim:      '#555555',
   accent:       '#c8602a',
-  accentSoft:   'rgba(200,96,42,0.09)',
-  accentBorder: 'rgba(200,96,42,0.35)',
-  focusRing:    '0 0 0 2px #f2f1ed, 0 0 0 4px #c8602a',
+  accentSoft:   'rgba(200,96,42,0.14)',
+  accentBorder: 'rgba(200,96,42,0.45)',
+  focusRing:    '0 0 0 2px #191919, 0 0 0 4px #c8602a',
 };
 
 /* ─────────────────────────────────────────────────────────
@@ -64,14 +64,14 @@ function injectStyles() {
   styleInjected = true;
   const s = document.createElement('style');
   s.textContent = `
-    .ds-panel-scroll { scrollbar-width:thin; scrollbar-color:rgba(0,0,0,0.14) transparent; }
+    .ds-panel-scroll { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent; }
     .ds-panel-scroll::-webkit-scrollbar { width:4px; }
     .ds-panel-scroll::-webkit-scrollbar-track { background:transparent; }
-    .ds-panel-scroll::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.14); border-radius:4px; }
-    .ds-panel-scroll::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.24); }
-    .ds-btn:focus-visible { outline:none; box-shadow:0 0 0 2px #f2f1ed, 0 0 0 4px #c8602a; }
-    .ds-input:focus { outline:none; box-shadow:0 0 0 2px #f2f1ed, 0 0 0 4px #c8602a; }
-    .ds-select:focus { outline:none; box-shadow:0 0 0 2px #f2f1ed, 0 0 0 4px #c8602a; }
+    .ds-panel-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+    .ds-panel-scroll::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.2); }
+    .ds-btn:focus-visible { outline:none; box-shadow:0 0 0 2px #191919, 0 0 0 4px #c8602a; }
+    .ds-input:focus { outline:none; box-shadow:0 0 0 2px #191919, 0 0 0 4px #c8602a; }
+    .ds-select:focus { outline:none; box-shadow:0 0 0 2px #191919, 0 0 0 4px #c8602a; }
     @keyframes pc-spin { to { transform: rotate(360deg); } }
   `;
   document.head.appendChild(s);
@@ -97,7 +97,7 @@ function Section({ title, locked, onLockToggle, children, defaultOpen=true }) {
       borderRadius:10, overflow:'hidden',
       border:`1px solid ${locked ? P.accentBorder : P.border}`,
       background: locked ? 'rgba(200,96,42,0.04)' : P.bgCard,
-      boxShadow: locked ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+      boxShadow: locked ? 'none' : '0 1px 3px rgba(0,0,0,0.35)',
       transition:'border .2s,background .2s,box-shadow .2s',
     }}>
       <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 12px' }}>
@@ -252,7 +252,7 @@ function FontSelect({ role, label, value, onChange }) {
             color:P.text,
             fontFamily:`'${value}',system-ui`,
             fontSize:12,cursor:'pointer',appearance:'none',
-            boxShadow:'0 1px 2px rgba(0,0,0,0.05)',
+            boxShadow:'0 1px 2px rgba(0,0,0,0.35)',
           }}>
           {filteredFonts.map(f => (
             <option key={f} value={f} style={{ fontFamily:`'${f}',system-ui`,background:'#ffffff',color:'#1b1a17' }}>{f}</option>
@@ -364,6 +364,13 @@ function ColorSection({ colors, locks, onChange, onLockSlot }) {
 ───────────────────────────────────────────────────────── */
 export default function DesignSystemBuilder() {
   injectStyles();
+  const [mobileTab, setMobileTab] = useState('controls'); // 'controls' | 'preview'
+  const [isMobileLayout, setIsMobileLayout] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+  useEffect(() => {
+    const handler = () => setIsMobileLayout(window.innerWidth < 640);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // Hydrate from share URL
   const initial = useRef(() => {
@@ -576,23 +583,38 @@ export default function DesignSystemBuilder() {
   }, [locks, setTokens]);
 
   return (
-    <div style={{ width:'100%',height:'100%',display:'flex',overflow:'hidden',background:P.bg,fontFamily:'"Geist Sans",system-ui,sans-serif' }}>
+    <div style={{ width:'100%',height:'100%',display:'flex',flexDirection: isMobileLayout ? 'column' : 'row',overflow:'hidden',background:P.bg,fontFamily:'"Geist Sans",system-ui,sans-serif' }}>
+      {/* Mobile tab switcher */}
+      {isMobileLayout && (
+        <div style={{ display:'flex',borderBottom:`1px solid ${P.border}`,flexShrink:0,background:P.bg }}>
+          {[['controls','Controls'],['preview','Preview']].map(([id,label]) => (
+            <button key={id} onClick={() => setMobileTab(id)}
+              style={{ flex:1,padding:'10px',border:'none',background:'none',color: mobileTab===id ? P.accent : P.textMuted,fontSize:12,fontWeight: mobileTab===id ? 600 : 400,fontFamily:'"Geist Sans",system-ui',cursor:'pointer',borderBottom:`2px solid ${mobileTab===id ? P.accent : 'transparent'}`,transition:'all .15s' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ═══════════════ LEFT PANEL ═══════════════ */}
       <div
         role="complementary"
         aria-label="Design system controls"
         style={{
-          width:300,minWidth:272,maxWidth:328,
-          height:'100%',
-          display:'flex',flexDirection:'column',
+          width: isMobileLayout ? '100%' : 300,
+          minWidth: isMobileLayout ? '100%' : 272,
+          maxWidth: isMobileLayout ? '100%' : 328,
+          height: isMobileLayout ? 'auto' : '100%',
+          flex: isMobileLayout ? 'unset' : undefined,
+          display: isMobileLayout && mobileTab === 'preview' ? 'none' : 'flex',
+          flexDirection:'column',
           background:P.bg,
           borderRight:`1px solid ${P.border}`,
           overflow:'hidden',
         }}>
 
         {/* ── Single unified scroll area ── */}
-        <div className="ds-panel-scroll" style={{ flex:1, overflowY:'auto', minHeight:0, padding:'16px 12px 0' }}>
+        <div className="ds-panel-scroll" style={{ flex:1, overflowY:'auto', minHeight:0, padding:'16px 12px 0', display: isMobileLayout && mobileTab !== 'controls' ? 'none' : 'block' }}>
 
           {/* System name + vibe */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginBottom:18 }}>
@@ -931,7 +953,7 @@ export default function DesignSystemBuilder() {
       </AnimatePresence>
 
       {/* ═══════════════ RIGHT PANEL ═══════════════ */}
-      <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+      <div style={{ flex:1, position:'relative', overflow:'hidden', display: isMobileLayout && mobileTab !== 'preview' ? 'none' : 'flex', flexDirection:'column' }}>
         <PreviewCanvas tokens={tokens} onTokenChange={setTokens} />
 
         {/* ── Evolution Comparison Overlay (Task 7.3) ── */}

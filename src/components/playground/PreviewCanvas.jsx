@@ -400,12 +400,239 @@ function MotionSection({ tokens }) {
 }
 
 /* ─────────────────────────────────────────────────────────
+   iOS COMPONENTS PREVIEW
+───────────────────────────────────────────────────────── */
+function IOSComponentsPreview() {
+  const [toggle1, setToggle1] = useState(true);
+  const [toggle2, setToggle2] = useState(false);
+  const [seg, setSeg] = useState(0);
+  const [checked, setChecked] = useState([true, false, true]);
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:0, fontFamily:'-apple-system,"SF Pro Text","Helvetica Neue",sans-serif' }}>
+
+      {/* iOS Navigation Bar */}
+      <div style={{ padding:'12px 16px 8px', borderBottom:'0.5px solid var(--ds-border)', display:'flex', alignItems:'center', justifyContent:'space-between', background:'var(--ds-bg-elevated)' }}>
+        <span style={{ fontSize:13, color:'var(--ds-primary)', fontWeight:400 }}>‹ Back</span>
+        <span style={{ fontSize:17, fontWeight:600, color:'var(--ds-fg)' }}>Settings</span>
+        <span style={{ fontSize:13, color:'var(--ds-primary)', fontWeight:400 }}>Edit</span>
+      </div>
+
+      {/* Segmented Control */}
+      <div style={{ padding:'12px 16px 8px', background:'var(--ds-bg)' }}>
+        <div style={{ display:'flex', background:'rgba(118,118,128,0.12)', borderRadius:9, padding:2, gap:1 }}>
+          {['All','Unread','Flagged'].map((label,i) => (
+            <button key={label} onClick={() => setSeg(i)}
+              style={{ flex:1, padding:'6px 4px', borderRadius:7, border:'none', background: seg===i ? 'var(--ds-bg-elevated)' : 'transparent', color: seg===i ? 'var(--ds-fg)' : 'var(--ds-text-muted)', fontSize:12, fontWeight: seg===i ? 600 : 400, cursor:'pointer', boxShadow: seg===i ? '0 1px 3px rgba(0,0,0,0.12)' : 'none', transition:'all .15s', fontFamily:'inherit' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grouped list */}
+      <div style={{ margin:'0 0 0', background:'var(--ds-bg)' }}>
+        <div style={{ fontSize:12, color:'var(--ds-text-muted)', padding:'14px 16px 6px', letterSpacing:'0.01em', textTransform:'uppercase' }}>Notifications</div>
+        <div style={{ background:'var(--ds-bg-elevated)', borderRadius:10, margin:'0 16px' }}>
+          {[
+            { label:'Allow Notifications', hasToggle:true, idx:0 },
+            { label:'Sounds', hasToggle:true, idx:1 },
+            { label:'Badges', hasChevron:true },
+          ].map((row, i, arr) => (
+            <div key={row.label} style={{ display:'flex', alignItems:'center', padding:'11px 16px', borderBottom: i < arr.length-1 ? '0.5px solid var(--ds-border)' : 'none' }}>
+              <span style={{ flex:1, fontSize:16, color:'var(--ds-fg)' }}>{row.label}</span>
+              {row.hasToggle && (
+                <div onClick={() => { const n=[...checked]; n[row.idx]=!n[row.idx]; setChecked(n); }}
+                  style={{ width:51, height:31, borderRadius:16, background: checked[row.idx] ? 'var(--ds-primary)' : 'rgba(120,120,128,0.32)', position:'relative', cursor:'pointer', transition:'background .2s', flexShrink:0 }}>
+                  <div style={{ position:'absolute', top:2, left: checked[row.idx] ? 22 : 2, width:27, height:27, borderRadius:'50%', background:'#fff', boxShadow:'0 2px 6px rgba(0,0,0,0.22)', transition:'left .2s' }}/>
+                </div>
+              )}
+              {row.hasChevron && <span style={{ color:'var(--ds-text-muted)', fontSize:16, opacity:0.5 }}>›</span>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize:12, color:'var(--ds-text-muted)', padding:'14px 16px 6px', letterSpacing:'0.01em', textTransform:'uppercase' }}>Account</div>
+        <div style={{ background:'var(--ds-bg-elevated)', borderRadius:10, margin:'0 16px' }}>
+          {['Profile', 'Privacy', 'Sign Out'].map((label,i,arr) => (
+            <div key={label} style={{ display:'flex', alignItems:'center', padding:'11px 16px', borderBottom: i < arr.length-1 ? '0.5px solid var(--ds-border)' : 'none', cursor:'pointer' }}>
+              <span style={{ flex:1, fontSize:16, color: label==='Sign Out' ? '#ff3b30' : 'var(--ds-fg)' }}>{label}</span>
+              {label !== 'Sign Out' && <span style={{ color:'var(--ds-text-muted)', fontSize:16, opacity:0.5 }}>›</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* iOS Buttons */}
+      <div style={{ padding:'20px 16px 12px', display:'flex', flexDirection:'column', gap:10, background:'var(--ds-bg)' }}>
+        <div style={{ fontSize:12, color:'var(--ds-text-muted)', padding:'0 0 4px', letterSpacing:'0.01em', textTransform:'uppercase' }}>Buttons</div>
+        <button style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', background:'var(--ds-primary)', color:'#fff', fontSize:17, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Continue</button>
+        <button style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', background:'rgba(118,118,128,0.12)', color:'var(--ds-primary)', fontSize:17, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Learn More</button>
+        <button style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', background:'transparent', color:'var(--ds-primary)', fontSize:17, fontWeight:400, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+      </div>
+
+      {/* iOS Tab Bar */}
+      <div style={{ borderTop:'0.5px solid var(--ds-border)', background:'var(--ds-bg-elevated)', display:'flex', justifyContent:'space-around', padding:'8px 0 4px', marginTop:8 }}>
+        {[['⊞','Home'],['🔍','Search'],['♡','Saved'],['⊙','Profile']].map(([icon,label],i) => (
+          <div key={label} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2, minWidth:48, cursor:'pointer' }}>
+            <span style={{ fontSize:20, color: i===0 ? 'var(--ds-primary)' : 'var(--ds-text-muted)' }}>{icon}</span>
+            <span style={{ fontSize:10, color: i===0 ? 'var(--ds-primary)' : 'var(--ds-text-muted)', fontWeight: i===0 ? 500 : 400 }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   ANDROID / MATERIAL 3 PREVIEW
+───────────────────────────────────────────────────────── */
+function AndroidComponentsPreview() {
+  const [activeNav, setActiveNav] = useState(0);
+  const [fabExpanded, setFabExpanded] = useState(false);
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:0, fontFamily:'"Google Sans","Roboto",sans-serif' }}>
+
+      {/* Material Top App Bar */}
+      <div style={{ padding:'16px 16px 12px', background:'var(--ds-bg-elevated)', display:'flex', alignItems:'center', gap:12 }}>
+        <span style={{ fontSize:22, color:'var(--ds-fg)', cursor:'pointer' }}>☰</span>
+        <span style={{ flex:1, fontSize:22, fontWeight:400, color:'var(--ds-fg)' }}>Inbox</span>
+        <span style={{ fontSize:18, color:'var(--ds-fg)', cursor:'pointer', marginRight:8 }}>🔍</span>
+        <div style={{ width:32, height:32, borderRadius:'50%', background:'var(--ds-primary)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <span style={{ fontSize:13, color:'#fff', fontWeight:700 }}>A</span>
+        </div>
+      </div>
+
+      {/* M3 Cards */}
+      <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:8, background:'var(--ds-bg)' }}>
+        <div style={{ fontSize:11, color:'var(--ds-text-muted)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:2 }}>Cards</div>
+        <div style={{ borderRadius:12, background:'var(--ds-bg-elevated)', padding:'16px', boxShadow:'0 1px 2px rgba(0,0,0,0.1),0 2px 6px rgba(0,0,0,0.07)' }}>
+          <div style={{ fontSize:22, fontWeight:400, color:'var(--ds-fg)', marginBottom:4 }}>Card Title</div>
+          <div style={{ fontSize:14, color:'var(--ds-text-muted)', lineHeight:1.5, marginBottom:12 }}>Supporting text describing this card's content briefly.</div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button style={{ padding:'10px 24px', borderRadius:100, border:'none', background:'var(--ds-primary)', color:'#fff', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'inherit' }}>Action</button>
+            <button style={{ padding:'10px 24px', borderRadius:100, border:`1px solid var(--ds-border)`, background:'transparent', color:'var(--ds-primary)', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'inherit' }}>Learn more</button>
+          </div>
+        </div>
+
+        {/* M3 outlined card */}
+        <div style={{ borderRadius:12, border:'1px solid var(--ds-border)', padding:'14px 16px', background:'var(--ds-bg)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:10, background:'var(--ds-primary-l)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <span style={{ fontSize:18 }}>📊</span>
+            </div>
+            <div>
+              <div style={{ fontSize:14, fontWeight:500, color:'var(--ds-fg)' }}>Analytics</div>
+              <div style={{ fontSize:12, color:'var(--ds-text-muted)' }}>Updated just now</div>
+            </div>
+            <span style={{ marginLeft:'auto', fontSize:18, color:'var(--ds-text-muted)' }}>›</span>
+          </div>
+        </div>
+      </div>
+
+      {/* M3 Button types */}
+      <div style={{ padding:'12px 16px', background:'var(--ds-bg)' }}>
+        <div style={{ fontSize:11, color:'var(--ds-text-muted)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>Buttons</div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button style={{ padding:'10px 24px', borderRadius:100, border:'none', background:'var(--ds-primary)', color:'#fff', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }}>Filled</button>
+          <button style={{ padding:'10px 24px', borderRadius:100, border:'none', background:'var(--ds-primary-l)', color:'var(--ds-primary-h)', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'inherit' }}>Tonal</button>
+          <button style={{ padding:'10px 24px', borderRadius:100, border:'1px solid var(--ds-border)', background:'transparent', color:'var(--ds-primary)', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'inherit' }}>Outlined</button>
+          <button style={{ padding:'10px 24px', borderRadius:100, border:'none', background:'transparent', color:'var(--ds-primary)', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'inherit' }}>Text</button>
+        </div>
+      </div>
+
+      {/* FAB */}
+      <div style={{ padding:'12px 16px', background:'var(--ds-bg)', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ fontSize:11, color:'var(--ds-text-muted)', letterSpacing:'0.08em', textTransform:'uppercase' }}>FAB</div>
+        <div onClick={() => setFabExpanded(f=>!f)}
+          style={{ display:'flex', alignItems:'center', gap: fabExpanded ? 8 : 0, padding: fabExpanded ? '14px 20px' : '14px', borderRadius:16, background:'var(--ds-primary-l)', color:'var(--ds-primary-h)', cursor:'pointer', boxShadow:'0 3px 8px rgba(0,0,0,0.15)', transition:'all .25s', overflow:'hidden' }}>
+          <span style={{ fontSize:22 }}>✏</span>
+          {fabExpanded && <span style={{ fontSize:14, fontWeight:500, whiteSpace:'nowrap', fontFamily:'inherit' }}>Compose</span>}
+        </div>
+      </div>
+
+      {/* M3 Bottom Navigation */}
+      <div style={{ borderTop:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', display:'flex', justifyContent:'space-around', padding:'4px 0', marginTop:12 }}>
+        {[['⊞','Home'],['📨','Mail'],['📅','Calendar'],['⊙','Profile']].map(([icon,label],i) => (
+          <button key={label} onClick={() => setActiveNav(i)}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2, padding:'8px 16px', border:'none', background:'none', cursor:'pointer', position:'relative', fontFamily:'inherit', minWidth:48 }}>
+            {i === activeNav && <div style={{ position:'absolute', top:4, left:'50%', transform:'translateX(-50%)', width:56, height:28, borderRadius:14, background:'var(--ds-primary-l)' }}/>}
+            <span style={{ fontSize:20, position:'relative', zIndex:1 }}>{icon}</span>
+            <span style={{ fontSize:11, color: i===activeNav ? 'var(--ds-fg)' : 'var(--ds-text-muted)', fontWeight: i===activeNav ? 600 : 400, position:'relative', zIndex:1 }}>{label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   DS ONLY — Token grid, no device shell
+───────────────────────────────────────────────────────── */
+function DSOnlyPreview({ tokens }) {
+  const { palette } = computeTokens(tokens);
+  const COLOR_NAMES = ['Primary','Secondary','Tertiary','Accent','Neutral','Warning'];
+  const SHADE_KEYS  = [50,100,200,300,400,500,600,700,800,900];
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+      <SectionLabel>Full Token Palette — All Scales</SectionLabel>
+      {palette.map((shades, ci) => (
+        <div key={ci}>
+          <div style={{ fontSize:10, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)', marginBottom:6 }}>{COLOR_NAMES[ci] ?? `Color ${ci+1}`}</div>
+          <div style={{ display:'flex', borderRadius:'var(--ds-radius)', overflow:'hidden', boxShadow:'var(--ds-shadow-sm)' }}>
+            {SHADE_KEYS.map(k => (
+              <div key={k} style={{ flex:1, minWidth:0 }}>
+                <div style={{ height:48, background:shades[k] ?? '#ccc' }} title={`${k}: ${shades[k]}`}/>
+                <div style={{ padding:'4px 0', textAlign:'center', background:'var(--ds-bg-elevated)', borderTop:'1px solid var(--ds-border)' }}>
+                  <div style={{ fontSize:7, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)' }}>{k}</div>
+                  <div style={{ fontSize:7, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)' }}>{(shades[k]??'').slice(1)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Semantic tokens summary */}
+      <SectionLabel>Semantic Tokens</SectionLabel>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))', gap:8 }}>
+        {[
+          { label:'Background', var:'--ds-bg' },
+          { label:'Surface', var:'--ds-bg-elevated' },
+          { label:'Subtle', var:'--ds-bg-subtle' },
+          { label:'Foreground', var:'--ds-fg' },
+          { label:'Muted text', var:'--ds-fg-muted' },
+          { label:'Primary', var:'--ds-primary' },
+          { label:'Primary hover', var:'--ds-primary-h' },
+          { label:'Primary subtle', var:'--ds-primary-l' },
+          { label:'Border', var:'--ds-border' },
+          { label:'Border strong', var:'--ds-border-strong' },
+        ].map(({ label, var: v }) => (
+          <div key={v} style={{ borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', overflow:'hidden' }}>
+            <div style={{ height:32, background:`var(${v})`, borderBottom:'1px solid var(--ds-border)' }}/>
+            <div style={{ padding:'4px 6px' }}>
+              <div style={{ fontSize:9, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', fontWeight:600 }}>{label}</div>
+              <div style={{ fontSize:8, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)' }}>{v}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    PREVIEW: COMPONENTS
 ───────────────────────────────────────────────────────── */
 function ComponentsPreview({ platform, tokens }) {
   const [activeNav, setActiveNav] = useState('Work');
-  const isMobile  = platform === 'ios' || platform === 'android';
   const matrixRef = useRef(null);
+
+  // Platform routing
+  if (platform === 'ios') return <IOSComponentsPreview />;
+  if (platform === 'android') return <AndroidComponentsPreview />;
+  if (platform === 'system') return <DSOnlyPreview tokens={tokens} />;
+
+  const isMobile = false;
 
   // GSAP scale-pulse when tokens change
   useEffect(() => {
