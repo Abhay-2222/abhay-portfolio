@@ -1,14 +1,17 @@
 /**
  * PlaygroundOverlay.jsx
- * Playground tabs: Earworm Studio · Spit card game
+ * Playground tabs: Earworm Studio · Spit card game · Design System Builder
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const DesignSystemBuilder = lazy(() => import('./playground/DesignSystemBuilder'));
 
 const TABS = [
   { id: 'earworm', label: 'Mashup' },
   { id: 'spit',    label: 'Spit'  },
+  { id: 'system',  label: 'System' },
 ];
 
 /* ══════════════════════════════════════════════════════════════
@@ -1446,6 +1449,11 @@ export default function PlaygroundOverlay({onClose}){
           <motion.div key={activeTab} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.18}} style={{width:'100%',height:'100%'}}>
             {activeTab==='earworm' &&<EarwormStudio/>}
             {activeTab==='spit'    &&<SpitGame/>}
+            {activeTab==='system'  &&(
+              <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',fontSize:12,color:'rgba(0,0,0,0.4)',fontFamily:'"Geist Mono",monospace'}}>Loading System…</div>}>
+                <DesignSystemBuilder/>
+              </Suspense>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import projects from '../data/projects.js';
 
 const META = {
@@ -36,13 +37,12 @@ function IconPlay() {
     </svg>
   );
 }
-function IconDoc() {
+function IconPerson() {
   return (
     <svg width="18" height="20" viewBox="0 0 18 20" fill="none" aria-hidden="true">
-      <rect x="1.5" y="1" width="15" height="18" rx="2.5" stroke="currentColor" strokeWidth="1.6"/>
-      <line x1="5" y1="7"  x2="13" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      <line x1="5" y1="10.5" x2="13" y2="10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      <line x1="5" y1="14" x2="9"  y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <circle cx="9" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.6"/>
+      <path d="M1.5 19c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5"
+            stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
   );
 }
@@ -147,6 +147,7 @@ function ProjectCard({ project, onOpen, soonId }) {
 
 /* ── Main component ── */
 export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
+  const navigate = useNavigate();
   const [workOpen, setWorkOpen] = useState(false);
   const [soonId,   setSoonId]   = useState(null);
 
@@ -278,17 +279,15 @@ export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
             <span>Playground</span>
           </button>
 
-          {/* Resume */}
-          <a
-            href="/resume.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* About */}
+          <button
+            onClick={() => navigate('/about')}
             className="mobile-nav-btn"
-            aria-label="Open Resume PDF"
+            aria-label="About Abhay"
           >
-            <IconDoc />
-            <span>Resume</span>
-          </a>
+            <IconPerson />
+            <span>About</span>
+          </button>
 
         </div>
       </motion.nav>

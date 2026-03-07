@@ -107,7 +107,7 @@ export default function MealPlannerPage() {
 
       {/* ── Back nav ── */}
       <motion.button
-        onClick={() => navigate('/')}
+        onClick={() => navigate(-1)}
         initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}
         data-cursor-hover
         style={{
@@ -659,7 +659,7 @@ export default function MealPlannerPage() {
                 }}
               >View Live Project ↗</motion.a>
               <motion.button
-                onClick={() => navigate('/')}
+                onClick={() => navigate(-1)}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 data-cursor-hover
                 style={{

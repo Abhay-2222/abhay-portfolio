@@ -34,15 +34,10 @@ function MenuBar({ onLogoClick }) {
         AS
       </Link>
 
-      {/* Right: Resume */}
-      <a
-        href="/resume.pdf"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="nav-resume"
-      >
-        Resume
-      </a>
+      {/* Right: About */}
+      <Link to="/about" className="nav-resume">
+        About
+      </Link>
 
       <style>{`
         .nav-monogram {

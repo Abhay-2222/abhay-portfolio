@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import gsap from 'gsap';
 
 import CustomCursor from './components/CustomCursor.jsx';
 import CornerButtons from './components/CornerButtons.jsx';
@@ -30,6 +31,7 @@ const MeatInspectorPage = lazy(() => import('./pages/MeatInspector.jsx'));
 const HealthcarePage    = lazy(() => import('./pages/Healthcare.jsx'));
 const TrailARPage       = lazy(() => import('./pages/TrailAR.jsx'));
 const MealPlannerPage   = lazy(() => import('./pages/MealPlanner.jsx'));
+const AboutPage         = lazy(() => import('./pages/About.jsx'));
 
 /* ─── Placeholder route page (for non-full projects) ─── */
 function PlaceholderPage() {
@@ -87,7 +89,7 @@ function DesktopView() {
   /* ── Close project overlay → back to landing ── */
   const handleCloseOverlay = useCallback(() => {
     setOriginRect(null);
-    navigate('/');
+    navigate(-1);
   }, [navigate]);
 
   /* ── Next project (replace so back skips intermediate) ── */
@@ -98,11 +100,20 @@ function DesktopView() {
 
   /* ── Open / close playground ── */
   const openPlayground  = useCallback(() => navigate('?pg=1'),  [navigate]);
-  const closePlayground = useCallback(() => navigate('/'),       [navigate]);
+  const closePlayground = useCallback(() => navigate(-1),       [navigate]);
 
   /* ── Suppress custom cursor when overlay is open ── */
   useEffect(() => {
     document.body.classList.toggle('overlay-open', !!activeProject);
+  }, [activeProject]);
+
+  /* ── When overlay closes via browser back, GSAP never runs its cleanup —
+        so we force-clear the blur/scale that was applied on open ── */
+  useEffect(() => {
+    if (!activeProject) {
+      gsap.killTweensOf('.portfolio-world');
+      gsap.set('.portfolio-world', { clearProps: 'filter,transform' });
+    }
   }, [activeProject]);
 
   /* ── Logo click closes whichever overlay is open ── */
@@ -207,6 +218,14 @@ function App() {
         />
         <Route path="/aurora" element={<PlaceholderPage />} />
         <Route path="/vosyn" element={<PlaceholderPage />} />
+        <Route
+          path="/about"
+          element={
+            <Suspense fallback={<div style={{ background: 'var(--bg)', minHeight: '100vh' }} />}>
+              <AboutPage />
+            </Suspense>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

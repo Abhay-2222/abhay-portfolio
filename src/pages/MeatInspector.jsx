@@ -110,7 +110,7 @@ function MeatInspector() {
         zIndex: 100,
       }}>
         <motion.button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           whileHover={{ scale: 1.03, background: 'var(--glass-bg)' }}
           whileTap={{ scale: 0.97 }}
           data-cursor-hover
@@ -599,7 +599,7 @@ function MeatInspector() {
         margin: '0 auto',
       }}>
         <motion.button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           data-cursor-hover

@@ -11,6 +11,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 /* ─── UX puns — new one each hover ─── */
 const PUNS = [
@@ -144,16 +145,14 @@ export default function CornerButtons({ onLogoClick }) {
         </div>
       </div>
 
-      {/* ── Resume — bottom right ── */}
+      {/* ── About — bottom right ── */}
       <div style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 210 }}>
-        <a
-          href="/resume.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to="/about"
           onMouseEnter={onRsEnter}
           onMouseLeave={onRsLeave}
           data-cursor-hover
-          aria-label="Open Resume"
+          aria-label="About Abhay"
           style={{
             ...PILL,
             display: 'flex',
@@ -163,9 +162,9 @@ export default function CornerButtons({ onLogoClick }) {
         >
           <div style={{ ...DOT, background: 'rgba(0,0,0,0.45)' }} />
           <span style={{ ...LABEL, color: resumeHovered ? '#0A0A0A' : 'rgba(0,0,0,0.60)' }}>
-            Resume
+            About
           </span>
-        </a>
+        </Link>
       </div>
     </motion.div>
   );

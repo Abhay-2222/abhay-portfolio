@@ -147,7 +147,7 @@ export default function TrailARPage() {
 
       {/* ── Back nav ── */}
       <motion.button
-        onClick={() => navigate('/')}
+        onClick={() => navigate(-1)}
         initial={{ opacity: 0, x: -16 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5 }}
@@ -499,7 +499,7 @@ export default function TrailARPage() {
         <div style={{ marginTop: 'var(--space-20)' }}>
           <Reveal>
             <motion.button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(-1)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               data-cursor-hover

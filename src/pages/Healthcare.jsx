@@ -157,7 +157,7 @@ function Healthcare() {
       {/* ── Back button ── */}
       <div style={{ position: 'fixed', top: 16, left: 24, zIndex: 199 }}>
         <motion.button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           whileHover={{ x: -3 }}
           data-cursor-hover
           style={{
@@ -1035,7 +1035,7 @@ function Healthcare() {
         <Reveal delay={0.1}>
           <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', paddingBottom: 'var(--space-8)' }}>
             <motion.button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(-1)}
               whileHover={{ x: -3 }}
               data-cursor-hover
               style={{
