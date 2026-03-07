@@ -1769,7 +1769,396 @@ function SidebarLayoutSection() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   PREVIEW: COMPONENTS  (web only)
+   COMPONENT LIBRARY — 5-component prototype
+   Grid overview → focused component detail page
+───────────────────────────────────────────────────────── */
+
+/* Token keys relevant to each prototype component */
+const COMPONENT_TOKENS = {
+  'Buttons': [
+    { key:'--ds-primary',   label:'Primary'       },
+    { key:'--ds-primary-h', label:'Primary hover'  },
+    { key:'--ds-primary-l', label:'Primary subtle' },
+    { key:'--ds-border',    label:'Border'         },
+    { key:'--ds-shadow-sm', label:'Shadow sm'      },
+    { key:'--ds-font-body', label:'Body font'      },
+  ],
+  'Text Fields': [
+    { key:'--ds-border',      label:'Border'      },
+    { key:'--ds-primary',     label:'Focus ring'  },
+    { key:'--ds-bg',          label:'Background'  },
+    { key:'--ds-bg-subtle',   label:'Disabled bg' },
+    { key:'--ds-fg',          label:'Text'        },
+    { key:'--ds-text-muted',  label:'Placeholder' },
+  ],
+  'Cards': [
+    { key:'--ds-bg-elevated', label:'Surface'    },
+    { key:'--ds-border',      label:'Border'     },
+    { key:'--ds-shadow-sm',   label:'Shadow sm'  },
+    { key:'--ds-shadow-md',   label:'Shadow md'  },
+    { key:'--ds-primary',     label:'Accent'     },
+    { key:'--ds-fg',          label:'Title text' },
+  ],
+  'Badges, Tags & Chips': [
+    { key:'--ds-primary',   label:'Info text' },
+    { key:'--ds-primary-l', label:'Info bg'   },
+    { key:'--ds-border',    label:'Tag border' },
+    { key:'--ds-fg',        label:'Tag text'  },
+  ],
+  'Data Table': [
+    { key:'--ds-bg-subtle',   label:'Row hover'    },
+    { key:'--ds-primary-l',   label:'Selected row' },
+    { key:'--ds-border',      label:'Row dividers' },
+    { key:'--ds-bg-elevated', label:'Header bg'    },
+    { key:'--ds-fg',          label:'Cell text'    },
+    { key:'--ds-text-muted',  label:'Header text'  },
+  ],
+};
+
+/* ── Mini preview components for grid cards ── */
+function ButtonsMini() {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:8, width:'100%' }}>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+        <div style={{ padding:'5px 12px', borderRadius:'var(--ds-radius)', background:'var(--ds-primary)', color:'#fff', fontSize:11, fontWeight:600, fontFamily:'var(--ds-font-body)' }}>Primary</div>
+        <div style={{ padding:'5px 12px', borderRadius:'var(--ds-radius)', border:'1.5px solid var(--ds-border)', color:'var(--ds-fg)', fontSize:11, fontFamily:'var(--ds-font-body)' }}>Ghost</div>
+        <div style={{ padding:'5px 12px', borderRadius:'var(--ds-radius)', background:'var(--ds-primary)', color:'#fff', fontSize:11, opacity:0.32, fontFamily:'var(--ds-font-body)' }}>Disabled</div>
+      </div>
+      <div style={{ display:'flex', gap:6 }}>
+        <div style={{ padding:'5px 12px', borderRadius:'var(--ds-radius)', background:'var(--ds-primary-l)', color:'var(--ds-primary)', fontSize:11, fontWeight:500, fontFamily:'var(--ds-font-body)' }}>Secondary</div>
+        <div style={{ padding:'5px 12px', borderRadius:'var(--ds-radius)', border:'1.5px solid #fca5a5', color:'#dc2626', fontSize:11, fontFamily:'var(--ds-font-body)' }}>Danger</div>
+      </div>
+    </div>
+  );
+}
+
+function TextFieldsMini() {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:9, width:'100%' }}>
+      <div>
+        <div style={{ fontSize:10, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', fontWeight:500, marginBottom:4 }}>Email address</div>
+        <div style={{ padding:'6px 10px', borderRadius:'var(--ds-radius)', border:'2px solid var(--ds-primary)', background:'var(--ds-bg)', fontSize:11, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', boxShadow:'0 0 0 3px var(--ds-primary-l)' }}>user@example.com</div>
+      </div>
+      <div>
+        <div style={{ fontSize:10, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', fontWeight:500, marginBottom:4 }}>Password</div>
+        <div style={{ padding:'6px 10px', borderRadius:'var(--ds-radius)', border:'1.5px solid #fca5a5', background:'var(--ds-bg)', fontSize:11, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)' }}>Min 8 characters</div>
+        <div style={{ fontSize:10, color:'#dc2626', marginTop:3 }}>⚠ Password too short</div>
+      </div>
+    </div>
+  );
+}
+
+function CardsMini() {
+  return (
+    <div style={{ display:'flex', gap:8, width:'100%' }}>
+      {[
+        { accent:'var(--ds-primary)', title:'Feature', sub:'Gradient image header, primary fill.' },
+        { accent:'var(--ds-primary-l)', title:'Profile', sub:'Avatar and stat row.' },
+      ].map((c,i) => (
+        <div key={i} style={{ flex:1, borderRadius:'var(--ds-radius-lg)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', overflow:'hidden', boxShadow:'var(--ds-shadow-sm)' }}>
+          <div style={{ height:32, background:c.accent }}/>
+          <div style={{ padding:'8px 10px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-display)', marginBottom:3 }}>{c.title}</div>
+            <div style={{ fontSize:9.5, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.5 }}>{c.sub}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BadgesMini() {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:8, width:'100%' }}>
+      <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+        {[['Success','#dcfce7','#166534'],['Warning','#fef9c3','#854d0e'],['Error','#fee2e2','#991b1b']].map(([l,bg,fg]) => (
+          <span key={l} style={{ padding:'3px 9px', borderRadius:'9999px', background:bg, color:fg, fontSize:10, fontWeight:600, fontFamily:'var(--ds-font-body)' }}>{l}</span>
+        ))}
+        <span style={{ padding:'3px 9px', borderRadius:'9999px', background:'var(--ds-primary-l)', color:'var(--ds-primary)', fontSize:10, fontWeight:600, fontFamily:'var(--ds-font-body)' }}>Info</span>
+      </div>
+      <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+        {['Design','React','Tokens'].map(tag => (
+          <span key={tag} style={{ padding:'3px 9px', borderRadius:'var(--ds-radius-lg)', border:'1px solid var(--ds-border)', color:'var(--ds-fg)', fontSize:10, fontFamily:'var(--ds-font-body)', display:'flex', alignItems:'center', gap:4 }}>
+            {tag} <span style={{ fontSize:9, color:'var(--ds-text-muted)' }}>×</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DataTableMini() {
+  return (
+    <div style={{ border:'1px solid var(--ds-border)', borderRadius:'var(--ds-radius)', overflow:'hidden', fontSize:10, fontFamily:'var(--ds-font-body)', width:'100%' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 70px 56px', background:'var(--ds-bg-subtle)', padding:'5px 8px', borderBottom:'1px solid var(--ds-border)' }}>
+        {['Name','Status','Role'].map(h => <span key={h} style={{ color:'var(--ds-text-muted)', fontWeight:600, fontSize:9.5 }}>{h}</span>)}
+      </div>
+      {[['Alice Tang','Active','Admin'],['Marcus B.','Inactive','Editor']].map(([n,s,r],i) => (
+        <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 70px 56px', padding:'6px 8px', borderBottom: i===0 ? '1px solid var(--ds-border)' : 'none', background: i===0 ? 'var(--ds-primary-l)' : 'transparent' }}>
+          <span style={{ color:'var(--ds-fg)', fontWeight: i===0 ? 500 : 400, fontSize:10 }}>{n}</span>
+          <span style={{ fontSize:9.5, display:'flex', alignItems:'center', gap:3, color: s==='Active' ? '#166534' : 'var(--ds-text-muted)' }}>
+            <span style={{ width:5, height:5, borderRadius:'50%', background: s==='Active' ? '#16a34a' : 'var(--ds-border)', flexShrink:0 }}/>
+            {s}
+          </span>
+          <span style={{ color:'var(--ds-text-muted)', fontSize:9.5 }}>{r}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Prototype component registry */
+const TIER_COLORS = { P1:'#16a34a', P2:'#2563eb', P3:'#9333ea' };
+
+const PROTO_COMPONENTS = [
+  { key:'Buttons',            category:'Action',    group:'Interaction & Input', tier:'P1', mini: ButtonsMini,    preview: () => <ButtonMatrix matrixRef={null}/> },
+  { key:'Text Fields',        category:'Input',     group:'Interaction & Input', tier:'P1', mini: TextFieldsMini, preview: () => <InputStates/> },
+  { key:'Cards',              category:'Content',   group:'Content & Cards',     tier:'P2', mini: CardsMini,      preview: () => <CardsSection/> },
+  { key:'Badges, Tags & Chips',category:'Taxonomy', group:'Feedback & Status',  tier:'P1', mini: BadgesMini,     preview: () => <BadgesSection/> },
+  { key:'Data Table',         category:'Data',      group:'Data & Tables',       tier:'P3', mini: DataTableMini,  preview: () => <DataTableSection/> },
+];
+
+/* Live computed token strip for the selected component */
+function ContextualTokenStrip({ componentKey, scopedVars }) {
+  const defs = COMPONENT_TOKENS[componentKey] ?? [];
+  const colorDefs = defs.filter(t => { const v = scopedVars[t.key]; return v && (v.startsWith('#') || v.startsWith('rgb') || v.startsWith('hsl')); });
+  const otherDefs = defs.filter(t => { const v = scopedVars[t.key]; return v && !v.startsWith('#') && !v.startsWith('rgb') && !v.startsWith('hsl'); });
+  if (!defs.length) return null;
+  return (
+    <div style={{ padding:'12px 16px', marginBottom:24, borderRadius:10, border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)' }}>
+      <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>
+        Tokens affecting this component
+      </div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+        {colorDefs.map(t => {
+          const val = scopedVars[t.key] ?? '';
+          return (
+            <div key={t.key} style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 9px', borderRadius:6, border:'1px solid var(--ds-border)', background:'var(--ds-bg)' }}>
+              <div style={{ width:13, height:13, borderRadius:3, background:val, border:'1px solid rgba(0,0,0,0.1)', flexShrink:0 }}/>
+              <div>
+                <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-primary)', lineHeight:1.1 }}>{t.label}</div>
+                <div style={{ fontSize:8, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginTop:1 }}>{val.length > 18 ? val.slice(0,18)+'…' : val}</div>
+              </div>
+            </div>
+          );
+        })}
+        {otherDefs.map(t => {
+          const val = scopedVars[t.key] ?? '';
+          return (
+            <div key={t.key} style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 9px', borderRadius:6, border:'1px solid var(--ds-border)', background:'var(--ds-bg)' }}>
+              <div>
+                <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-primary)', lineHeight:1.1 }}>{t.label}</div>
+                <div style={{ fontSize:8, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginTop:1 }}>{val.length > 24 ? val.slice(0,24)+'…' : val}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const DETAIL_TABS = ['Preview', 'Usage', 'Anatomy', 'A11y'];
+
+/* Focused single-component page */
+function ComponentDetailPage({ comp, tokens, scopedVars, onBack }) {
+  const [tab, setTab] = useState('Preview');
+  const doc = COMPONENT_DOCS[comp.key] ?? null;
+  return (
+    <div style={{ display:'flex', flexDirection:'column', minHeight:'100%' }}>
+
+      {/* Back + title */}
+      <div style={{ marginBottom:28 }}>
+        <button onClick={onBack} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'none', border:'none', color:'var(--ds-text-muted)', fontSize:11, fontFamily:'var(--ds-font-mono)', cursor:'pointer', padding:'0 0 14px', letterSpacing:'0.04em', transition:'color .12s' }}>
+          ← All components
+        </button>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16 }}>
+          <div>
+            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:7, opacity:0.85 }}>{comp.category}</div>
+            <h1 style={{ margin:0, fontSize:28, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.03em', lineHeight:1.15 }}>{comp.key}</h1>
+            {doc && <p style={{ margin:'9px 0 0', fontSize:13, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.75, maxWidth:560 }}>{doc.description}</p>}
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:5, flexShrink:0, marginTop:4 }}>
+            <span style={{ padding:'3px 9px', borderRadius:6, fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color: TIER_COLORS[comp.tier], border:`1px solid ${TIER_COLORS[comp.tier]}` }}>{comp.tier}</span>
+            <span style={{ fontSize:9, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)' }}>stable</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Live token strip */}
+      <ContextualTokenStrip componentKey={comp.key} scopedVars={scopedVars}/>
+
+      {/* Tab bar */}
+      <div style={{ display:'flex', borderBottom:'1px solid var(--ds-border)', marginBottom:28 }}>
+        {DETAIL_TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding:'9px 16px', fontSize:12, fontFamily:'var(--ds-font-body)',
+            background:'none', border:'none', cursor:'pointer', marginBottom:-1,
+            borderBottom: tab===t ? '2px solid var(--ds-primary)' : '2px solid transparent',
+            color: tab===t ? 'var(--ds-fg)' : 'var(--ds-text-muted)',
+            fontWeight: tab===t ? 600 : 400, transition:'color .12s',
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {tab === 'Preview' && <div>{comp.preview()}</div>}
+
+      {tab === 'Usage' && doc && (
+        <div style={{ display:'flex', flexDirection:'column', gap:24, maxWidth:600 }}>
+          {doc.usage.when?.length > 0 && (
+            <div>
+              <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', letterSpacing:'0.1em', marginBottom:10 }}>USE WHEN</div>
+              {doc.usage.when.map((s,i) => <div key={i} style={{ display:'flex', gap:10, marginBottom:8, alignItems:'flex-start' }}><span style={{ color:'var(--ds-primary)', fontSize:15, flexShrink:0, lineHeight:1.4 }}>✓</span><span style={{ fontSize:13, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', lineHeight:1.7 }}>{s}</span></div>)}
+            </div>
+          )}
+          {doc.usage.whenNot?.length > 0 && (
+            <div>
+              <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', letterSpacing:'0.1em', marginBottom:10 }}>AVOID</div>
+              {doc.usage.whenNot.map((s,i) => <div key={i} style={{ display:'flex', gap:10, marginBottom:8, alignItems:'flex-start' }}><span style={{ color:'#dc2626', fontSize:15, flexShrink:0, lineHeight:1.4 }}>✕</span><span style={{ fontSize:13, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', lineHeight:1.7 }}>{s}</span></div>)}
+            </div>
+          )}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            {doc.usage.dos?.length > 0 && (
+              <div style={{ padding:'14px', borderRadius:8, border:'1px solid #bbf7d0', background:'#f0fdf4' }}>
+                <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'#166534', letterSpacing:'0.1em', marginBottom:8 }}>DO</div>
+                {doc.usage.dos.map((s,i) => <div key={i} style={{ fontSize:12, color:'#166534', fontFamily:'var(--ds-font-body)', lineHeight:1.65, marginBottom:6 }}>↑ {s}</div>)}
+              </div>
+            )}
+            {doc.usage.donts?.length > 0 && (
+              <div style={{ padding:'14px', borderRadius:8, border:'1px solid #fecaca', background:'#fef2f2' }}>
+                <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'#991b1b', letterSpacing:'0.1em', marginBottom:8 }}>DON'T</div>
+                {doc.usage.donts.map((s,i) => <div key={i} style={{ fontSize:12, color:'#991b1b', fontFamily:'var(--ds-font-body)', lineHeight:1.65, marginBottom:6 }}>↓ {s}</div>)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === 'Anatomy' && doc && (
+        <div style={{ display:'flex', flexDirection:'column', gap:8, maxWidth:580 }}>
+          {doc.anatomy.map(a => (
+            <div key={a.label} style={{ display:'flex', gap:14, padding:'13px 15px', borderRadius:9, border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', alignItems:'flex-start' }}>
+              <span style={{ minWidth:26, height:26, borderRadius:6, background:'var(--ds-primary-l)', color:'var(--ds-primary)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontFamily:'var(--ds-font-mono)' }}>{a.label}</span>
+              <div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)' }}>{a.name}</span>
+                  {!a.required && <span style={{ fontSize:10, color:'var(--ds-text-muted)', fontStyle:'italic' }}>optional</span>}
+                </div>
+                <span style={{ fontSize:12, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.7 }}>{a.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'A11y' && doc && (
+        <div style={{ display:'flex', flexDirection:'column', gap:24, maxWidth:600 }}>
+          {doc.a11y.keyboard?.length > 0 && (
+            <div>
+              <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', letterSpacing:'0.1em', marginBottom:10 }}>KEYBOARD</div>
+              <div style={{ border:'1px solid var(--ds-border)', borderRadius:8, overflow:'hidden' }}>
+                {doc.a11y.keyboard.map((k,i) => (
+                  <div key={i} style={{ display:'flex', gap:16, padding:'10px 14px', borderBottom: i<doc.a11y.keyboard.length-1 ? '1px solid var(--ds-border)' : 'none', alignItems:'center' }}>
+                    <kbd style={{ padding:'3px 10px', borderRadius:5, border:'1px solid var(--ds-border)', background:'var(--ds-bg-subtle)', fontSize:11, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', whiteSpace:'nowrap', flexShrink:0 }}>{k.key}</kbd>
+                    <span style={{ fontSize:12, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', lineHeight:1.5 }}>{k.action}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {doc.a11y.aria?.length > 0 && (
+            <div>
+              <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', letterSpacing:'0.1em', marginBottom:10 }}>ARIA</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                {doc.a11y.aria.map((s,i) => <div key={i} style={{ fontSize:12, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)', lineHeight:1.7, paddingLeft:12, borderLeft:'2px solid var(--ds-primary)' }}>{s}</div>)}
+              </div>
+            </div>
+          )}
+          {doc.a11y.notes?.length > 0 && (
+            <div>
+              <div style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', letterSpacing:'0.1em', marginBottom:10 }}>NOTES</div>
+              {doc.a11y.notes.map((s,i) => <div key={i} style={{ fontSize:12, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.7, marginBottom:5 }}>— {s}</div>)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Grid card */
+function ComponentCard({ comp, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  const doc = COMPONENT_DOCS[comp.key] ?? null;
+  const Mini = comp.mini;
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderRadius:12,
+        border:`1px solid ${hovered ? 'var(--ds-primary)' : 'var(--ds-border)'}`,
+        background:'var(--ds-bg-elevated)',
+        padding:'16px',
+        cursor:'pointer',
+        transition:'border-color .15s, box-shadow .15s, transform .12s',
+        boxShadow: hovered ? 'var(--ds-shadow-md)' : 'var(--ds-shadow-sm)',
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        display:'flex', flexDirection:'column', gap:14,
+      }}
+    >
+      {/* Live mini preview */}
+      <div style={{ padding:'14px', borderRadius:8, background:'var(--ds-bg)', border:'1px solid var(--ds-border)', minHeight:96, display:'flex', alignItems:'center' }}>
+        <Mini/>
+      </div>
+      {/* Footer */}
+      <div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:3 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:'var(--ds-fg)', fontFamily:'var(--ds-font-body)' }}>{comp.key}</div>
+          <span style={{ fontSize:9, fontWeight:700, fontFamily:'var(--ds-font-mono)', color: TIER_COLORS[comp.tier], padding:'2px 7px', borderRadius:4, border:`1px solid ${TIER_COLORS[comp.tier]}` }}>{comp.tier}</span>
+        </div>
+        <div style={{ fontSize:10, color:'var(--ds-primary)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:5, opacity:0.8 }}>{comp.group}</div>
+        {doc && <div style={{ fontSize:11.5, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.6 }}>{doc.description.slice(0,80)}…</div>}
+        <div style={{ marginTop:10, fontSize:10, color: hovered ? 'var(--ds-primary)' : 'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)', transition:'color .12s' }}>View component →</div>
+      </div>
+    </div>
+  );
+}
+
+/* Grid overview + drill-in controller */
+function ComponentLibraryView({ tokens, scopedVars }) {
+  const [selected, setSelected] = useState(null);
+  const comp = PROTO_COMPONENTS.find(c => c.key === selected);
+  return (
+    <div style={{ minHeight:'100%' }}>
+      {!selected ? (
+        <div>
+          {/* Header */}
+          <div style={{ marginBottom:32 }}>
+            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:7, opacity:0.85 }}>Component Library</div>
+            <div style={{ fontSize:24, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.025em', lineHeight:1.2 }}>5-component preview</div>
+            <div style={{ fontSize:13, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', marginTop:9, lineHeight:1.75, maxWidth:540 }}>
+              Click any component to open its dedicated page — live preview, usage guidance, anatomy, and accessibility. Every preview reflects your current token choices in real time.
+            </div>
+          </div>
+          {/* Grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
+            {PROTO_COMPONENTS.map(c => (
+              <ComponentCard key={c.key} comp={c} onClick={() => setSelected(c.key)}/>
+            ))}
+          </div>
+        </div>
+      ) : comp ? (
+        <ComponentDetailPage comp={comp} tokens={tokens} scopedVars={scopedVars} onBack={() => setSelected(null)}/>
+      ) : null}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   PREVIEW: COMPONENTS  (web only — full scroll)
 ───────────────────────────────────────────────────────── */
 function ComponentsPreview({ tokens }) {
   const matrixRef = useRef(null);
@@ -2903,7 +3292,7 @@ export default function PreviewCanvas({ tokens, onTokenChange }) {
               </div>
             ) : (
               <div className="ds-preview" style={{ padding:'44px 52px', minHeight:'100%', ...scopedVars, background:'var(--ds-bg)' }}>
-                {activeTab==='components' && <ComponentsPreview tokens={tokens}/>}
+                {activeTab==='components' && <ComponentLibraryView tokens={tokens} scopedVars={scopedVars}/>}
                 {activeTab==='typography' && <TypographyPreview tokens={tokens} />}
                 {activeTab==='layout'     && <LayoutPreview tokens={tokens} />}
               </div>
