@@ -19,7 +19,7 @@ import gsap from 'gsap';
 import {
   computeTokens, computeAllTokens, tokensToCSSVars,
   SHAPE_RADIUS, generateTypeScale, hslToHex, hexToHsl,
-  getContrastRatio, wcagLevel, auditTokens, getAutoFix, PLATFORMS, computeVibeScore,
+  getContrastRatio, wcagLevel, auditTokens, getAutoFix, computeVibeScore,
   getColorBase,
 } from './dsEngine';
 
@@ -86,59 +86,6 @@ function buildScopedVars(tokens, mode) {
   return vars;
 }
 
-/* ─────────────────────────────────────────────────────────
-   DEVICE FRAME
-───────────────────────────────────────────────────────── */
-function DeviceFrame({ platform, children }) {
-  if (platform === 'web' || platform === 'system' || !platform) {
-    return <>{children}</>;
-  }
-  const isIOS = platform === 'ios';
-  return (
-    <div style={{ display:'flex',flexDirection:'column',alignItems:'center',padding:'0 0 24px' }}>
-      <div style={{
-        width: isIOS ? 375 : 360,
-        borderRadius: isIOS ? 46 : 30,
-        border:'7px solid #1c1c1e',
-        background:'#1c1c1e',
-        boxShadow:'0 30px 80px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.08)',
-        overflow:'hidden',
-        position:'relative',
-      }}>
-        {/* Status bar */}
-        {isIOS ? (
-          <div style={{ height:44,background:'var(--ds-bg)',display:'flex',alignItems:'flex-end',justifyContent:'space-between',padding:'0 20px 8px',position:'relative' }}>
-            <div style={{ position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:120,height:30,background:'#1c1c1e',borderRadius:'0 0 18px 18px' }}/>
-            <span style={{ fontSize:11,fontWeight:600,fontFamily:'"Geist Sans",system-ui',color:'var(--ds-fg)',zIndex:1 }}>9:41</span>
-            <div style={{ display:'flex',gap:4,zIndex:1 }}>
-              {['▋▋▋','WiFi','🔋'].map((x,i) => <span key={i} style={{ fontSize:9,color:'var(--ds-fg)' }}>{i===0?'▋▋▋':i===1?'☁':''}</span>)}
-            </div>
-          </div>
-        ) : (
-          <div style={{ height:28,background:'var(--ds-bg)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-            <div style={{ width:10,height:10,borderRadius:'50%',background:'#1c1c1e',border:'1px solid rgba(255,255,255,0.1)' }}/>
-          </div>
-        )}
-        {/* Content */}
-        <div style={{ maxHeight:650,overflowY:'auto',background:'var(--ds-bg)' }}>
-          {children}
-        </div>
-        {/* Home indicator / nav */}
-        {isIOS ? (
-          <div style={{ height:32,background:'var(--ds-bg)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-            <div style={{ width:128,height:4,borderRadius:2,background:'rgba(0,0,0,0.15)' }}/>
-          </div>
-        ) : (
-          <div style={{ height:40,background:'var(--ds-bg)',borderTop:'1px solid var(--ds-border)',display:'flex',alignItems:'center',justifyContent:'space-around',padding:'0 24px' }}>
-            {['←','○','□'].map(icon => (
-              <div key={icon} style={{ width:28,height:28,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'var(--ds-fg)',opacity:0.5 }}>{icon}</div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 /* ─────────────────────────────────────────────────────────
    DS PRIMITIVES  (all use --ds-* vars)
@@ -2324,21 +2271,7 @@ function LayoutPreview({ tokens }) {
    PREVIEW: WCAG AUDIT
 ───────────────────────────────────────────────────────── */
 function AuditPreview({ tokens, mode, onTokenChange }) {
-  // Run audit on requestIdleCallback so it never blocks paint (Task 10.3)
-  const [issues, setIssues] = useState(() => auditTokens(tokens, mode));
-  useEffect(() => {
-    let id;
-    const run = () => { setIssues(auditTokens(tokens, mode)); };
-    if (typeof requestIdleCallback !== 'undefined') {
-      id = requestIdleCallback(run, { timeout: 400 });
-    } else {
-      id = setTimeout(run, 0);
-    }
-    return () => {
-      if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(id);
-      else clearTimeout(id);
-    };
-  }, [tokens, mode]);
+  const issues = useMemo(() => auditTokens(tokens, mode), [tokens, mode]);
 
   const errors   = issues.filter(i=>i.level==='error');
   const warnings = issues.filter(i=>i.level==='warning');
@@ -2362,7 +2295,6 @@ function AuditPreview({ tokens, mode, onTokenChange }) {
   const bg   = semantic['color.background.base']  ?? (mode==='dark' ? hslToHex(_auditBH,Math.min(_auditSat*0.14,11),8) : '#ffffff');
   const prim = semantic['color.action.primary']   ?? (mode==='dark' ? (p[400]??'#60a5fa') : (p[500]??'#4f46e5'));
   const fg   = semantic['color.text.primary']     ?? (mode==='dark' ? '#f2efe9' : (p[900]??'#111111'));
-  const plat = PLATFORMS[tokens.platform??'web'];
 
   const matrixRows = [
     { label:'Primary vs White',  hex1:prim,  hex2:'#ffffff' },
@@ -2394,7 +2326,7 @@ function AuditPreview({ tokens, mode, onTokenChange }) {
             {score>=80?'Looking good!':score>=60?'A few things to fix':'Needs attention'}
           </div>
           <div style={{ fontSize:12,fontFamily:'var(--ds-font-body)',color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b',opacity:0.75,marginTop:2 }}>
-            {passes.length} passed · {warnings.length} warnings · {errors.length} errors · Platform: {plat.label}
+            {passes.length} passed · {warnings.length} warnings · {errors.length} errors
           </div>
         </div>
       </div>
@@ -2706,11 +2638,8 @@ export default function PreviewCanvas({ tokens, onTokenChange }) {
   const [mode, setMode]           = useState('light');
 
   const scopedVars = useMemo(() => buildScopedVars(tokens, mode), [tokens, mode]);
-  const platform   = tokens.platform ?? 'web';
-  const plat       = PLATFORMS[platform];
   // Memoize vibe score
   const vibe       = useMemo(() => computeVibeScore(tokens), [tokens.colors.swatches, tokens.shape, tokens.shadows]);
-  // Error badge count for WCAG tab (lightweight sync check — full audit runs on idle in AuditPreview)
   const auditErrorCount = useMemo(() => auditTokens(tokens, mode).filter(i => i.level === 'error').length, [tokens, mode]);
 
   // ── Task 8.1 — Token Change Cascade Animation ──

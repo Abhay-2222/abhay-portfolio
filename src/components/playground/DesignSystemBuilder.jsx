@@ -9,7 +9,6 @@ import PreviewCanvas from './PreviewCanvas';
 import ExportModal from './ExportModal';
 import VersionCompare from './VersionCompare';
 import SplashScreen from './SplashScreen';
-import { extractPaletteFromColor } from './brandImport';
 import {
   FONT_CATEGORIES, DISPLAY_FONTS, BODY_FONTS, MONO_FONTS,
   PRESETS, PRESET_KEYS,
@@ -17,10 +16,10 @@ import {
   loadGoogleFont,
   regenerateTokens, applyPreset,
   computeTokens,
-  hexToHsl, generateHarmoniousSwatch,
+  generateHarmoniousSwatch,
   exportCSS, exportTailwind, exportDesignTokensJSON, exportReactComponents,
   encodeTokensToURL, decodeTokensFromURL,
-  computeVibeScore, generateSystemName,
+  generateSystemName,
   generateEvolution,
 } from './dsEngine';
 
@@ -104,42 +103,42 @@ function Section({ title, locked, onLockToggle, children, defaultOpen=true }) {
     <div role="region" aria-label={title} style={{
       borderRadius:10, overflow:'hidden',
       border:`1px solid ${locked ? P.accentBorder : P.border}`,
-      background: locked ? 'rgba(200,96,42,0.04)' : P.bgCard,
+      background: locked ? 'rgba(200,96,42,0.03)' : P.bgCard,
       boxShadow: locked ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
       transition:'border .2s,background .2s,box-shadow .2s',
     }}>
-      <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 12px' }}>
-        <button
-          className="ds-btn"
-          onClick={onLockToggle}
-          aria-label={locked ? `Unlock ${title}` : `Lock ${title}`}
-          aria-pressed={locked}
-          style={{
-            width:22,height:22,borderRadius:5,
-            border:`1px solid ${locked ? P.accentBorder : P.border}`,
-            flexShrink:0,
-            background: locked ? P.accent : 'transparent',
-            color: locked ? '#fff' : P.textDim,
-            fontSize:11,cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            transition:'all .15s',
-          }}>
-          {locked ? '⊠' : '⊡'}
-        </button>
+      <div style={{ display:'flex',alignItems:'center',gap:8,padding:'9px 12px' }}>
         <button
           className="ds-btn"
           onClick={() => setOpen(o=>!o)}
           aria-expanded={open}
           style={{
             flex:1,background:'transparent',border:'none',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:0,
+            display:'flex',alignItems:'center',gap:7,
+            padding:0, textAlign:'left',
           }}>
+          <motion.span animate={{ rotate:open?90:0 }} transition={{ duration:.15 }}
+            style={{ fontSize:8,color:P.textDim,display:'inline-block',flexShrink:0 }}>▶</motion.span>
           <span style={{ fontSize:12,fontWeight:600,color:locked?P.accent:P.text,letterSpacing:'0.01em',fontFamily:'"Geist Sans",system-ui',transition:'color .2s' }}>
             {title}
           </span>
-          <motion.span animate={{ rotate:open?180:0 }} transition={{ duration:.15 }}
-            style={{ fontSize:10,color:P.textDim }}>▾</motion.span>
+        </button>
+        <button
+          className="ds-btn"
+          onClick={onLockToggle}
+          aria-label={locked ? `Unlock ${title}` : `Lock ${title}`}
+          aria-pressed={locked}
+          style={{
+            padding:'2px 9px',borderRadius:20,flexShrink:0,
+            border:`1px solid ${locked ? P.accent : P.borderStrong}`,
+            background: locked ? P.accent : 'transparent',
+            color: locked ? '#fff' : P.textDim,
+            fontSize:9,cursor:'pointer',
+            fontFamily:'"Geist Mono",monospace',
+            letterSpacing:'0.05em',
+            transition:'all .15s',
+          }}>
+          {locked ? '⊗ locked' : 'lock'}
         </button>
       </div>
 
@@ -431,18 +430,11 @@ export default function DesignSystemBuilder() {
     value:v, label: v===1.618 ? 'φ' : String(v),
   }));
 
-  // ── System naming ──
+  // ── System naming (used in exports) ──
   const autoName = useMemo(() => generateSystemName(tokens), [tokens.colors.swatches?.[0]?.hex, tokens.shape, tokens.shadows]);
-  const [systemName,    setSystemName]    = useState(() => tokens.systemName ?? autoName);
-  const [editingName,   setEditingName]   = useState(false);
-  const [nameDraft,     setNameDraft]     = useState('');
-  // Keep systemName in tokens so it exports correctly
   useEffect(() => {
-    setTokens(p => ({ ...p, systemName }));
-  }, [systemName]);
-
-  // ── Vibe score ──
-  const vibe = useMemo(() => computeVibeScore(tokens), [tokens.colors.swatches, tokens.shape, tokens.shadows, tokens.typography?.scale]);
+    setTokens(p => ({ ...p, systemName: autoName }));
+  }, [autoName]);
 
   // ── Version history (Task 7.1) ──
   const [versions, setVersions]       = useState(() => {
@@ -526,22 +518,6 @@ export default function DesignSystemBuilder() {
     setShowEvolution(true);
   }, [tokens]);
 
-  // ── Brand import state (Task 5.2) ──
-  const [brandHex,    setBrandHex]    = useState('#c8602a');
-  const [brandPreview,setBrandPreview]= useState(null);
-  const applyBrandColor = useCallback(() => {
-    if (!locks.colors) {
-      // Set first swatch to the brand color, keep others
-      setTokens(prev => {
-        const swatches = (prev.colors?.swatches ?? []).map((s, i) =>
-          i === 0 ? { ...s, hex: brandHex } : s
-        );
-        return { ...prev, colors: { swatches: swatches.length ? swatches : [{ hex: brandHex, locked: false }] } };
-      });
-    }
-    const { h, s, l } = hexToHsl(brandHex);
-    setBrandPreview({ h, s, l });
-  }, [brandHex, locks]);
 
 
   return (
@@ -579,55 +555,10 @@ export default function DesignSystemBuilder() {
         {/* ── Single unified scroll area ── */}
         <div className="ds-panel-scroll" style={{ flex:1, overflowY:'auto', minHeight:0, padding:'16px 12px 0', display: isMobileLayout && mobileTab !== 'controls' ? 'none' : 'block' }}>
 
-          {/* System name */}
-          <div style={{ marginBottom:16 }}>
-            {editingName ? (
-              <input autoFocus value={nameDraft}
-                onChange={e => setNameDraft(e.target.value)}
-                onBlur={() => { if (nameDraft.trim()) setSystemName(nameDraft.trim()); setEditingName(false); }}
-                onKeyDown={e => { if (e.key==='Enter') { if (nameDraft.trim()) setSystemName(nameDraft.trim()); setEditingName(false); } if (e.key==='Escape') setEditingName(false); }}
-                style={{ width:'100%', background:'transparent', border:'none', borderBottom:`1.5px solid ${P.accent}`, color:P.text, fontSize:15, fontWeight:700, fontFamily:'"Geist Sans",system-ui', outline:'none', padding:'2px 0', boxSizing:'border-box' }}/>
-            ) : (
-              <button onClick={() => { setNameDraft(systemName); setEditingName(true); }}
-                style={{ background:'none', border:'none', color:P.text, fontSize:15, fontWeight:700, fontFamily:'"Geist Sans",system-ui', cursor:'text', padding:0, textAlign:'left', width:'100%' }}>
-                {systemName}
-              </button>
-            )}
-          </div>
 
-          {/* Brand Color */}
-          <div style={{ marginBottom:16 }}>
-            <div style={{ fontSize:10, color:P.textMuted, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', marginBottom:8 }}>BRAND COLOR</div>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <div style={{ position:'relative', flexShrink:0 }}>
-                <div style={{ width:34, height:34, borderRadius:8, background:brandHex, border:`1px solid ${P.border}`, overflow:'hidden', cursor:'pointer', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
-                  <input type="color" value={brandHex}
-                    onChange={e => { setBrandHex(e.target.value); setBrandPreview(null); }}
-                    style={{ opacity:0, position:'absolute', inset:0, width:'100%', height:'100%', cursor:'pointer' }}/>
-                </div>
-              </div>
-              <input className="ds-input" value={brandHex}
-                onChange={e => { const v=e.target.value; setBrandHex(v.startsWith('#')?v:'#'+v); setBrandPreview(null); }}
-                maxLength={7}
-                style={{ flex:1, padding:'7px 10px', borderRadius:8, border:`1px solid ${P.border}`, background:P.bgCard, color:P.text, fontFamily:'"Geist Mono",monospace', fontSize:12, outline:'none', boxShadow:'0 1px 3px rgba(0,0,0,0.06)' }}/>
-              <button className="ds-btn" onClick={applyBrandColor}
-                style={{ padding:'7px 12px', borderRadius:8, border:`1px solid ${P.accentBorder}`, background:P.accentSoft, color:P.accent, fontSize:11, cursor:'pointer', fontFamily:'"Geist Sans",system-ui', fontWeight:600, flexShrink:0 }}>
-                Apply
-              </button>
-            </div>
-            {brandPreview && (
-              <motion.div initial={{ opacity:0, y:3 }} animate={{ opacity:1, y:0 }}
-                style={{ display:'flex', gap:4, marginTop:8, flexWrap:'wrap' }}>
-                {[['H', brandPreview.h+'°'],['S', brandPreview.s+'%'],['L', brandPreview.l+'%']].map(([k,v]) => (
-                  <span key={k} style={{ fontSize:10, fontFamily:'"Geist Mono",monospace', color:P.textMuted, background:P.bgCard, padding:'3px 8px', borderRadius:5, border:`1px solid ${P.border}` }}>{k} {v}</span>
-                ))}
-              </motion.div>
-            )}
-          </div>
-
-          {/* Presets */}
-          <div style={{ marginBottom:18 }}>
-            <div style={{ fontSize:10, color:P.textMuted, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', marginBottom:8 }}>PRESET</div>
+          {/* Style preset */}
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontSize:11, color:P.textDim, fontFamily:'"Geist Sans",system-ui', fontWeight:500, marginBottom:8 }}>Style preset</div>
             <div role="group" aria-label="Design presets" style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
               {PRESET_KEYS.map(key => {
                 const active=tokens.preset===key;
@@ -650,6 +581,7 @@ export default function DesignSystemBuilder() {
               })}
             </div>
           </div>
+
 
           {/* Token sections */}
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -765,13 +697,9 @@ export default function DesignSystemBuilder() {
             </button>
             <button className="ds-btn" onClick={() => { saveVersion(); setShowHistory(true); }}
               title="Save version (⌘S)"
-              style={{ padding:'8px 10px', borderRadius:8, border:`1px solid ${P.border}`, background:P.bgCard, color:P.textMuted, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', gap:4, boxShadow:'0 1px 2px rgba(0,0,0,0.06)' }}>
-              💾
-              {versions.length > 0 && <span style={{ fontSize:9, color:P.textDim }}>{versions.length}</span>}
-            </button>
-            <button className="ds-btn" onClick={() => setShowHistory(h=>!h)}
-              style={{ padding:'8px 10px', borderRadius:8, border:`1px solid ${showHistory?P.accent:P.border}`, background:showHistory?P.accentSoft:P.bgCard, color:showHistory?P.accent:P.textMuted, fontSize:11, cursor:'pointer', boxShadow:'0 1px 2px rgba(0,0,0,0.06)' }}>
-              {showHistory ? '▲' : '▼'}
+              style={{ padding:'8px 11px', borderRadius:8, border:`1px solid ${showHistory?P.accentBorder:P.border}`, background:showHistory?P.accentSoft:P.bgCard, color:showHistory?P.accent:P.textMuted, fontSize:11, cursor:'pointer', fontFamily:'"Geist Sans",system-ui', fontWeight:500, display:'flex', alignItems:'center', gap:5, flexShrink:0, boxShadow:'0 1px 2px rgba(0,0,0,0.06)' }}>
+              Save
+              {versions.length > 0 && <span style={{ fontSize:9, color:showHistory?P.accent:P.textDim, fontFamily:'"Geist Mono",monospace', background:P.bg, padding:'1px 5px', borderRadius:3, border:`1px solid ${P.border}` }}>{versions.length}</span>}
             </button>
           </div>
           <motion.button className="ds-btn" onClick={() => setShowExport(true)} whileTap={{ scale:.97 }}
