@@ -168,7 +168,7 @@ export async function generateShareCard(tokens) {
     `shadows: ${tokens.shadows}`,
     `scale: ×${tokens.typography?.scale ?? 1.333}`,
     `spacing: ${tokens.spacing?.base ?? 8}px base`,
-    `harmony: ${tokens.colors.harmony}`,
+    `colors: ${(tokens.colors?.swatches ?? []).length} swatches`,
   ];
   ctx.font = `11px "Geist Mono", monospace`;
   let pillX = RX;
@@ -198,7 +198,9 @@ export async function generateShareCard(tokens) {
   const nameW = ctx.measureText(sysName).width;
   ctx.font = `11px "Geist Sans", sans-serif`;
   ctx.fillStyle = hex2rgba(primColor, 0.85);
-  ctx.fillText(`${tokens.colors.harmony} · h${tokens.colors.baseHue}° · sat${tokens.colors.saturation}%`, PAL_X + nameW + 16, 84);
+  const swatches = tokens.colors?.swatches ?? [];
+  const swatchLabel = swatches.length > 0 ? `${swatches.length} swatches · ${swatches[0].hex}` : 'custom palette';
+  ctx.fillText(swatchLabel, PAL_X + nameW + 16, 84);
 
   // ── Top accent bar ──
   const barGrad = ctx.createLinearGradient(0, 0, W, 0);

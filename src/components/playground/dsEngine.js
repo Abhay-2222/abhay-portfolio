@@ -25,6 +25,39 @@ export function hexToRgb(hex) {
   return { r, g, b };
 }
 
+export function hexToHsl(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const rn = r/255, gn = g/255, bn = b/255;
+  const max = Math.max(rn,gn,bn), min = Math.min(rn,gn,bn);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === rn)      h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6;
+    else if (max === gn) h = ((bn - rn) / d + 2) / 6;
+    else                 h = ((rn - gn) / d + 4) / 6;
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/** Generate a harmonious hex using golden-angle hue spacing */
+export function generateHarmoniousSwatch(index) {
+  const hue = Math.round((index * 137.508 + Math.random() * 30) % 360);
+  const sat = 55 + Math.floor(Math.random() * 25);
+  return hslToHex(hue, sat, 48);
+}
+
+/** Extract {baseHue, saturation} from tokens — works with both old and new color formats */
+export function getColorBase(tokens) {
+  const c = tokens?.colors;
+  if (c?.swatches?.[0]?.hex) {
+    const { h, s } = hexToHsl(c.swatches[0].hex);
+    return { baseHue: h, saturation: s };
+  }
+  return { baseHue: c?.baseHue ?? 220, saturation: c?.saturation ?? 70 };
+}
+
 export function getLuminance(hex) {
   const { r, g, b } = hexToRgb(hex);
   const lin = c => { const v = c/255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
@@ -174,14 +207,14 @@ export const PLATFORM_KEYS = Object.keys(PLATFORMS);
 ══════════════════════════════════════════════════════════ */
 
 export const PRESETS = {
-  minimal:    { label:'Minimal',    colors:{ baseHue:220, saturation:18, harmony:'mono',          count:1 }, typography:{ display:'DM Sans',          body:'DM Sans',        mono:'DM Mono',        scale:1.25,  baseSize:16 }, spacing:{ base:8, scale:'linear'    }, shape:'soft',        shadows:'flat'    },
-  corporate:  { label:'Corporate',  colors:{ baseHue:214, saturation:75, harmony:'analogous',      count:2 }, typography:{ display:'Plus Jakarta Sans', body:'Plus Jakarta Sans',mono:'IBM Plex Mono',  scale:1.25,  baseSize:16 }, spacing:{ base:8, scale:'linear'    }, shape:'rounded',     shadows:'soft'    },
-  playful:    { label:'Playful',    colors:{ baseHue:340, saturation:90, harmony:'triadic',         count:4 }, typography:{ display:'Fraunces',         body:'Nunito',         mono:'Space Mono',     scale:1.414, baseSize:16 }, spacing:{ base:8, scale:'fibonacci' }, shape:'veryRounded', shadows:'hard'    },
-  editorial:  { label:'Editorial',  colors:{ baseHue:30,  saturation:14, harmony:'mono',           count:1 }, typography:{ display:'Cormorant Garamond',body:'Work Sans',       mono:'DM Mono',        scale:1.618, baseSize:18 }, spacing:{ base:8, scale:'linear'    }, shape:'sharp',       shadows:'flat'    },
-  brutalist:  { label:'Brutalist',  colors:{ baseHue:48,  saturation:100,harmony:'complementary',  count:2 }, typography:{ display:'Space Grotesk',    body:'Space Grotesk',  mono:'Space Mono',     scale:1.333, baseSize:16 }, spacing:{ base:4, scale:'linear'    }, shape:'sharp',       shadows:'hard'    },
-  glass:      { label:'Glass',      colors:{ baseHue:200, saturation:60, harmony:'analogous',      count:3 }, typography:{ display:'Cabinet Grotesk',  body:'Outfit',         mono:'Fira Code',      scale:1.333, baseSize:16 }, spacing:{ base:8, scale:'linear'    }, shape:'veryRounded', shadows:'soft'    },
-  editorial2: { label:'Ink',        colors:{ baseHue:0,   saturation:0,  harmony:'mono',           count:1 }, typography:{ display:'Libre Baskerville',body:'Lato',           mono:'Courier Prime',  scale:1.414, baseSize:17 }, spacing:{ base:8, scale:'linear'    }, shape:'soft',        shadows:'layered' },
-  neon:       { label:'Neon',       colors:{ baseHue:280, saturation:100,harmony:'split',          count:3 }, typography:{ display:'Syne',             body:'Manrope',        mono:'Share Tech Mono',scale:1.333, baseSize:16 }, spacing:{ base:8, scale:'fibonacci' }, shape:'pill',        shadows:'hard'    },
+  minimal:    { label:'Minimal',    colors:{ swatches:[{ hex:'#3b5bdb',locked:false },{ hex:'#868e96',locked:false }] }, typography:{ display:'DM Sans',          body:'DM Sans',        mono:'DM Mono',        scale:1.25,  baseSize:16 }, spacing:{ base:8, scale:'linear'    }, shape:'soft',        shadows:'flat'    },
+  corporate:  { label:'Corporate',  colors:{ swatches:[{ hex:'#1971c2',locked:false },{ hex:'#2f9e44',locked:false },{ hex:'#5c7cfa',locked:false }] }, typography:{ display:'Plus Jakarta Sans', body:'Plus Jakarta Sans',mono:'IBM Plex Mono',  scale:1.25,  baseSize:16 }, spacing:{ base:8, scale:'linear'    }, shape:'rounded',     shadows:'soft'    },
+  playful:    { label:'Playful',    colors:{ swatches:[{ hex:'#e64980',locked:false },{ hex:'#f76707',locked:false },{ hex:'#74c417',locked:false },{ hex:'#7950f2',locked:false }] }, typography:{ display:'Fraunces',         body:'Nunito',         mono:'Space Mono',     scale:1.414, baseSize:16 }, spacing:{ base:8, scale:'fibonacci' }, shape:'veryRounded', shadows:'hard'    },
+  editorial:  { label:'Editorial',  colors:{ swatches:[{ hex:'#212529',locked:false },{ hex:'#c9956a',locked:false }] }, typography:{ display:'Cormorant Garamond',body:'Work Sans',       mono:'DM Mono',        scale:1.618, baseSize:18 }, spacing:{ base:8, scale:'linear'    }, shape:'sharp',       shadows:'flat'    },
+  brutalist:  { label:'Brutalist',  colors:{ swatches:[{ hex:'#f08c00',locked:false },{ hex:'#1864ab',locked:false }] }, typography:{ display:'Space Grotesk',    body:'Space Grotesk',  mono:'Space Mono',     scale:1.333, baseSize:16 }, spacing:{ base:4, scale:'linear'    }, shape:'sharp',       shadows:'hard'    },
+  glass:      { label:'Glass',      colors:{ swatches:[{ hex:'#0c8599',locked:false },{ hex:'#1864ab',locked:false },{ hex:'#5c7cfa',locked:false }] }, typography:{ display:'Cabinet Grotesk',  body:'Outfit',         mono:'Fira Code',      scale:1.333, baseSize:16 }, spacing:{ base:8, scale:'linear'    }, shape:'veryRounded', shadows:'soft'    },
+  editorial2: { label:'Ink',        colors:{ swatches:[{ hex:'#212529',locked:false },{ hex:'#495057',locked:false }] }, typography:{ display:'Libre Baskerville',body:'Lato',           mono:'Courier Prime',  scale:1.414, baseSize:17 }, spacing:{ base:8, scale:'linear'    }, shape:'soft',        shadows:'layered' },
+  neon:       { label:'Neon',       colors:{ swatches:[{ hex:'#ae3ec9',locked:false },{ hex:'#2563eb',locked:false },{ hex:'#0ca678',locked:false }] }, typography:{ display:'Syne',             body:'Manrope',        mono:'Share Tech Mono',scale:1.333, baseSize:16 }, spacing:{ base:8, scale:'fibonacci' }, shape:'pill',        shadows:'hard'    },
 };
 
 export const PRESET_KEYS = Object.keys(PRESETS);
@@ -232,11 +265,21 @@ export function getShadowDefs(style) {
 
 export function computeTokens(tokens) {
   const { colors, typography, spacing, shape, shadows } = tokens;
-  const hues = getHarmonyHues(colors.baseHue, colors.harmony, colors.count);
-  const palette = hues.map((hue, i) => {
-    const slotHue = (colors.colorSlotHues?.[i] != null) ? colors.colorSlotHues[i] : hue;
-    return generateShades(slotHue, colors.saturation);
-  });
+  let palette;
+  if (colors?.swatches?.length) {
+    // New swatch-based format: each swatch.hex drives its own shade ramp
+    palette = colors.swatches.map(s => {
+      const { h, s: sat } = hexToHsl(s?.hex ?? '#4f46e5');
+      return generateShades(h, sat);
+    });
+  } else {
+    // Legacy HSL format — backward compat for old share URLs
+    const hues = getHarmonyHues(colors?.baseHue ?? 220, colors?.harmony ?? 'complementary', colors?.count ?? 3);
+    palette = hues.map((hue, i) => {
+      const slotHue = (colors?.colorSlotHues?.[i] != null) ? colors.colorSlotHues[i] : hue;
+      return generateShades(slotHue, colors?.saturation ?? 70);
+    });
+  }
   return {
     palette,
     typeScale:    generateTypeScale(typography.baseSize, typography.scale),
@@ -259,7 +302,8 @@ export function auditTokens(tokens, mode = 'light') {
   const p = palette[0] ?? {};
   const issues = [];
 
-  const bg   = sem['color.background.base'] ?? (mode === 'dark' ? hslToHex(tokens.colors.baseHue, Math.min(tokens.colors.saturation*0.14,11), 8) : '#ffffff');
+  const { baseHue: _bh, saturation: _bs } = getColorBase(tokens);
+  const bg   = sem['color.background.base'] ?? (mode === 'dark' ? hslToHex(_bh, Math.min(_bs*0.14,11), 8) : '#ffffff');
   const fg   = sem['color.text.primary']    ?? (mode === 'dark' ? '#f2efe9' : (p[900] ?? '#111111'));
   const prim = sem['color.action.primary']  ?? (mode === 'dark' ? (p[400] ?? '#60a5fa') : (p[500] ?? '#4f46e5'));
   const surf = sem['color.background.surface'] ?? bg;
@@ -425,24 +469,23 @@ export function getAutoFix(autoFixKey, tokens) {
   const t = tokens;
   switch (autoFixKey) {
     case 'fix_text_contrast':
-      // Boost saturation toward high-contrast and ensure dark palette used
-      return { colors: { ...t.colors, saturation: Math.min(95, t.colors.saturation + 15) } };
-
     case 'fix_primary_contrast':
-      // Lower saturation slightly so primary-500 has more luminance contrast
-      return { colors: { ...t.colors, saturation: Math.max(40, t.colors.saturation - 20) } };
-
     case 'fix_button_contrast':
-      // Ensure primary button uses deeper shade — nudge saturation up for better contrast
-      return { colors: { ...t.colors, saturation: Math.min(95, t.colors.saturation + 10) } };
-
     case 'fix_placeholder':
-      // Increase saturation so semantic muted colors derive at higher contrast
-      return { colors: { ...t.colors, saturation: Math.min(80, t.colors.saturation + 12) } };
-
-    case 'fix_focus_ring':
-      // Set a higher-saturation color so focus ring derives at higher contrast
-      return { colors: { ...t.colors, saturation: Math.min(95, t.colors.saturation + 20) } };
+    case 'fix_focus_ring': {
+      // Nudge first swatch toward higher saturation for better contrast
+      if (t.colors?.swatches?.length) {
+        const newSwatches = t.colors.swatches.map((s, i) => {
+          if (i !== 0) return s;
+          const { h, s: sat, l } = hexToHsl(s.hex);
+          const delta = autoFixKey === 'fix_primary_contrast' ? -15 : 12;
+          return { ...s, hex: hslToHex(h, Math.max(20, Math.min(95, sat + delta)), l) };
+        });
+        return { colors: { ...t.colors, swatches: newSwatches } };
+      }
+      const delta = autoFixKey === 'fix_primary_contrast' ? -20 : autoFixKey === 'fix_text_contrast' ? 15 : 12;
+      return { colors: { ...t.colors, saturation: Math.max(20, Math.min(95, (t.colors.saturation??70) + delta)) } };
+    }
 
     case 'fix_type_scale':
       // Increase base size to make smallest step ≥ 12px
@@ -471,13 +514,15 @@ export function regenerateTokens(tokens, locks) {
   const next = { ...tokens };
 
   if (!locks.colors) {
-    next.colors = { baseHue:rInt(0,359), saturation:rInt(40,95), harmony:pick(ALL_HARMONY), count:rInt(1,4), colorSlotHues:{} };
-  } else {
-    // Regenerate unlocked individual slots
-    const hues = getHarmonyHues(tokens.colors.baseHue, tokens.colors.harmony, tokens.colors.count);
-    const newSlotHues = { ...tokens.colors.colorSlotHues };
-    hues.forEach((_,i) => { if (!locks.colorSlots?.[i]) delete newSlotHues[i]; });
-    next.colors = { ...tokens.colors, colorSlotHues: newSlotHues };
+    // Regenerate unlocked swatches; keep locked ones
+    const swatches = (tokens.colors?.swatches ?? []).map((s, i) =>
+      s.locked ? s : { hex: generateHarmoniousSwatch(i), locked: false }
+    );
+    // If no swatches yet (legacy format or empty), generate 4 fresh ones
+    next.colors = {
+      swatches: swatches.length ? swatches :
+        Array.from({ length: 4 }, (_, i) => ({ hex: generateHarmoniousSwatch(i), locked: false }))
+    };
   }
 
   if (!locks.typography) {
@@ -496,7 +541,7 @@ export function applyPreset(presetKey, current, locks) {
   const preset = PRESETS[presetKey];
   if (!preset) return current;
   const next = { ...current, preset: presetKey };
-  if (!locks.colors)     next.colors     = { ...preset.colors, colorSlotHues:{} };
+  if (!locks.colors)     next.colors     = { swatches: preset.colors.swatches ?? Array.from({length:4},(_,i) => ({ hex: generateHarmoniousSwatch(i), locked: false })) };
   if (!locks.typography) next.typography = { ...preset.typography };
   if (!locks.spacing)    next.spacing    = { ...preset.spacing };
   if (!locks.shape)      next.shape      = preset.shape;
@@ -813,7 +858,7 @@ export function computeSemanticTokens(tokens, mode = 'light') {
   const p2 = palette[1] ?? palette[0] ?? {};  // secondary
 
   const dark = mode === 'dark';
-  const { baseHue, saturation } = tokens.colors;
+  const { baseHue, saturation } = getColorBase(tokens);
   const s = Math.min(saturation * 0.14, 11);
 
   // Surface
@@ -1276,8 +1321,11 @@ const VIBE_NAMES = {
 };
 
 export function computeVibeScore(tokens) {
+  // Normalise: inject baseHue/saturation/harmony so legacy VIBE_RULES still work
+  const { baseHue, saturation } = getColorBase(tokens);
+  const tNorm = { ...tokens, colors: { ...tokens.colors, baseHue, saturation, harmony: tokens.colors?.harmony ?? 'complementary' } };
   for (const rule of VIBE_RULES) {
-    if (rule.match(tokens)) {
+    if (rule.match(tNorm)) {
       return { label: rule.label, emojis: rule.emojis, tagline: rule.tagline };
     }
   }
@@ -1287,8 +1335,8 @@ export function computeVibeScore(tokens) {
 export function generateSystemName(tokens) {
   const vibe = computeVibeScore(tokens);
   const pool = VIBE_NAMES[vibe.label] ?? VIBE_NAMES.Minimal;
-  // Deterministic pick based on hue so it doesn't change every render
-  const idx = Math.round(tokens.colors.baseHue / 72) % pool.length;
+  const { baseHue } = getColorBase(tokens);
+  const idx = Math.round(baseHue / 72) % pool.length;
   return pool[idx] + ' DS';
 }
 
@@ -1325,25 +1373,38 @@ export function generateEvolution(tokens) {
   // v1 — Original
   const v1 = clone(tokens);
 
-  // v2 — Evolved: shift saturation / shape / harmony based on current preset
+  // v2 — Evolved: shift saturation / shape based on current preset
   const v2 = clone(tokens);
   const shift = PRESET_PERSONALITY_SHIFTS[tokens.preset] ?? { saturation: +20, shape: 'rounded', harmony: 'analogous', shadows: 'soft' };
-  v2.colors = {
-    ...v2.colors,
-    saturation: Math.min(100, Math.max(10, v2.colors.saturation + shift.saturation)),
-    harmony:    shift.harmony,
-  };
+  if (v2.colors?.swatches?.length) {
+    // Shift each swatch hue by a fixed offset
+    v2.colors = { swatches: v2.colors.swatches.map(s => {
+      const { h, s: sat } = hexToHsl(s.hex);
+      return { hex: hslToHex(h, Math.min(100,Math.max(10,sat+shift.saturation)), 48), locked: s.locked };
+    })};
+  } else {
+    v2.colors = { ...v2.colors, saturation: Math.min(100, Math.max(10, (v2.colors.saturation??70) + shift.saturation)), harmony: shift.harmony };
+  }
   v2.shape   = shift.shape;
   v2.shadows = shift.shadows;
 
-  // v3 — Contrasted: complementary hue + different harmony + opposite shape/shadow
+  // v3 — Contrasted: complementary palette
   const v3 = clone(tokens);
-  v3.colors = {
-    ...v3.colors,
-    baseHue: (tokens.colors.baseHue + 150 + Math.round(tokens.colors.saturation / 10)) % 360,
-    harmony: HARMONY_CYCLE[tokens.colors.harmony] ?? 'complementary',
-    saturation: Math.max(20, Math.min(90, tokens.colors.saturation + (tokens.colors.saturation > 50 ? -15 : +15))),
-  };
+  const { baseHue: bh, saturation: bs } = getColorBase(tokens);
+  if (v3.colors?.swatches?.length) {
+    v3.colors = { swatches: v3.colors.swatches.map(s => {
+      const { h, s: sat } = hexToHsl(s.hex);
+      const newH = (h + 150) % 360;
+      return { hex: hslToHex(newH, Math.max(20,Math.min(90,sat+(sat>50?-15:15))), 48), locked: s.locked };
+    })};
+  } else {
+    v3.colors = {
+      ...v3.colors,
+      baseHue: (bh + 150 + Math.round(bs / 10)) % 360,
+      harmony: HARMONY_CYCLE[tokens.colors?.harmony] ?? 'complementary',
+      saturation: Math.max(20, Math.min(90, bs + (bs > 50 ? -15 : +15))),
+    };
+  }
   const SHAPE_CONTRAST = { sharp:'pill', soft:'sharp', rounded:'pill', veryRounded:'sharp', pill:'sharp' };
   const SHADOW_CONTRAST = { flat:'hard', soft:'layered', hard:'flat', layered:'soft' };
   v3.shape   = SHAPE_CONTRAST[tokens.shape]   ?? 'rounded';

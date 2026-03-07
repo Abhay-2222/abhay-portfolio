@@ -8,17 +8,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PreviewCanvas from './PreviewCanvas';
 import ExportModal from './ExportModal';
 import VersionCompare from './VersionCompare';
+import SplashScreen from './SplashScreen';
 import { extractPaletteFromColor } from './brandImport';
 import {
   FONT_CATEGORIES, DISPLAY_FONTS, BODY_FONTS, MONO_FONTS,
-  PRESETS, PRESET_KEYS, PLATFORMS, PLATFORM_KEYS,
+  PRESETS, PRESET_KEYS,
   SHAPE_RADIUS, SCALE_NAMES,
-  loadGoogleFont, getHarmonyHues, generateShades,
+  loadGoogleFont,
   regenerateTokens, applyPreset,
   computeTokens,
+  hexToHsl, generateHarmoniousSwatch,
   exportCSS, exportTailwind, exportDesignTokensJSON, exportReactComponents,
   encodeTokensToURL, decodeTokensFromURL,
-  parseAIPromptToTokenAdjustments,
   computeVibeScore, generateSystemName,
   generateEvolution,
 } from './dsEngine';
@@ -27,7 +28,14 @@ import {
    DEFAULTS
 ───────────────────────────────────────────────────────── */
 const DEFAULT_TOKENS = {
-  colors:     { baseHue:220, saturation:70, harmony:'complementary', count:3, colorSlotHues:{} },
+  colors: {
+    swatches: [
+      { hex: '#4f46e5', locked: false },
+      { hex: '#e54f4f', locked: false },
+      { hex: '#22c55e', locked: false },
+      { hex: '#f59e0b', locked: false },
+    ]
+  },
   typography: { display:'Playfair Display', body:'DM Sans', mono:'DM Mono', scale:1.333, baseSize:16 },
   spacing:    { base:8, scale:'linear' },
   shape:      'soft',
@@ -35,24 +43,24 @@ const DEFAULT_TOKENS = {
   preset:     'minimal',
   platform:   'web',
 };
-const DEFAULT_LOCKS = { colors:false, colorSlots:{}, typography:false, spacing:false, shape:false, shadows:false };
+const DEFAULT_LOCKS = { colors:false, typography:false, spacing:false, shape:false, shadows:false };
 
 /* ─────────────────────────────────────────────────────────
-   DESIGN TOKENS — dark sidebar
+   DESIGN TOKENS — light sidebar
 ───────────────────────────────────────────────────────── */
 const P = {
-  bg:           '#191919',
-  bgCard:       '#232323',
-  bgHover:      '#2a2a2a',
-  border:       '#303030',
-  borderStrong: '#484848',
-  text:         '#e2e2e2',
-  textMuted:    '#888888',
-  textDim:      '#555555',
+  bg:           '#ffffff',
+  bgCard:       '#f7f6f5',
+  bgHover:      '#f0efee',
+  border:       'rgba(0,0,0,0.07)',
+  borderStrong: 'rgba(0,0,0,0.13)',
+  text:         '#1a1814',
+  textMuted:    'rgba(0,0,0,0.45)',
+  textDim:      'rgba(0,0,0,0.28)',
   accent:       '#c8602a',
-  accentSoft:   'rgba(200,96,42,0.14)',
-  accentBorder: 'rgba(200,96,42,0.45)',
-  focusRing:    '0 0 0 2px #191919, 0 0 0 4px #c8602a',
+  accentSoft:   'rgba(200,96,42,0.08)',
+  accentBorder: 'rgba(200,96,42,0.30)',
+  focusRing:    '0 0 0 2px #fff, 0 0 0 4px #c8602a',
 };
 
 /* ─────────────────────────────────────────────────────────
@@ -64,14 +72,14 @@ function injectStyles() {
   styleInjected = true;
   const s = document.createElement('style');
   s.textContent = `
-    .ds-panel-scroll { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent; }
+    .ds-panel-scroll { scrollbar-width:thin; scrollbar-color:rgba(0,0,0,0.1) transparent; }
     .ds-panel-scroll::-webkit-scrollbar { width:4px; }
     .ds-panel-scroll::-webkit-scrollbar-track { background:transparent; }
-    .ds-panel-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
-    .ds-panel-scroll::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.2); }
-    .ds-btn:focus-visible { outline:none; box-shadow:0 0 0 2px #191919, 0 0 0 4px #c8602a; }
-    .ds-input:focus { outline:none; box-shadow:0 0 0 2px #191919, 0 0 0 4px #c8602a; }
-    .ds-select:focus { outline:none; box-shadow:0 0 0 2px #191919, 0 0 0 4px #c8602a; }
+    .ds-panel-scroll::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.1); border-radius:4px; }
+    .ds-panel-scroll::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.18); }
+    .ds-btn:focus-visible { outline:none; box-shadow:0 0 0 2px #fff, 0 0 0 4px #c8602a; }
+    .ds-input:focus { outline:none; box-shadow:0 0 0 2px #fff, 0 0 0 4px #c8602a; }
+    .ds-select:focus { outline:none; box-shadow:0 0 0 2px #fff, 0 0 0 4px #c8602a; }
     @keyframes pc-spin { to { transform: rotate(360deg); } }
   `;
   document.head.appendChild(s);
@@ -97,7 +105,7 @@ function Section({ title, locked, onLockToggle, children, defaultOpen=true }) {
       borderRadius:10, overflow:'hidden',
       border:`1px solid ${locked ? P.accentBorder : P.border}`,
       background: locked ? 'rgba(200,96,42,0.04)' : P.bgCard,
-      boxShadow: locked ? 'none' : '0 1px 3px rgba(0,0,0,0.35)',
+      boxShadow: locked ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
       transition:'border .2s,background .2s,box-shadow .2s',
     }}>
       <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 12px' }}>
@@ -289,73 +297,80 @@ function ExportBtn({ label, icon, onCopy }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   COLOR SECTION
+   COOLORS COLOR SECTION
 ───────────────────────────────────────────────────────── */
-const HARMONY_OPTS = [
-  { value:'mono',          label:'Mono'    },
-  { value:'analogous',     label:'Analog'  },
-  { value:'complementary', label:'Comp'    },
-  { value:'triadic',       label:'Triadic' },
-  { value:'split',         label:'Split'   },
-];
+function CoolorsColorSection({ colors, onChange }) {
+  const swatches = colors?.swatches ?? [];
+  const colorRefs = swatches.map(() => null); // populated inline
 
-function ColorSection({ colors, locks, onChange, onLockSlot }) {
-  const hues = getHarmonyHues(colors.baseHue, colors.harmony, colors.count);
+  const updateSwatch = (i, patch) => {
+    const next = swatches.map((s, idx) => idx === i ? { ...s, ...patch } : s);
+    onChange({ swatches: next });
+  };
+
+  const removeSwatch = (i) => {
+    if (swatches.length <= 2) return;
+    onChange({ swatches: swatches.filter((_, idx) => idx !== i) });
+  };
+
+  const addSwatch = () => {
+    if (swatches.length >= 6) return;
+    onChange({ swatches: [...swatches, { hex: generateHarmoniousSwatch(swatches.length), locked: false }] });
+  };
+
   return (
-    <>
-      <SliderRow id="hue-slider" label="Hue" min={0} max={359} value={colors.baseHue} onChange={v=>onChange({ baseHue:v })} unit="°"
-        gradient="linear-gradient(to right,hsl(0,70%,50%),hsl(60,70%,50%),hsl(120,70%,50%),hsl(180,70%,50%),hsl(240,70%,50%),hsl(300,70%,50%),hsl(360,70%,50%))"
-      />
-      <SliderRow id="sat-slider" label="Sat" min={0} max={100} value={colors.saturation} onChange={v=>onChange({ saturation:v })} unit="%"
-        gradient={`linear-gradient(to right,hsl(${colors.baseHue},0%,50%),hsl(${colors.baseHue},100%,50%))`}
-      />
-      <div>
-        <span id="harmony-label" style={{ fontSize:9,color:P.textMuted,fontFamily:'"Geist Mono",monospace',display:'block',marginBottom:5,letterSpacing:'0.04em' }}>HARMONY</span>
-        <PillGroup aria-label="Colour harmony mode" options={HARMONY_OPTS} value={colors.harmony} onChange={v=>onChange({ harmony:v })} />
-      </div>
-      <SliderRow id="count-slider" label="Count" min={1} max={6} step={1} value={colors.count} onChange={v=>onChange({ count:v })} />
-
-      {/* Per-slot palette strips */}
-      <div>
-        <span style={{ fontSize:9,color:P.textMuted,fontFamily:'"Geist Mono",monospace',display:'block',marginBottom:6,letterSpacing:'0.04em' }}>PALETTE</span>
-        <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
-          {hues.map((hue,i) => {
-            const slotHue = (colors.colorSlotHues?.[i] != null) ? colors.colorSlotHues[i] : hue;
-            const shades  = generateShades(slotHue, colors.saturation);
-            const locked  = colors.colorSlotHues?.[i] != null && (locks.colorSlots?.[i] ?? false);
-            return (
-              <div key={i} style={{ display:'flex',flexDirection:'column',gap:3,alignItems:'center' }}>
-                {/* 5-shade strip */}
-                <div style={{ display:'flex',borderRadius:4,overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.15)' }}>
-                  {[200,400,500,700,900].map(k => (
-                    <div key={k} style={{ width:14,height:32,background:shades[k] }} title={`${k}: ${shades[k]}`}/>
-                  ))}
-                </div>
-                {/* Slot lock */}
+    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+      {swatches.map((s, i) => {
+        const pickerRef = { current: null };
+        return (
+          <div key={i} style={{ display:'flex', flexDirection:'column', gap:5 }}>
+            {/* Color block — click to open native picker */}
+            <div style={{ position:'relative', borderRadius:8, overflow:'hidden', height:52, cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.2)' }}>
+              <div style={{ position:'absolute', inset:0, background:s.hex }}
+                onClick={() => { const inp = document.getElementById(`swatch-input-${i}`); inp?.click(); }} />
+              <input id={`swatch-input-${i}`} type="color" value={s.hex}
+                onChange={e => updateSwatch(i, { hex: e.target.value })}
+                style={{ opacity:0, position:'absolute', inset:0, width:'100%', height:'100%', cursor:'pointer' }} />
+            </div>
+            {/* Hex label + actions */}
+            <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <input
+                value={s.hex}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(v)) updateSwatch(i, { hex: v.length === 7 ? v : s.hex });
+                }}
+                maxLength={7}
+                className="ds-input"
+                style={{ flex:1, fontSize:11, fontFamily:'"Geist Mono",monospace', color:P.text, background:P.bg, border:`1px solid ${P.border}`, borderRadius:5, padding:'4px 8px', outline:'none' }}
+                aria-label={`Swatch ${i+1} hex`}
+              />
+              <button className="ds-btn"
+                onClick={() => updateSwatch(i, { locked: !s.locked })}
+                aria-label={s.locked ? `Unlock swatch ${i+1}` : `Lock swatch ${i+1}`}
+                aria-pressed={s.locked}
+                style={{ width:26, height:26, borderRadius:5, border:`1px solid ${s.locked ? P.accentBorder : P.border}`, background: s.locked ? P.accentSoft : 'transparent', color: s.locked ? P.accent : P.textDim, fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {s.locked ? '🔒' : '🔓'}
+              </button>
+              {swatches.length > 2 && (
                 <button className="ds-btn"
-                  onClick={() => onLockSlot(i, !locks.colorSlots?.[i])}
-                  aria-label={`${locks.colorSlots?.[i]?'Unlock':'Lock'} colour ${i+1}`}
-                  aria-pressed={locks.colorSlots?.[i]??false}
-                  style={{
-                    width:22,height:14,borderRadius:3,border:'none',cursor:'pointer',
-                    background: locks.colorSlots?.[i] ? P.accent : P.border,
-                    fontSize:7,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',
-                  }}>
-                  {locks.colorSlots?.[i] ? '🔒' : '○'}
+                  onClick={() => removeSwatch(i)}
+                  aria-label={`Remove swatch ${i+1}`}
+                  style={{ width:26, height:26, borderRadius:5, border:`1px solid ${P.border}`, background:'transparent', color:P.textDim, fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all .1s' }}>
+                  ✕
                 </button>
-                {/* Hue nudge */}
-                <input type="range" min={0} max={359} value={slotHue}
-                  aria-label={`Hue for colour slot ${i+1}`}
-                  onChange={e => onChange({ colorSlotHues:{ ...colors.colorSlotHues, [i]:+e.target.value } })}
-                  className="ds-input"
-                  style={{ width:70,height:3,accentColor:`hsl(${slotHue},70%,55%)`,cursor:'pointer' }}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      {swatches.length < 6 && (
+        <button className="ds-btn" onClick={addSwatch}
+          style={{ padding:'7px', borderRadius:7, border:`1px dashed ${P.border}`, background:'transparent', color:P.textMuted, fontSize:11, cursor:'pointer', fontFamily:'"Geist Sans",system-ui', display:'flex', alignItems:'center', justifyContent:'center', gap:5, transition:'all .12s' }}>
+          + Add color
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -384,6 +399,7 @@ export default function DesignSystemBuilder() {
   const [tokens, setTokens]   = useState(initial.current);
   const [locks,  setLocks]    = useState(DEFAULT_LOCKS);
   const [showExport, setShowExport] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('ds-splash-seen'));
 
   // Load fonts on change
   useEffect(() => {
@@ -392,16 +408,13 @@ export default function DesignSystemBuilder() {
     loadGoogleFont(tokens.typography.mono);
   }, [tokens.typography.display, tokens.typography.body, tokens.typography.mono]);
 
-  // Keyboard shortcuts (Task 8.4)
+  // Keyboard shortcuts
   const regenerate = useCallback(() => setTokens(p => regenerateTokens(p, locks)), [locks]);
-  const aiInputRef = useRef(null);
 
-  const toggleLock     = key => setLocks(p => ({ ...p, [key]:!p[key] }));
-  const toggleSlotLock = (i,v) => setLocks(p => ({ ...p, colorSlots:{ ...p.colorSlots, [i]:v } }));
-  const patchColors    = patch => setTokens(p => ({ ...p, colors:{ ...p.colors, ...patch } }));
+  const toggleLock  = key => setLocks(p => ({ ...p, [key]:!p[key] }));
+  const patchColors = patch => setTokens(p => ({ ...p, colors:{ ...p.colors, ...patch } }));
   const patchTypo      = patch => setTokens(p => ({ ...p, typography:{ ...p.typography, ...patch } }));
   const patchSpacing   = patch => setTokens(p => ({ ...p, spacing:{ ...p.spacing, ...patch } }));
-  const setPlatform    = val   => setTokens(p => ({ ...p, platform:val }));
 
   const copyCSS   = () => navigator.clipboard.writeText(exportCSS(tokens)).catch(()=>{});
   const copyTW    = () => navigator.clipboard.writeText(exportTailwind(tokens)).catch(()=>{});
@@ -418,10 +431,8 @@ export default function DesignSystemBuilder() {
     value:v, label: v===1.618 ? 'φ' : String(v),
   }));
 
-  const currentPlatform = tokens.platform ?? 'web';
-
-  // ── System naming (Task 8.6) ──
-  const autoName = useMemo(() => generateSystemName(tokens), [tokens.colors.baseHue, tokens.colors.saturation, tokens.shape, tokens.shadows]);
+  // ── System naming ──
+  const autoName = useMemo(() => generateSystemName(tokens), [tokens.colors.swatches?.[0]?.hex, tokens.shape, tokens.shadows]);
   const [systemName,    setSystemName]    = useState(() => tokens.systemName ?? autoName);
   const [editingName,   setEditingName]   = useState(false);
   const [nameDraft,     setNameDraft]     = useState('');
@@ -430,8 +441,8 @@ export default function DesignSystemBuilder() {
     setTokens(p => ({ ...p, systemName }));
   }, [systemName]);
 
-  // ── Vibe score (Task 8.3) ──
-  const vibe = useMemo(() => computeVibeScore(tokens), [tokens.colors.saturation, tokens.shape, tokens.shadows, tokens.colors.harmony, tokens.typography?.scale, tokens.colors.baseHue]);
+  // ── Vibe score ──
+  const vibe = useMemo(() => computeVibeScore(tokens), [tokens.colors.swatches, tokens.shape, tokens.shadows, tokens.typography?.scale]);
 
   // ── Version history (Task 7.1) ──
   const [versions, setVersions]       = useState(() => {
@@ -462,10 +473,8 @@ export default function DesignSystemBuilder() {
       if (e.code === 'Space' && !inInput) { e.preventDefault(); regenerate(); return; }
       if (inInput) return;
       // L — lock all, U — unlock all
-      if (e.key === 'l' || e.key === 'L') setLocks({ colors:true, colorSlots:{}, typography:true, spacing:true, shape:true, shadows:true });
+      if (e.key === 'l' || e.key === 'L') setLocks({ colors:true, typography:true, spacing:true, shape:true, shadows:true });
       if (e.key === 'u' || e.key === 'U') setLocks(DEFAULT_LOCKS);
-      // ⌘K — focus AI prompt
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); aiInputRef.current?.focus(); }
       // ⌘E — open export modal
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') { e.preventDefault(); setShowExport(true); }
       // ⌘C — copy CSS
@@ -521,69 +530,23 @@ export default function DesignSystemBuilder() {
   const [brandHex,    setBrandHex]    = useState('#c8602a');
   const [brandPreview,setBrandPreview]= useState(null);
   const applyBrandColor = useCallback(() => {
-    const adj = extractPaletteFromColor(brandHex);
-    if (!adj) return;
-    setTokens(prev => {
-      const next = { ...prev };
-      if (!locks.colors)   next.colors   = { ...prev.colors,   ...adj.colors   };
-      if (!locks.shape)    next.shape    = adj.shape;
-      if (!locks.shadows)  next.shadows  = adj.shadows;
-      return next;
-    });
-    setBrandPreview(adj._extracted);
+    if (!locks.colors) {
+      // Set first swatch to the brand color, keep others
+      setTokens(prev => {
+        const swatches = (prev.colors?.swatches ?? []).map((s, i) =>
+          i === 0 ? { ...s, hex: brandHex } : s
+        );
+        return { ...prev, colors: { swatches: swatches.length ? swatches : [{ hex: brandHex, locked: false }] } };
+      });
+    }
+    const { h, s, l } = hexToHsl(brandHex);
+    setBrandPreview({ h, s, l });
   }, [brandHex, locks]);
 
-  // ── AI prompt state (Task 4.1 + 4.3) ──
-  const [aiPrompt,    setAiPrompt]    = useState('');
-  const [aiLoading,   setAiLoading]   = useState(false);
-  const [aiToast,     setAiToast]     = useState('');
-  const [promptHistory, setPromptHistory] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('ds-ai-history') ?? '[]'); } catch { return []; }
-  });
-
-  const AI_PLACEHOLDERS = [
-    'Make this feel like Stripe…',
-    'Accessible enterprise dashboard',
-    'Dark, editorial, luxury brand',
-    'Playful fintech for Gen Z',
-    'Minimal SaaS, lots of white space',
-    'Bold brutalist startup',
-  ];
-  const [aiPlaceholderIdx, setAiPlaceholderIdx] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setAiPlaceholderIdx(i => (i+1) % AI_PLACEHOLDERS.length), 3000);
-    return () => clearInterval(id);
-  }, []);
-
-  const applyAIPrompt = useCallback((text) => {
-    if (!text.trim()) return;
-    setAiLoading(true);
-    // Simulate brief processing delay for UX
-    setTimeout(() => {
-      const adj = parseAIPromptToTokenAdjustments(text);
-      setTokens(prev => {
-        const next = { ...prev };
-        if (adj.colors     && !locks.colors)     next.colors     = { ...prev.colors,     ...adj.colors     };
-        if (adj.typography && !locks.typography)  next.typography = { ...prev.typography, ...adj.typography };
-        if (adj.spacing    && !locks.spacing)     next.spacing    = { ...prev.spacing,    ...adj.spacing    };
-        if (adj.shape      && !locks.shape)       next.shape      = adj.shape;
-        if (adj.shadows    && !locks.shadows)     next.shadows    = adj.shadows;
-        return next;
-      });
-      // Save to history (deduplicated, max 5)
-      setPromptHistory(prev => {
-        const next = [text, ...prev.filter(h => h !== text)].slice(0,5);
-        try { sessionStorage.setItem('ds-ai-history', JSON.stringify(next)); } catch {}
-        return next;
-      });
-      setAiLoading(false);
-      setAiToast('✦ System updated');
-      setTimeout(() => setAiToast(''), 2200);
-    }, 320);
-  }, [locks, setTokens]);
 
   return (
     <div style={{ width:'100%',height:'100%',display:'flex',flexDirection: isMobileLayout ? 'column' : 'row',overflow:'hidden',background:P.bg,fontFamily:'"Geist Sans",system-ui,sans-serif' }}>
+      {showSplash && <SplashScreen onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); }} />}
       {/* Mobile tab switcher */}
       {isMobileLayout && (
         <div style={{ display:'flex',borderBottom:`1px solid ${P.border}`,flexShrink:0,background:P.bg }}>
@@ -616,88 +579,20 @@ export default function DesignSystemBuilder() {
         {/* ── Single unified scroll area ── */}
         <div className="ds-panel-scroll" style={{ flex:1, overflowY:'auto', minHeight:0, padding:'16px 12px 0', display: isMobileLayout && mobileTab !== 'controls' ? 'none' : 'block' }}>
 
-          {/* System name + vibe */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginBottom:18 }}>
+          {/* System name */}
+          <div style={{ marginBottom:16 }}>
             {editingName ? (
               <input autoFocus value={nameDraft}
                 onChange={e => setNameDraft(e.target.value)}
                 onBlur={() => { if (nameDraft.trim()) setSystemName(nameDraft.trim()); setEditingName(false); }}
                 onKeyDown={e => { if (e.key==='Enter') { if (nameDraft.trim()) setSystemName(nameDraft.trim()); setEditingName(false); } if (e.key==='Escape') setEditingName(false); }}
-                style={{ flex:1, background:'transparent', border:'none', borderBottom:`1.5px solid ${P.accent}`, color:P.text, fontSize:15, fontWeight:700, fontFamily:'"Geist Sans",system-ui', outline:'none', padding:'2px 0' }}/>
+                style={{ width:'100%', background:'transparent', border:'none', borderBottom:`1.5px solid ${P.accent}`, color:P.text, fontSize:15, fontWeight:700, fontFamily:'"Geist Sans",system-ui', outline:'none', padding:'2px 0', boxSizing:'border-box' }}/>
             ) : (
               <button onClick={() => { setNameDraft(systemName); setEditingName(true); }}
-                style={{ background:'none', border:'none', color:P.text, fontSize:15, fontWeight:700, fontFamily:'"Geist Sans",system-ui', cursor:'text', padding:0, textAlign:'left', flex:1 }}>
+                style={{ background:'none', border:'none', color:P.text, fontSize:15, fontWeight:700, fontFamily:'"Geist Sans",system-ui', cursor:'text', padding:0, textAlign:'left', width:'100%' }}>
                 {systemName}
               </button>
             )}
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2, flexShrink:0 }}>
-              <span style={{ fontSize:13 }}>{vibe.emojis.join('')}</span>
-              <span style={{ fontSize:9, color:P.textMuted, fontFamily:'"Geist Mono",monospace', whiteSpace:'nowrap' }}>{vibe.label}</span>
-            </div>
-          </div>
-
-          {/* AI Prompt */}
-          <div role="search" aria-label="AI design prompt" style={{ marginBottom:16, position:'relative' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:7 }}>
-              <span style={{ fontSize:10, color:P.accent, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', fontWeight:700 }}>✦ AI</span>
-              <span style={{ fontSize:10, color:P.textDim, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em' }}>PROMPT</span>
-            </div>
-            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <input
-                ref={aiInputRef}
-                id="ds-ai-prompt"
-                aria-label="Describe your design system aesthetic"
-                className="ds-input"
-                value={aiPrompt}
-                onChange={e => setAiPrompt(e.target.value)}
-                onKeyDown={e => { if (e.key==='Enter') { e.preventDefault(); applyAIPrompt(aiPrompt); setAiPrompt(''); } }}
-                placeholder={AI_PLACEHOLDERS[aiPlaceholderIdx]}
-                style={{
-                  flex:1, padding:'8px 11px', borderRadius:8, fontSize:12,
-                  border:`1px solid ${aiLoading ? P.accent : P.border}`,
-                  background:P.bgCard, color:P.text,
-                  fontFamily:'"Geist Sans",system-ui',
-                  boxShadow: aiLoading ? `0 0 0 2px ${P.accentBorder}` : '0 1px 3px rgba(0,0,0,0.06)',
-                  transition:'border-color .2s, box-shadow .2s',
-                  outline:'none',
-                }}
-              />
-              <button className="ds-btn"
-                onClick={() => { applyAIPrompt(aiPrompt); setAiPrompt(''); }}
-                disabled={aiLoading || !aiPrompt.trim()}
-                aria-label="Apply AI prompt"
-                style={{
-                  width:34, height:34, borderRadius:8, border:`1px solid ${P.border}`,
-                  background:P.accentSoft, color:P.accent, cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0,
-                  opacity:!aiPrompt.trim() ? 0.4 : 1, transition:'opacity .15s',
-                  boxShadow:'0 1px 3px rgba(0,0,0,0.06)',
-                }}>
-                {aiLoading ? <span style={{ display:'inline-block', width:11, height:11, border:`1.5px solid ${P.accent}`, borderTopColor:'transparent', borderRadius:'50%', animation:'pc-spin 0.6s linear infinite' }}/> : '✦'}
-              </button>
-            </div>
-            {promptHistory.length > 0 && (
-              <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:7 }}>
-                {promptHistory.map((h, i) => (
-                  <motion.button key={h}
-                    initial={{ opacity:0, x:-6 }} animate={{ opacity:1, x:0 }}
-                    transition={{ delay: i*0.05 }}
-                    onClick={() => applyAIPrompt(h)}
-                    className="ds-btn"
-                    style={{ padding:'3px 9px', borderRadius:5, border:`1px solid ${P.border}`, background:P.bgCard, color:P.textMuted, fontSize:10, cursor:'pointer', fontFamily:'"Geist Sans",system-ui', whiteSpace:'nowrap', maxWidth:130, overflow:'hidden', textOverflow:'ellipsis', boxShadow:'0 1px 2px rgba(0,0,0,0.04)' }}>
-                    {h.length > 20 ? h.slice(0,20)+'…' : h}
-                  </motion.button>
-                ))}
-              </div>
-            )}
-            <AnimatePresence>
-              {aiToast && (
-                <motion.div initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                  style={{ position:'absolute', bottom:-22, left:0, fontSize:11, color:P.accent, fontFamily:'"Geist Sans",system-ui', fontWeight:500, zIndex:10 }}>
-                  {aiToast}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {/* Brand Color */}
@@ -730,36 +625,6 @@ export default function DesignSystemBuilder() {
             )}
           </div>
 
-          {/* Platform */}
-          <div style={{ marginBottom:16 }}>
-            <div style={{ fontSize:10, color:P.textMuted, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', marginBottom:8 }}>PLATFORM</div>
-            <div role="group" aria-label="Target platform" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
-              {PLATFORM_KEYS.map(key => {
-                const plat=PLATFORMS[key], active=currentPlatform===key;
-                return (
-                  <button key={key} className="ds-btn"
-                    onClick={() => setPlatform(key)}
-                    aria-pressed={active}
-                    title={plat.description}
-                    style={{
-                      padding:'8px 10px', borderRadius:8, cursor:'pointer',
-                      border:`1px solid ${active?P.accent:P.border}`,
-                      background:active?P.accentSoft:P.bgCard,
-                      color:active?P.accent:P.text,
-                      fontSize:11, fontFamily:'"Geist Sans",system-ui',
-                      fontWeight:active?600:400,
-                      display:'flex', alignItems:'center', gap:6,
-                      transition:'all .12s',
-                      boxShadow:active?'none':'0 1px 2px rgba(0,0,0,0.05)',
-                    }}>
-                    <span aria-hidden="true">{plat.icon}</span>
-                    <span>{plat.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Presets */}
           <div style={{ marginBottom:18 }}>
             <div style={{ fontSize:10, color:P.textMuted, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', marginBottom:8 }}>PRESET</div>
@@ -789,7 +654,7 @@ export default function DesignSystemBuilder() {
           {/* Token sections */}
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <Section title="Colors" locked={locks.colors} onLockToggle={() => toggleLock('colors')}>
-              <ColorSection colors={tokens.colors} locks={locks} onChange={patchColors} onLockSlot={toggleSlotLock} />
+              <CoolorsColorSection colors={tokens.colors} onChange={patchColors} />
             </Section>
 
             <Section title="Typography" locked={locks.typography} onLockToggle={() => toggleLock('typography')}>
@@ -912,7 +777,7 @@ export default function DesignSystemBuilder() {
           <motion.button className="ds-btn" onClick={() => setShowExport(true)} whileTap={{ scale:.97 }}
             aria-label="Open export modal (⌘E)"
             style={{
-              width:'100%', padding:'9px', borderRadius:8,
+              width:'100%', padding:'10px', borderRadius:8,
               border:'none', background:P.accent, color:'#fff',
               fontSize:12, cursor:'pointer',
               fontFamily:'"Geist Sans",system-ui', fontWeight:600,
@@ -920,16 +785,8 @@ export default function DesignSystemBuilder() {
               transition:'opacity .12s',
             }}>
             ↑ Export
-            <kbd style={{ fontSize:9, color:'rgba(255,255,255,0.65)', fontFamily:'"Geist Mono",monospace', background:'rgba(0,0,0,0.18)', padding:'1px 5px', borderRadius:3, border:'1px solid rgba(255,255,255,0.2)' }}>⌘E</kbd>
+            <kbd style={{ fontSize:9, color:'rgba(255,255,255,0.55)', fontFamily:'"Geist Mono",monospace', background:'rgba(0,0,0,0.15)', padding:'1px 5px', borderRadius:3, border:'1px solid rgba(255,255,255,0.18)' }}>⌘E</kbd>
           </motion.button>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:'2px 10px' }}>
-            {[['Space','Shuffle'],['L','Lock'],['U','Unlock'],['⌘K','AI'],['⌘E','Export'],['⌘S','Save']].map(([k,v]) => (
-              <span key={k} style={{ fontSize:9, color:P.textDim, fontFamily:'"Geist Mono",monospace', display:'flex', gap:3, alignItems:'center' }}>
-                <kbd style={{ background:P.bgCard, padding:'1px 4px', borderRadius:3, border:`1px solid ${P.border}`, fontSize:8 }}>{k}</kbd>
-                {v}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -1016,10 +873,10 @@ export default function DesignSystemBuilder() {
                       </div>
                       {/* Palette swatches */}
                       <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:10, overflow:'auto', flex:1 }}>
-                        {palette.slice(0, vTokens.colors.count).map((shadeMap, ci) => (
+                        {palette.slice(0, (vTokens.colors?.swatches?.length ?? 4)).map((shadeMap, ci) => (
                           <div key={ci}>
                             <div style={{ fontSize:8, color:P.textDim, fontFamily:'"Geist Mono",monospace', marginBottom:4 }}>
-                              Color {ci + 1} · H{Math.round(getHarmonyHues(vTokens.colors.baseHue, vTokens.colors.harmony, vTokens.colors.count)[ci] ?? vTokens.colors.baseHue)}°
+                              Color {ci + 1} · {vTokens.colors?.swatches?.[ci]?.hex ?? ''}
                             </div>
                             <div style={{ display:'flex', gap:2 }}>
                               {shades.map(s => (
@@ -1034,8 +891,7 @@ export default function DesignSystemBuilder() {
                           {[
                             ['Shape',   vTokens.shape],
                             ['Shadow',  vTokens.shadows],
-                            ['Harmony', vTokens.colors.harmony],
-                            ['Sat',     vTokens.colors.saturation + '%'],
+                            ['Colors',  (vTokens.colors?.swatches?.length ?? 0) + ' swatches'],
                             ['Display', vTokens.typography?.display?.split(' ')[0] ?? '—'],
                             ['Scale',   vTokens.typography?.scale ?? '—'],
                           ].map(([k, v]) => (
