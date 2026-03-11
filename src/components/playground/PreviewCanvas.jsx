@@ -2775,28 +2775,21 @@ function TypographyPreview({ tokens }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:36 }}>
 
-      {/* Header section with font metadata */}
-      <DSSection
-        staticChrome
-        category="Type System"
-        title="Typography Scale"
-        desc="A modular type scale generates harmonious heading and body sizes. Three font families cover display headings, body prose, and monospaced code — each size is a computed step in the scale."
-      >
-        <div style={{ display:'flex', gap:0, borderRadius:CHROME.radius, border:`1px solid ${CHROME.borderColor}`, overflow:'hidden' }}>
-          {[['Display', tokens.typography.display, 'Headings & titles'],['Body', tokens.typography.body, 'Prose & UI labels'],['Mono', tokens.typography.mono, 'Code & tokens']].map(([l, v, sub], i, arr) => (
-            <div key={l} style={{ flex:1, padding:'12px 16px', borderRight: i < arr.length-1 ? `1px solid ${CHROME.borderColor}` : 'none', background: i===0 ? CHROME.bgSubtle : CHROME.bgBase }}>
-              <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, letterSpacing:'0.08em', marginBottom:5 }}>{l.toUpperCase()}</div>
-              <div style={{ fontSize:13, color:CHROME.fg, fontFamily:CHROME.mono, fontWeight:600, marginBottom:3 }}>{v}</div>
-              <div style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans }}>{sub}</div>
-            </div>
-          ))}
-          <div style={{ flex:0, padding:'12px 16px', background:CHROME.bgBase, display:'flex', flexDirection:'column', justifyContent:'center', borderLeft:`1px solid ${CHROME.borderColor}`, minWidth:80 }}>
-            <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, letterSpacing:'0.08em', marginBottom:5 }}>SCALE</div>
-            <div style={{ fontSize:13, color:CHROME.accent, fontFamily:CHROME.mono, fontWeight:700 }}>×{tokens.typography.scale}</div>
-            <div style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans, marginTop:3 }}>ratio</div>
+      {/* Font metadata card */}
+      <div style={{ display:'flex', gap:0, borderRadius:CHROME.radius, border:`1px solid ${CHROME.borderColor}`, overflow:'hidden' }}>
+        {[['Display', tokens.typography.display, 'Headings & titles'],['Body', tokens.typography.body, 'Prose & UI labels'],['Mono', tokens.typography.mono, 'Code & tokens']].map(([l, v, sub], i, arr) => (
+          <div key={l} style={{ flex:1, padding:'12px 16px', borderRight: i < arr.length-1 ? `1px solid ${CHROME.borderColor}` : 'none', background: i===0 ? CHROME.bgSubtle : CHROME.bgBase }}>
+            <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, letterSpacing:'0.08em', marginBottom:5 }}>{l.toUpperCase()}</div>
+            <div style={{ fontSize:13, color:CHROME.fg, fontFamily:CHROME.mono, fontWeight:600, marginBottom:3 }}>{v}</div>
+            <div style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans }}>{sub}</div>
           </div>
+        ))}
+        <div style={{ flex:0, padding:'12px 16px', background:CHROME.bgBase, display:'flex', flexDirection:'column', justifyContent:'center', borderLeft:`1px solid ${CHROME.borderColor}`, minWidth:80 }}>
+          <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, letterSpacing:'0.08em', marginBottom:5 }}>SCALE</div>
+          <div style={{ fontSize:13, color:CHROME.accent, fontFamily:CHROME.mono, fontWeight:700 }}>×{tokens.typography.scale}</div>
+          <div style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans, marginTop:3 }}>ratio</div>
         </div>
-      </DSSection>
+      </div>
 
       {/* Type scale samples */}
       <div>
