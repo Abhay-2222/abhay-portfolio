@@ -41,10 +41,28 @@ export function hexToHsl(hex) {
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
-/** Generate a harmonious hex using golden-angle hue spacing */
-export function generateHarmoniousSwatch(index) {
-  const hue = Math.round((index * 137.508 + Math.random() * 30) % 360);
-  const sat = 55 + Math.floor(Math.random() * 25);
+/**
+ * Generate secondary/tertiary hex colors from a primary hex using color harmony theory.
+ * Returns an array of 1–3 hex colors (not including primary).
+ */
+export function generateHarmonyColors(primaryHex, harmonyMode) {
+  const { h, s, l } = hexToHsl(primaryHex);
+  const sat = Math.max(20, Math.min(s, 85));
+  switch (harmonyMode) {
+    case 'analogous':     return [hslToHex((h + 30) % 360, sat, l), hslToHex((h - 30 + 360) % 360, sat, l)];
+    case 'complementary': return [hslToHex((h + 180) % 360, sat, l)];
+    case 'triadic':       return [hslToHex((h + 120) % 360, sat, l), hslToHex((h + 240) % 360, sat, l)];
+    case 'split':         return [hslToHex((h + 150) % 360, sat, l), hslToHex((h + 210) % 360, sat, l)];
+    case 'mono':          return [hslToHex(h, Math.max(10, sat - 25), l), hslToHex(h, sat, Math.min(80, l + 18))];
+    default:              return [hslToHex((h + 180) % 360, sat, l)];
+  }
+}
+
+/** Generate a harmonious hex using golden-angle hue spacing.
+ *  baseOffset (0-360) shifts the whole palette so primary isn't always red/orange. */
+export function generateHarmoniousSwatch(index, baseOffset = 0) {
+  const hue = Math.round((baseOffset + index * 137.508 + Math.random() * 12) % 360);
+  const sat = 58 + Math.floor(Math.random() * 22);
   return hslToHex(hue, sat, 48);
 }
 
@@ -257,7 +275,7 @@ export function getShadowDefs(style) {
   switch (style) {
     case 'flat':    return { sm:'none', md:'none', lg:'none' };
     case 'soft':    return { sm:'0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.05)', md:'0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06)', lg:'0 10px 40px rgba(0,0,0,0.12),0 4px 10px rgba(0,0,0,0.08)' };
-    case 'hard':    return { sm:'2px 2px 0 rgba(0,0,0,0.85)', md:'4px 4px 0 rgba(0,0,0,0.85)', lg:'6px 6px 0 rgba(0,0,0,0.85)' };
+    case 'hard':    return { sm:'2px 2px 0 rgba(0,0,0,0.65)', md:'4px 4px 0 rgba(0,0,0,0.65)', lg:'6px 6px 0 rgba(0,0,0,0.65)' };
     case 'layered': return { sm:'0 1px 1px rgba(0,0,0,0.08),0 2px 2px rgba(0,0,0,0.06),0 4px 4px rgba(0,0,0,0.04)', md:'0 2px 2px rgba(0,0,0,0.08),0 4px 4px rgba(0,0,0,0.06),0 8px 8px rgba(0,0,0,0.04),0 16px 16px rgba(0,0,0,0.02)', lg:'0 2px 2px rgba(0,0,0,0.08),0 4px 4px rgba(0,0,0,0.06),0 8px 8px rgba(0,0,0,0.04),0 16px 16px rgba(0,0,0,0.02),0 32px 32px rgba(0,0,0,0.02)' };
     default:        return { sm:'none', md:'none', lg:'none' };
   }
@@ -268,9 +286,10 @@ export function computeTokens(tokens) {
   let palette;
   if (colors?.swatches?.length) {
     // New swatch-based format: each swatch.hex drives its own shade ramp
+    const satBoost = colors?.saturationBoost ?? 0;
     palette = colors.swatches.map(s => {
       const { h, s: sat } = hexToHsl(s?.hex ?? '#4f46e5');
-      return generateShades(h, sat);
+      return generateShades(h, Math.max(5, Math.min(100, sat + satBoost)));
     });
   } else {
     // Legacy HSL format — backward compat for old share URLs
@@ -446,6 +465,16 @@ export function auditTokens(tokens, mode = 'light') {
   else
     push('FOCUS_SHAPE', 'Interaction', 'pass', 'Border radius compatible with visible focus rings', '', null);
 
+  // ── 15. DENSITY + COMPACT TOUCH TARGET ──
+  if (tokens.density === 'compact') {
+    const DENSITY_SCALE = 0.75;
+    const btnH = Math.round((tokens.typography.baseSize + tokens.spacing.base * 2 + 3) * DENSITY_SCALE);
+    if (btnH < 44)
+      push('DENSITY_TOUCH_TARGET', 'Spacing', 'warning', `Compact density reduces buttons to ~${btnH}px — below 44px touch target`, 'Use Regular or Comfortable density for touch interfaces', 'fix_touch_target');
+    else
+      push('DENSITY_TOUCH_TARGET', 'Spacing', 'pass', `Compact density: buttons ~${btnH}px — meets 44px target`, '', null);
+  }
+
   return issues;
 }
 
@@ -462,43 +491,150 @@ const rInt  = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
 ══════════════════════════════════════════════════════════ */
 
 /**
- * Given an autoFixKey from an audit issue, return a partial tokens patch.
- * Caller merges patch into tokens state via setTokens.
+ * Given an autoFixKey from an audit issue, return an array of strategy objects.
+ * Each strategy: { label, description, apply: (tokens) => patchObject, locked? }
+ * Caller shows options UI and applies chosen strategy.
  */
 export function getAutoFix(autoFixKey, tokens) {
   const t = tokens;
+  const swatches = t.colors?.swatches ?? [];
+  const hasLockedPrimary = swatches[0]?.locked;
+
   switch (autoFixKey) {
     case 'fix_text_contrast':
-    case 'fix_primary_contrast':
-    case 'fix_button_contrast':
-    case 'fix_placeholder':
-    case 'fix_focus_ring': {
-      // Nudge first swatch toward higher saturation for better contrast
-      if (t.colors?.swatches?.length) {
-        const newSwatches = t.colors.swatches.map((s, i) => {
-          if (i !== 0) return s;
-          const { h, s: sat, l } = hexToHsl(s.hex);
-          const delta = autoFixKey === 'fix_primary_contrast' ? -15 : 12;
-          return { ...s, hex: hslToHex(h, Math.max(20, Math.min(95, sat + delta)), l) };
-        });
-        return { colors: { ...t.colors, swatches: newSwatches } };
+    case 'fix_primary_contrast': {
+      if (hasLockedPrimary) {
+        return [{ label: 'Brand color locked', description: 'Primary swatch is locked — unlock it to allow auto-fix.', apply: null, locked: true }];
       }
-      const delta = autoFixKey === 'fix_primary_contrast' ? -20 : autoFixKey === 'fix_text_contrast' ? 15 : 12;
-      return { colors: { ...t.colors, saturation: Math.max(20, Math.min(95, (t.colors.saturation??70) + delta)) } };
+      if (!swatches.length) return null;
+      const { h, s: sat, l } = hexToHsl(swatches[0].hex);
+      const darkenedL = Math.max(l - 15, 8);
+      const boostSat  = Math.min(sat + 20, 95);
+      return [
+        {
+          label: 'Darken primary',
+          description: `Lightness ${l}% → ${darkenedL}% (increases contrast)`,
+          apply: (tok) => {
+            const ns = tok.colors.swatches.map((s, i) => {
+              if (i !== 0) return s;
+              const { h: hh, s: ss } = hexToHsl(s.hex);
+              return { ...s, hex: hslToHex(hh, ss, darkenedL) };
+            });
+            return { colors: { ...tok.colors, swatches: ns } };
+          },
+        },
+        {
+          label: 'Boost saturation',
+          description: `Saturation ${sat}% → ${boostSat}% (richer color)`,
+          apply: (tok) => {
+            const ns = tok.colors.swatches.map((s, i) => {
+              if (i !== 0) return s;
+              const { h: hh, l: ll } = hexToHsl(s.hex);
+              return { ...s, hex: hslToHex(hh, boostSat, ll) };
+            });
+            return { colors: { ...tok.colors, swatches: ns } };
+          },
+        },
+      ];
+    }
+
+    case 'fix_button_contrast': {
+      if (hasLockedPrimary) {
+        return [{ label: 'Brand color locked', description: 'Primary swatch is locked — unlock to allow auto-fix.', apply: null, locked: true }];
+      }
+      if (!swatches.length) return null;
+      const { l } = hexToHsl(swatches[0].hex);
+      const darkerL = Math.max(l - 12, 8);
+      return [{
+        label: 'Darken button background',
+        description: `Primary lightness ${l}% → ${darkerL}% (improves text on button)`,
+        apply: (tok) => {
+          const ns = tok.colors.swatches.map((s, i) => {
+            if (i !== 0) return s;
+            const { h, s: sat } = hexToHsl(s.hex);
+            return { ...s, hex: hslToHex(h, sat, darkerL) };
+          });
+          return { colors: { ...tok.colors, swatches: ns } };
+        },
+      }];
+    }
+
+    case 'fix_placeholder': {
+      if (hasLockedPrimary) {
+        return [{ label: 'Brand color locked', description: 'Primary is locked — cannot auto-adjust muted text.', apply: null, locked: true }];
+      }
+      return [{
+        label: 'Darken muted text',
+        description: 'Boost primary saturation so muted text reaches 3:1',
+        apply: (tok) => {
+          if (!tok.colors?.swatches?.length) {
+            return { colors: { ...tok.colors, saturation: Math.min(95, (tok.colors.saturation ?? 70) + 12) } };
+          }
+          const ns = tok.colors.swatches.map((s, i) => {
+            if (i !== 0) return s;
+            const { h, s: sat, l } = hexToHsl(s.hex);
+            return { ...s, hex: hslToHex(h, Math.min(95, sat + 12), l) };
+          });
+          return { colors: { ...tok.colors, swatches: ns } };
+        },
+      }];
+    }
+
+    case 'fix_focus_ring': {
+      if (hasLockedPrimary) {
+        return [{ label: 'Brand color locked', description: 'Focus ring inherits locked brand color.', apply: null, locked: true }];
+      }
+      if (!swatches.length) return null;
+      const { l } = hexToHsl(swatches[0].hex);
+      const targetL = Math.max(30, Math.min(l, 45));
+      return [{
+        label: 'Adjust focus ring color',
+        description: `Set lightness to ${targetL}% for 3:1+ contrast`,
+        apply: (tok) => {
+          const ns = tok.colors.swatches.map((s, i) => {
+            if (i !== 0) return s;
+            const { h, s: sat } = hexToHsl(s.hex);
+            return { ...s, hex: hslToHex(h, sat, targetL) };
+          });
+          return { colors: { ...tok.colors, swatches: ns } };
+        },
+      }];
     }
 
     case 'fix_type_scale':
-      // Increase base size to make smallest step ≥ 12px
-      return { typography: { ...t.typography, baseSize: Math.max(16, t.typography.baseSize + 2) } };
+      return [{
+        label: 'Increase base size',
+        description: `${t.typography.baseSize}px → ${Math.max(16, t.typography.baseSize + 2)}px`,
+        apply: (tok) => ({ typography: { ...tok.typography, baseSize: Math.max(16, tok.typography.baseSize + 2) } }),
+      }];
 
     case 'fix_base_size':
-      return { typography: { ...t.typography, baseSize: 16 } };
+      return [{
+        label: 'Set to 16px',
+        description: '16px is the recommended minimum for body text',
+        apply: (tok) => ({ typography: { ...tok.typography, baseSize: 16 } }),
+      }];
 
     case 'fix_spacing':
-      return { spacing: { ...t.spacing, base: 8 } };
+      return [{
+        label: '8px base unit',
+        description: 'Ensures comfortable component density',
+        apply: (tok) => ({ spacing: { ...tok.spacing, base: 8 } }),
+      }];
 
     case 'fix_touch_target':
-      return { spacing: { ...t.spacing, base: 8 }, typography: { ...t.typography, baseSize: Math.max(16, t.typography.baseSize) } };
+      return [
+        {
+          label: 'Increase spacing',
+          description: 'Set spacing base to 8px for larger touch targets',
+          apply: (tok) => ({ spacing: { ...tok.spacing, base: 8 } }),
+        },
+        {
+          label: 'Increase font size',
+          description: `${t.typography.baseSize}px → ${Math.max(16, t.typography.baseSize + 2)}px`,
+          apply: (tok) => ({ typography: { ...tok.typography, baseSize: Math.max(16, tok.typography.baseSize + 2) } }),
+        },
+      ];
 
     default:
       return null;
@@ -514,14 +650,14 @@ export function regenerateTokens(tokens, locks) {
   const next = { ...tokens };
 
   if (!locks.colors) {
-    // Regenerate unlocked swatches; keep locked ones
+    // Random base hue each press so primary color covers the full 360° spectrum
+    const baseOffset = Math.floor(Math.random() * 360);
     const swatches = (tokens.colors?.swatches ?? []).map((s, i) =>
-      s.locked ? s : { hex: generateHarmoniousSwatch(i), locked: false }
+      s.locked ? s : { hex: generateHarmoniousSwatch(i, baseOffset), locked: false }
     );
-    // If no swatches yet (legacy format or empty), generate 4 fresh ones
     next.colors = {
       swatches: swatches.length ? swatches :
-        Array.from({ length: 4 }, (_, i) => ({ hex: generateHarmoniousSwatch(i), locked: false }))
+        Array.from({ length: 4 }, (_, i) => ({ hex: generateHarmoniousSwatch(i, baseOffset), locked: false }))
     };
   }
 
@@ -889,12 +1025,14 @@ export function computeSemanticTokens(tokens, mode = 'light') {
   const actSecondary      = dark ? (p2[400] ?? '#a78bfa') : (p2[500] ?? '#7c3aed');
   const actSecondaryHover = dark ? (p2[300] ?? '#c4b5fd') : (p2[600] ?? '#6d28d9');
 
-  // Semantic danger/success/warning — use palette roles if available, else fallbacks
-  const danger  = palette[palette.length > 2 ? 2 : 0];
-  const dangerColor  = danger?.[500] ?? FALLBACK_DANGER;
+  // Semantic danger/success/warning — custom override (Gap #9) or auto-computed
+  const customSem    = tokens.colors?.semantic ?? {};
+  const danger       = palette[palette.length > 2 ? 2 : 0];
+  const dangerColor  = customSem.error   ?? (danger?.[500] ?? FALLBACK_DANGER);
   const dangerHover  = danger?.[600] ?? hslToHex(4, 86, 40);
-  const successColor = FALLBACK_SUCCESS;
-  const warningColor = FALLBACK_WARNING;
+  const successColor = customSem.success ?? FALLBACK_SUCCESS;
+  const warningColor = customSem.warning ?? FALLBACK_WARNING;
+  const infoColor    = customSem.info    ?? (p[400] ?? '#0ea5e9');
 
   // Badges use [50]/[700] of their role
   const badgeInfo    = { bg: p[50]??'#eff6ff',   text: p[700]??'#1d4ed8'    };
@@ -931,6 +1069,7 @@ export function computeSemanticTokens(tokens, mode = 'light') {
     'color.action.dangerHover':    dangerHover,
     'color.action.success':        successColor,
     'color.action.warning':        warningColor,
+    'color.action.info':           infoColor,
     // Button
     'color.button.primaryBg':       actPrimary,
     'color.button.primaryText':     textOnBrand,
@@ -1411,4 +1550,222 @@ export function generateEvolution(tokens) {
   v3.shadows = SHADOW_CONTRAST[tokens.shadows] ?? 'soft';
 
   return [v1, v2, v3];
+}
+
+/* ══════════════════════════════════════════════════════════
+   GAP #12 + #2 — DESIGN QUALITY AUDIT
+   10 checks covering typography, color, spacing, motion
+══════════════════════════════════════════════════════════ */
+
+/**
+ * auditDesignQuality(tokens)
+ * Returns { score: 0-100, checks: [{ id, label, pass, severity, message, detail }] }
+ * Each check worth 10 points; severity weights adjust partial credit.
+ */
+export function auditDesignQuality(tokens) {
+  const { typography, spacing, colors, motion } = tokens;
+  const { typeScale, spacingSteps } = computeTokens(tokens);
+  const swatches = colors?.swatches ?? [];
+
+  const checks = [];
+
+  function push(id, label, pass, severity, message, detail = '') {
+    checks.push({ id, label, pass, severity, message, detail });
+  }
+
+  // 1. TYPE_SCALE_RATIO — ratio >= 1.2 for clear hierarchy
+  {
+    const ratio = typography.scale ?? 1.25;
+    if (ratio >= 1.2) {
+      push('TYPE_SCALE_RATIO', 'Type Scale Ratio', true, 'info',
+        `Scale ratio ${ratio} creates clear typographic hierarchy.`,
+        'A ratio of 1.2 or higher produces readable step distinctions between size levels.'
+      );
+    } else if (ratio >= 1.1) {
+      push('TYPE_SCALE_RATIO', 'Type Scale Ratio', false, 'warning',
+        `Scale ratio ${ratio} — steps are too similar (< 1.2).`,
+        'Headings and body text may not create enough visual distinction. Try 1.25 or higher.'
+      );
+    } else {
+      push('TYPE_SCALE_RATIO', 'Type Scale Ratio', false, 'error',
+        `Scale ratio ${ratio} — virtually no hierarchy (< 1.1).`,
+        'Increase scale ratio to at least 1.2 for meaningful typographic levels.'
+      );
+    }
+  }
+
+  // 2. HEADING_WEIGHT — display weight > body weight
+  {
+    const dispW = typography.displayWeight ?? 700;
+    const bodyW = typography.bodyWeight ?? 400;
+    if (dispW > bodyW) {
+      push('HEADING_WEIGHT', 'Heading vs Body Weight', true, 'info',
+        `Display weight ${dispW} > body weight ${bodyW} — correct hierarchy.`,
+        'Bold headings against regular body text creates a strong visual hierarchy.'
+      );
+    } else {
+      push('HEADING_WEIGHT', 'Heading vs Body Weight', false, 'error',
+        `Display weight (${dispW}) ≤ body weight (${bodyW}) — no weight hierarchy.`,
+        'Headings should be heavier than body text. Set display weight to 600 or 700.'
+      );
+    }
+  }
+
+  // 3. BODY_READABILITY — base font size >= 14px
+  {
+    const base = typography.baseSize ?? 16;
+    if (base >= 14) {
+      push('BODY_READABILITY', 'Body Font Size', true, 'info',
+        `Base size ${base}px meets comfortable reading threshold (≥ 14px).`,
+        'Body text at 14px or larger reduces eye strain for long reading sessions.'
+      );
+    } else {
+      push('BODY_READABILITY', 'Body Font Size', false, 'warning',
+        `Base size ${base}px — below 14px is straining for body text.`,
+        'Consider 14–17px for comfortable body text. Small sizes work for captions only.'
+      );
+    }
+  }
+
+  // 4. SPACING_GRANULARITY — adjacent steps differ by >= 4px
+  {
+    const steps = spacingSteps.slice(0, 6);
+    const minDiff = Math.min(...steps.slice(1).map((v, i) => v - steps[i]));
+    if (minDiff >= 4) {
+      push('SPACING_GRANULARITY', 'Spacing Granularity', true, 'info',
+        `Minimum spacing step gap is ${Math.round(minDiff)}px — well-differentiated.`,
+        'Steps with at least 4px difference create visually distinct spatial relationships.'
+      );
+    } else {
+      push('SPACING_GRANULARITY', 'Spacing Granularity', false, 'warning',
+        `Minimum spacing gap is ${Math.round(minDiff)}px — may feel cramped.`,
+        'Increase the base spacing unit or switch to a fibonacci scale for better step separation.'
+      );
+    }
+  }
+
+  // 5. COLOR_CONTRAST_BRAND — primary + error not in same hue family (within 30°)
+  {
+    const primHex  = swatches[0]?.hex ?? '#4f46e5';
+    const errHex   = colors?.semantic?.error ?? '#ef4444';
+    const primHue  = hexToHsl(primHex).h;
+    const errHue   = hexToHsl(errHex).h;
+    const hueDiff  = Math.min(Math.abs(primHue - errHue), 360 - Math.abs(primHue - errHue));
+    if (hueDiff >= 30) {
+      push('COLOR_CONTRAST_BRAND', 'Brand vs Error Color Separation', true, 'info',
+        `Primary and error colors are ${Math.round(hueDiff)}° apart — clearly distinct.`,
+        'Error states use a visually separate hue from your brand color — users can distinguish status easily.'
+      );
+    } else {
+      push('COLOR_CONTRAST_BRAND', 'Brand vs Error Color Separation', false, 'error',
+        `Primary and error are only ${Math.round(hueDiff)}° apart — may cause confusion.`,
+        'Error colors should differ from your primary by at least 30° on the hue wheel to be unmistakably distinct.'
+      );
+    }
+  }
+
+  // 6. PALETTE_DIVERSITY — not all swatches in same hue family
+  {
+    if (swatches.length >= 2) {
+      const hues      = swatches.map(s => hexToHsl(s?.hex ?? '#4f46e5').h);
+      const maxSpread = Math.max(...hues.map(h => Math.min(...hues.filter(hh => hh !== h).map(hh => Math.min(Math.abs(h - hh), 360 - Math.abs(h - hh))))));
+      if (maxSpread >= 30) {
+        push('PALETTE_DIVERSITY', 'Palette Diversity', true, 'info',
+          `Swatches span ${Math.round(maxSpread)}° — good hue variety.`,
+          'Diverse hues give you more semantic range (action, status, accent) without visual monotony.'
+        );
+      } else {
+        push('PALETTE_DIVERSITY', 'Palette Diversity', false, 'warning',
+          `All swatches within ${Math.round(maxSpread)}° — monotone palette.`,
+          'Consider adding a complementary or split-complementary color for better semantic distinction.'
+        );
+      }
+    } else {
+      push('PALETTE_DIVERSITY', 'Palette Diversity', true, 'info',
+        'Single-swatch palette — monochromatic by design.',
+        'A single brand hue applied consistently creates a strong, cohesive identity.'
+      );
+    }
+  }
+
+  // 7. LETTER_SPACING_SMALL — tight tracking with font < 14px = unreadable
+  {
+    const ls   = typography.letterSpacing ?? 'normal';
+    const base = typography.baseSize ?? 16;
+    if (ls === 'tight' && base < 14) {
+      push('LETTER_SPACING_SMALL', 'Letter Spacing at Small Size', false, 'error',
+        `Tight tracking (-0.02em) at ${base}px base — unreadable for body text.`,
+        'Tight letter-spacing reduces legibility below 14px. Use "normal" or "wide" for small text.'
+      );
+    } else {
+      push('LETTER_SPACING_SMALL', 'Letter Spacing at Small Size', true, 'info',
+        `Letter-spacing "${ls}" at ${base}px — comfortable for reading.`,
+        'Tracking is appropriate for the current font size. No legibility issues detected.'
+      );
+    }
+  }
+
+  // 8. MOTION_PERFORMANCE — duration not > 400ms for UI transitions
+  {
+    const dur = motion?.duration ?? 'balanced';
+    const durMs = { instant: 80, snappy: 120, balanced: 200, expressive: 320 }[dur] ?? 200;
+    if (durMs > 400) {
+      push('MOTION_PERFORMANCE', 'Motion Performance', false, 'warning',
+        `UI transition duration ${durMs}ms — too slow for interactive feedback.`,
+        'Transitions above 400ms make the UI feel sluggish. Use "balanced" (200ms) or "snappy" (120ms).'
+      );
+    } else {
+      push('MOTION_PERFORMANCE', 'Motion Performance', true, 'info',
+        `UI transitions at ${durMs}ms — within performance-friendly range.`,
+        'Fast transitions (under 400ms) keep the UI feeling responsive and snappy.'
+      );
+    }
+  }
+
+  // 9. DENSITY_FONT_MATCH — compact density should have smaller font
+  {
+    const density = tokens.density ?? 'regular';
+    const base    = typography.baseSize ?? 16;
+    if (density === 'compact' && base > 16) {
+      push('DENSITY_FONT_MATCH', 'Density & Font Size Match', false, 'info',
+        `Compact density with ${base}px font — content may feel oversized.`,
+        'Compact density pairs best with a 14–15px base size to achieve the intended information density.'
+      );
+    } else if (density === 'spacious' && base < 15) {
+      push('DENSITY_FONT_MATCH', 'Density & Font Size Match', false, 'info',
+        `Spacious density with ${base}px font — may feel imbalanced.`,
+        'Spacious layouts benefit from a 16–18px base to fill the breathing room elegantly.'
+      );
+    } else {
+      push('DENSITY_FONT_MATCH', 'Density & Font Size Match', true, 'info',
+        `Density "${density}" and font size ${base}px are well-matched.`,
+        'Font size and density setting create a cohesive information rhythm.'
+      );
+    }
+  }
+
+  // 10. BORDER_RADIUS_CONSISTENCY — shape should match brand feel
+  {
+    const shape   = tokens.shape ?? 'soft';
+    const shadows = tokens.shadows ?? 'soft';
+    const clashes = (shape === 'sharp' && shadows === 'soft') || (shape === 'pill' && shadows === 'hard');
+    push('BORDER_RADIUS_CONSISTENCY', 'Shape & Shadow Consistency', true, 'info',
+      clashes
+        ? `Shape "${shape}" + shadows "${shadows}" may create a stylistic mismatch.`
+        : `Shape "${shape}" + shadows "${shadows}" — consistent visual language.`,
+      clashes
+        ? 'Sharp shapes typically pair with flat/hard shadows; rounded shapes pair with soft/layered shadows.'
+        : 'Your radius and shadow style reinforce the same design personality — geometric and intentional.'
+    );
+  }
+
+  // Score: passing checks * 10, with severity weight deduction
+  const passing  = checks.filter(c => c.pass).length;
+  const errors   = checks.filter(c => !c.pass && c.severity === 'error').length;
+  const warnings = checks.filter(c => !c.pass && c.severity === 'warning').length;
+  const rawScore = (passing / checks.length) * 100;
+  // Deduct more for errors than warnings
+  const score    = Math.max(0, Math.round(rawScore - errors * 4 - warnings * 1));
+
+  return { score, checks };
 }

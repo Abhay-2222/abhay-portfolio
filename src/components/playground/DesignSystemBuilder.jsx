@@ -5,10 +5,15 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import PreviewCanvas from './PreviewCanvas';
 import ExportModal from './ExportModal';
 import VersionCompare from './VersionCompare';
 import SplashScreen from './SplashScreen';
+import DSTopBar from './DSTopBar';
+import DSLeftNav from './DSLeftNav';
+import DSMainContent from './DSMainContent';
+import DSConfigPanel from './DSConfigPanel';
+import DSMobileLayout from './DSMobileLayout';
+import { buildScopedVars } from './PreviewCanvas';
 import {
   FONT_CATEGORIES, DISPLAY_FONTS, BODY_FONTS, MONO_FONTS,
   PRESETS, PRESET_KEYS,
@@ -16,11 +21,11 @@ import {
   loadGoogleFont,
   regenerateTokens, applyPreset,
   computeTokens,
-  generateHarmoniousSwatch,
+  generateHarmoniousSwatch, generateHarmonyColors,
   exportCSS, exportTailwind, exportDesignTokensJSON, exportReactComponents,
   encodeTokensToURL, decodeTokensFromURL,
-  generateSystemName,
   generateEvolution,
+  auditTokens,
 } from './dsEngine';
 
 /* ─────────────────────────────────────────────────────────
@@ -29,20 +34,31 @@ import {
 const DEFAULT_TOKENS = {
   colors: {
     swatches: [
-      { hex: '#4f46e5', locked: false },
-      { hex: '#e54f4f', locked: false },
-      { hex: '#22c55e', locked: false },
-      { hex: '#f59e0b', locked: false },
-    ]
+      { hex: '#4f46e5', locked: false },  // primary  — indigo
+      { hex: '#0ea5e9', locked: false },  // secondary — sky blue
+      { hex: '#8b5cf6', locked: false },  // tertiary  — violet
+      { hex: '#f59e0b', locked: false },  // accent    — amber
+    ],
+    harmony: 'complementary',
+    saturationBoost: 0,
+    semantic: { success: null, warning: null, error: null, info: null }, // Gap #9: custom semantic colors
   },
-  typography: { display:'Playfair Display', body:'DM Sans', mono:'DM Mono', scale:1.333, baseSize:16 },
-  spacing:    { base:8, scale:'linear' },
+  typography: {
+    display: 'Playfair Display', body: 'DM Sans', mono: 'DM Mono',
+    scale: 1.333, baseSize: 16,
+    displayWeight: 700, bodyWeight: 400,
+    letterSpacing: 'normal', lineHeight: 'normal',
+  },
+  spacing:    { base: 8, scale: 'linear' },
   shape:      'soft',
   shadows:    'soft',
   preset:     'minimal',
   platform:   'web',
+  density:    'regular',
+  motion:     { duration: 'balanced', easing: 'ease' },
+  surfaces:   { borderWeight: 'regular', elevation: 'layered' },
 };
-const DEFAULT_LOCKS = { colors:false, typography:false, spacing:false, shape:false, shadows:false };
+const DEFAULT_LOCKS = { colors:false, typography:false, spacing:false, shape:false, shadows:false, density:false, motion:false, surfaces:false };
 
 /* ─────────────────────────────────────────────────────────
    DESIGN TOKENS — light sidebar
@@ -386,19 +402,103 @@ export default function DesignSystemBuilder() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // Hydrate from share URL
+  // Gap #8: track whether data was restored from localStorage (set during init)
+  const wasRestoredFromLS = useRef(false);
+  // Gap #10: track whether the URL share param was present but corrupted
+  const urlWasCorrupted = useRef(false);
+
+  // Hydrate: URL params (share link) → localStorage → DEFAULT_TOKENS
   const initial = useRef(() => {
+    // 1. URL params — highest priority (explicit share link)
     try {
       const ds = new URLSearchParams(window.location.search).get('ds');
-      if (ds) { const d = decodeTokensFromURL(ds); if (d) return d; }
+      if (ds) {
+        const d = decodeTokensFromURL(ds);
+        if (d) return d;
+        urlWasCorrupted.current = true; // param exists but decode failed
+      }
+    } catch { urlWasCorrupted.current = true; }
+
+    // 2. localStorage — persisted session
+    try {
+      const saved = localStorage.getItem('ds-tokens');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          wasRestoredFromLS.current = true;
+          // Deep merge: ensures new DEFAULT keys survive across code updates
+          return {
+            ...DEFAULT_TOKENS,
+            ...parsed,
+            colors:    { ...DEFAULT_TOKENS.colors,    ...(parsed.colors    ?? {}) },
+            typography:{ ...DEFAULT_TOKENS.typography, ...(parsed.typography ?? {}) },
+            spacing:   { ...DEFAULT_TOKENS.spacing,   ...(parsed.spacing    ?? {}) },
+            motion:    { ...DEFAULT_TOKENS.motion,    ...(parsed.motion     ?? {}) },
+            surfaces:  { ...DEFAULT_TOKENS.surfaces,  ...(parsed.surfaces   ?? {}) },
+          };
+        }
+      }
     } catch {}
+
+    // 3. Defaults
     return DEFAULT_TOKENS;
   });
 
   const [tokens, setTokens]   = useState(initial.current);
   const [locks,  setLocks]    = useState(DEFAULT_LOCKS);
+
+  // ── Gap #38: Undo / Redo stacks ──
+  const undoStack = useRef([]);
+  const redoStack = useRef([]);
+  const [undoSize, setUndoSize] = useState(0);
+  const [redoSize, setRedoSize] = useState(0);
+
+  /** Wrapped setter that pushes to undo stack before updating */
+  const pushTokens = useCallback((newTokensOrUpdater) => {
+    setTokens(prev => {
+      const next = typeof newTokensOrUpdater === 'function' ? newTokensOrUpdater(prev) : newTokensOrUpdater;
+      undoStack.current = [...undoStack.current, prev].slice(-20);
+      redoStack.current = [];
+      setUndoSize(undoStack.current.length);
+      setRedoSize(0);
+      return next;
+    });
+  }, []);
   const [showExport, setShowExport] = useState(false);
   const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('ds-splash-seen'));
+  // Gap #8: toast + URL banner states
+  const [restoredToast, setRestoredToast] = useState(() => wasRestoredFromLS.current);
+  const [urlCorrupted,  setUrlCorrupted]  = useState(() => urlWasCorrupted.current);
+  const [shareWarning,  setShareWarning]  = useState(false);
+
+  // ── Docs-site layout state ──
+  const [selectedPage, setSelectedPage] = useState('Buttons');
+  const [configOpen,   setConfigOpen]   = useState(false);
+  const [mode,         setMode]         = useState('light');
+  const [systemName,   setSystemName]   = useState('Design System');
+  const scopedVars      = useMemo(() => buildScopedVars(tokens, mode), [tokens, mode]);
+  const auditErrorCount = useMemo(() => auditTokens(tokens, mode).filter(i => i.level === 'error').length, [tokens, mode]);
+
+  // ── Mobile detection ──
+  const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
+  useEffect(() => {
+    const handler = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  const isMobile = windowWidth < 768;
+
+  // Gap #8: persist tokens to localStorage on every change
+  useEffect(() => {
+    try { localStorage.setItem('ds-tokens', JSON.stringify(tokens)); } catch {}
+  }, [tokens]);
+
+  // Gap #8: auto-dismiss "restored" toast after 3.5s
+  useEffect(() => {
+    if (!wasRestoredFromLS.current) return;
+    const id = setTimeout(() => setRestoredToast(false), 3500);
+    return () => clearTimeout(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load fonts on change
   useEffect(() => {
@@ -407,13 +507,48 @@ export default function DesignSystemBuilder() {
     loadGoogleFont(tokens.typography.mono);
   }, [tokens.typography.display, tokens.typography.body, tokens.typography.mono]);
 
+  // Gap #38: Undo/Redo keyboard shortcut
+  useEffect(() => {
+    const fn = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (!undoStack.current.length) return;
+        const prev = undoStack.current[undoStack.current.length - 1];
+        undoStack.current = undoStack.current.slice(0, -1);
+        setTokens(cur => {
+          redoStack.current = [...redoStack.current, cur].slice(-20);
+          setUndoSize(undoStack.current.length);
+          setRedoSize(redoStack.current.length);
+          return prev;
+        });
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        if (!redoStack.current.length) return;
+        const next = redoStack.current[redoStack.current.length - 1];
+        redoStack.current = redoStack.current.slice(0, -1);
+        setTokens(cur => {
+          undoStack.current = [...undoStack.current, cur].slice(-20);
+          setUndoSize(undoStack.current.length);
+          setRedoSize(redoStack.current.length);
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, []);
+
   // Keyboard shortcuts
-  const regenerate = useCallback(() => setTokens(p => regenerateTokens(p, locks)), [locks]);
+  const regenerate = useCallback(() => pushTokens(p => regenerateTokens(p, locks)), [locks, pushTokens]);
 
   const toggleLock  = key => setLocks(p => ({ ...p, [key]:!p[key] }));
-  const patchColors = patch => setTokens(p => ({ ...p, colors:{ ...p.colors, ...patch } }));
-  const patchTypo      = patch => setTokens(p => ({ ...p, typography:{ ...p.typography, ...patch } }));
-  const patchSpacing   = patch => setTokens(p => ({ ...p, spacing:{ ...p.spacing, ...patch } }));
+  const patchColors = patch => pushTokens(p => ({ ...p, colors:{ ...p.colors, ...patch } }));
+  const patchTypo      = patch => pushTokens(p => ({ ...p, typography:{ ...p.typography, ...patch } }));
+  const patchSpacing   = patch => pushTokens(p => ({ ...p, spacing:{ ...p.spacing, ...patch } }));
+
+  const patchMotion   = patch => pushTokens(p => ({ ...p, motion:   { ...p.motion,   ...patch } }));
+  const patchSurfaces = patch => pushTokens(p => ({ ...p, surfaces: { ...p.surfaces, ...patch } }));
 
   const copyCSS   = () => navigator.clipboard.writeText(exportCSS(tokens)).catch(()=>{});
   const copyTW    = () => navigator.clipboard.writeText(exportTailwind(tokens)).catch(()=>{});
@@ -423,22 +558,31 @@ export default function DesignSystemBuilder() {
     if (!enc) return;
     const u = new URL(window.location.href);
     u.searchParams.set('pg','1'); u.searchParams.set('ds',enc);
-    navigator.clipboard.writeText(u.toString()).catch(()=>{});
+    const shareURL = u.toString();
+    // Gap #10: warn if URL may be too long for some browsers
+    if (shareURL.length > 4000) {
+      setShareWarning(true);
+      setTimeout(() => setShareWarning(false), 4000);
+    }
+    navigator.clipboard.writeText(shareURL).catch(()=>{});
+  };
+
+  // Gap #8: clear all persisted data
+  const clearSavedData = () => {
+    try { localStorage.removeItem('ds-tokens'); localStorage.removeItem('ds-versions'); } catch {}
+    setVersions([]);
+    setTokens(DEFAULT_TOKENS);
   };
 
   const SCALE_OPTS = [1.2,1.25,1.333,1.414,1.618].map(v => ({
     value:v, label: v===1.618 ? 'φ' : String(v),
   }));
 
-  // ── System naming (used in exports) ──
-  const autoName = useMemo(() => generateSystemName(tokens), [tokens.colors.swatches?.[0]?.hex, tokens.shape, tokens.shadows]);
-  useEffect(() => {
-    setTokens(p => ({ ...p, systemName: autoName }));
-  }, [autoName]);
+  // (system name removed — no auto-generated DS names shown in UI)
 
-  // ── Version history (Task 7.1) ──
+  // ── Version history (Task 7.1) — Gap #8: use localStorage so versions survive tab close ──
   const [versions, setVersions]       = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('ds-versions') ?? '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('ds-versions') ?? '[]'); } catch { return []; }
   });
   const [showHistory, setShowHistory] = useState(false);
   const saveVersion = useCallback(() => {
@@ -452,11 +596,11 @@ export default function DesignSystemBuilder() {
         swatches: [0,1,2,3].map(i => palette[i]?.[500] ?? '#888'),
       };
       const next = [v, ...prev].slice(0, 12);
-      try { sessionStorage.setItem('ds-versions', JSON.stringify(next)); } catch {}
+      try { localStorage.setItem('ds-versions', JSON.stringify(next)); } catch {}
       return next;
     });
   }, [tokens]);
-  const restoreVersion = useCallback(v => setTokens(JSON.parse(JSON.stringify(v.tokens))), []);
+  const restoreVersion = useCallback(v => pushTokens(JSON.parse(JSON.stringify(v.tokens))), [pushTokens]);
 
   // Keyboard shortcuts — placed after copyCSS/saveVersion/showHistory to avoid TDZ
   useEffect(() => {
@@ -465,7 +609,7 @@ export default function DesignSystemBuilder() {
       if (e.code === 'Space' && !inInput) { e.preventDefault(); regenerate(); return; }
       if (inInput) return;
       // L — lock all, U — unlock all
-      if (e.key === 'l' || e.key === 'L') setLocks({ colors:true, typography:true, spacing:true, shape:true, shadows:true });
+      if (e.key === 'l' || e.key === 'L') setLocks({ colors:true, typography:true, spacing:true, shape:true, shadows:true, density:true, motion:true, surfaces:true });
       if (e.key === 'u' || e.key === 'U') setLocks(DEFAULT_LOCKS);
       // ⌘E — open export modal
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') { e.preventDefault(); setShowExport(true); }
@@ -473,6 +617,8 @@ export default function DesignSystemBuilder() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !window.getSelection()?.toString()) { e.preventDefault(); copyCSS(); }
       // ⌘S — save version
       if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveVersion(); setShowHistory(true); }
+      // ⌘, or ⌘K — toggle config panel
+      if ((e.metaKey || e.ctrlKey) && (e.key === ',' || e.key === 'k')) { e.preventDefault(); setConfigOpen(o => !o); }
     };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
@@ -511,7 +657,7 @@ export default function DesignSystemBuilder() {
         };
       });
       const next = [...newVers, ...prev].slice(0, 12);
-      try { sessionStorage.setItem('ds-versions', JSON.stringify(next)); } catch {}
+      try { localStorage.setItem('ds-versions', JSON.stringify(next)); } catch {}
       return next;
     });
     setEvolutionVariants(variants);
@@ -520,37 +666,205 @@ export default function DesignSystemBuilder() {
 
 
 
-  return (
-    <div style={{ width:'100%',height:'100%',display:'flex',flexDirection: isMobileLayout ? 'column' : 'row',overflow:'hidden',background:P.bg,fontFamily:'"Geist Sans",system-ui,sans-serif' }}>
-      {showSplash && <SplashScreen onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); }} />}
-      {/* Mobile tab switcher */}
-      {isMobileLayout && (
-        <div style={{ display:'flex',borderBottom:`1px solid ${P.border}`,flexShrink:0,background:P.bg }}>
-          {[['controls','Controls'],['preview','Preview']].map(([id,label]) => (
-            <button key={id} onClick={() => setMobileTab(id)}
-              style={{ flex:1,padding:'10px',border:'none',background:'none',color: mobileTab===id ? P.accent : P.textMuted,fontSize:12,fontWeight: mobileTab===id ? 600 : 400,fontFamily:'"Geist Sans",system-ui',cursor:'pointer',borderBottom:`2px solid ${mobileTab===id ? P.accent : 'transparent'}`,transition:'all .15s' }}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+  // ── Mobile render ──
+  if (isMobile) {
+    return (
+      <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+        {showSplash && <SplashScreen onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); }} />}
+        <DSMobileLayout
+          tokens={tokens}
+          scopedVars={scopedVars}
+          mode={mode}
+          auditErrorCount={auditErrorCount}
+          onTokenChange={pushTokens}
+          onModeToggle={() => setMode(m => m === 'light' ? 'dark' : 'light')}
+          onRegenerate={regenerate}
+          onShowExport={() => setShowExport(true)}
+        />
+        {showExport && (
+          <ExportModal
+            tokens={tokens}
+            mode={mode}
+            onClose={() => setShowExport(false)}
+          />
+        )}
+      </div>
+    );
+  }
 
-      {/* ═══════════════ LEFT PANEL ═══════════════ */}
-      <div
-        role="complementary"
-        aria-label="Design system controls"
-        style={{
-          width: isMobileLayout ? '100%' : 300,
-          minWidth: isMobileLayout ? '100%' : 272,
-          maxWidth: isMobileLayout ? '100%' : 328,
-          height: isMobileLayout ? 'auto' : '100%',
-          flex: isMobileLayout ? 'unset' : undefined,
-          display: isMobileLayout && mobileTab === 'preview' ? 'none' : 'flex',
-          flexDirection:'column',
-          background:P.bg,
-          borderRight:`1px solid ${P.border}`,
-          overflow:'hidden',
-        }}>
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', background:'#ffffff', fontFamily:'"Geist Sans",system-ui,sans-serif' }}>
+      {showSplash && <SplashScreen onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); }} />}
+
+      {/* Gap #10: Corrupted share URL banner */}
+      <AnimatePresence>
+        {urlCorrupted && (
+          <motion.div
+            initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
+            style={{ background:'#fef9c3', borderBottom:'1px solid #fde047', padding:'8px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', fontSize:12, fontFamily:'"Geist Sans",system-ui', color:'#854d0e', flexShrink:0, zIndex:100 }}>
+            <span>⚠ This share link appears corrupted — starting fresh</span>
+            <button onClick={() => setUrlCorrupted(false)} style={{ border:'none', background:'transparent', cursor:'pointer', color:'#854d0e', fontSize:16, lineHeight:1, padding:'0 4px' }}>×</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gap #10: Share URL length warning */}
+      <AnimatePresence>
+        {shareWarning && (
+          <motion.div
+            initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
+            style={{ background:'#fef3c7', borderBottom:'1px solid #fcd34d', padding:'7px 20px', fontSize:11, fontFamily:'"Geist Sans",system-ui', color:'#92400e', flexShrink:0, zIndex:100 }}>
+            ⚠ Share URL is long ({'>'}4000 chars) — may not work in some browsers. Consider exporting a JSON file instead.
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gap #8: Restored from session toast */}
+      <AnimatePresence>
+        {restoredToast && (
+          <motion.div
+            initial={{ opacity:0, y:-16, x:'-50%' }} animate={{ opacity:1, y:0, x:'-50%' }} exit={{ opacity:0, y:-16, x:'-50%' }}
+            style={{ position:'fixed', top:56, left:'50%', background:'#1a1814', color:'#fff', borderRadius:8, padding:'8px 16px', fontSize:12, fontFamily:'"Geist Sans",system-ui', zIndex:9999, display:'flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(0,0,0,0.28)', pointerEvents:'none', whiteSpace:'nowrap' }}>
+            <span style={{ color:'#c8602a' }}>✦</span> Restored from last session
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════ TOP BAR ═══════════════ */}
+      <DSTopBar
+        systemName={systemName}
+        onSystemNameChange={setSystemName}
+        selectedPage={selectedPage}
+        onNavigate={setSelectedPage}
+        mode={mode}
+        onModeToggle={() => setMode(m => m === 'light' ? 'dark' : 'light')}
+        configOpen={configOpen}
+        onConfigToggle={() => setConfigOpen(o => !o)}
+        onExport={() => setShowExport(true)}
+        auditErrorCount={auditErrorCount}
+      />
+
+      {/* ═══════════════ 3-PANEL BODY ═══════════════ */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
+
+        {/* LEFT NAV */}
+        <DSLeftNav
+          selectedPage={selectedPage}
+          onSelect={setSelectedPage}
+          auditErrorCount={auditErrorCount}
+          systemName={systemName}
+        />
+
+        {/* MAIN CONTENT */}
+        <DSMainContent
+          selectedPage={selectedPage}
+          tokens={tokens}
+          scopedVars={scopedVars}
+          mode={mode}
+          onTokenChange={pushTokens}
+          onNavigate={setSelectedPage}
+        />
+
+        {/* RIGHT CONFIG PANEL */}
+        <DSConfigPanel
+          open={configOpen}
+          onClose={() => setConfigOpen(false)}
+          tokens={tokens}
+          locks={locks}
+          versions={versions}
+          showHistory={showHistory}
+          compareSelect={compareSelect}
+          onTokenChange={pushTokens}
+          onClearData={clearSavedData}
+          onLocksChange={setLocks}
+          onRegenerate={regenerate}
+          onRunEvolution={runEvolution}
+          onSaveVersion={saveVersion}
+          onSetShowHistory={setShowHistory}
+          onRestoreVersion={restoreVersion}
+          onSelectForCompare={selectForCompare}
+          onCancelCompare={() => setCompareSelect(null)}
+          onShowExport={() => setShowExport(true)}
+          onGenerateHarmony={(harmonyMode) => {
+            if (locks.colors) return;
+            const primary = tokens.colors.swatches[0]?.hex ?? '#4f46e5';
+            const harmColors = generateHarmonyColors(primary, harmonyMode);
+            pushTokens(p => ({
+              ...p,
+              colors: {
+                ...p.colors,
+                swatches: p.colors.swatches.map((s, i) => {
+                  if (s.locked || i === 0) return s;
+                  const newHex = harmColors[i - 1];
+                  return newHex ? { ...s, hex: newHex } : s;
+                }),
+              },
+            }));
+          }}
+        />
+
+        {/* Gap #38: Undo / Redo indicator — shown only when stacks have entries */}
+        {(undoSize > 0 || redoSize > 0) && (
+          <div style={{
+            position: 'absolute', bottom: 16, left: 200, zIndex: 50,
+            display: 'flex', gap: 4,
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.10)',
+            borderRadius: 10,
+            padding: 4,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }}>
+            <button
+              onClick={() => {
+                if (!undoStack.current.length) return;
+                const prev = undoStack.current[undoStack.current.length - 1];
+                undoStack.current = undoStack.current.slice(0, -1);
+                setTokens(cur => {
+                  redoStack.current = [...redoStack.current, cur].slice(-20);
+                  setUndoSize(undoStack.current.length);
+                  setRedoSize(redoStack.current.length);
+                  return prev;
+                });
+              }}
+              disabled={undoSize === 0}
+              title={`Undo (${undoSize}) — Ctrl+Z`}
+              style={{
+                width: 28, height: 28, borderRadius: 7, border: 'none',
+                background: undoSize > 0 ? 'rgba(0,0,0,0.05)' : 'transparent',
+                color: undoSize > 0 ? '#1a1814' : 'rgba(0,0,0,0.2)',
+                cursor: undoSize > 0 ? 'pointer' : 'default',
+                fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'system-ui', transition: 'all 0.12s',
+              }}>←</button>
+            <button
+              onClick={() => {
+                if (!redoStack.current.length) return;
+                const next = redoStack.current[redoStack.current.length - 1];
+                redoStack.current = redoStack.current.slice(0, -1);
+                setTokens(cur => {
+                  undoStack.current = [...undoStack.current, cur].slice(-20);
+                  setUndoSize(undoStack.current.length);
+                  setRedoSize(redoStack.current.length);
+                  return next;
+                });
+              }}
+              disabled={redoSize === 0}
+              title={`Redo (${redoSize}) — Ctrl+Shift+Z`}
+              style={{
+                width: 28, height: 28, borderRadius: 7, border: 'none',
+                background: redoSize > 0 ? 'rgba(0,0,0,0.05)' : 'transparent',
+                color: redoSize > 0 ? '#1a1814' : 'rgba(0,0,0,0.2)',
+                cursor: redoSize > 0 ? 'pointer' : 'default',
+                fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'system-ui', transition: 'all 0.12s',
+              }}>→</button>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════════════ PLACEHOLDER: old left panel (keeps JSX valid during strip) ═══════════════ */}
+      {false && (
+      <div style={{ display: 'none' }}>
 
         {/* ── Single unified scroll area ── */}
         <div className="ds-panel-scroll" style={{ flex:1, overflowY:'auto', minHeight:0, padding:'16px 12px 0', display: isMobileLayout && mobileTab !== 'controls' ? 'none' : 'block' }}>
@@ -595,7 +909,7 @@ export default function DesignSystemBuilder() {
               <FontSelect role="mono"    label="Mono"    value={tokens.typography.mono}    onChange={v=>patchTypo({ mono:v })} />
               <div>
                 <span style={{ fontSize:11, color:P.textMuted, fontFamily:'"Geist Sans",system-ui', display:'block', marginBottom:6 }}>
-                  Scale — {SCALE_NAMES[tokens.typography.scale] ?? ''}
+                  Scale: {SCALE_NAMES[tokens.typography.scale] ?? ''}
                 </span>
                 <PillGroup aria-label="Type scale ratio" options={SCALE_OPTS} value={tokens.typography.scale} onChange={v=>patchTypo({ scale:v })} />
               </div>
@@ -718,14 +1032,16 @@ export default function DesignSystemBuilder() {
         </div>
       </div>
 
-      {/* ═══════════════ EXPORT MODAL (Task 6.3) ═══════════════ */}
+      )} {/* end {false && placeholder */}
+
+      {/* ═══════════════ EXPORT MODAL ═══════════════ */}
       <AnimatePresence>
         {showExport && (
           <ExportModal tokens={tokens} onClose={() => setShowExport(false)} />
         )}
       </AnimatePresence>
 
-      {/* ═══════════════ VERSION COMPARE (Task 7.2) ═══════════════ */}
+      {/* ═══════════════ VERSION COMPARE ═══════════════ */}
       <AnimatePresence>
         {compareVersions && (
           <VersionCompare
@@ -737,11 +1053,11 @@ export default function DesignSystemBuilder() {
         )}
       </AnimatePresence>
 
-      {/* ═══════════════ RIGHT PANEL ═══════════════ */}
-      <div style={{ flex:1, position:'relative', overflow:'hidden', display: isMobileLayout && mobileTab !== 'preview' ? 'none' : 'flex', flexDirection:'column' }}>
-        <PreviewCanvas tokens={tokens} onTokenChange={setTokens} />
+      {/* ═══════════════ EVOLUTION OVERLAY ═══════════════ */}
+      <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:100 }}>
+        <div style={{ width:'100%', height:'100%', position:'relative', pointerEvents:'none' }}>
 
-        {/* ── Evolution Comparison Overlay (Task 7.3) ── */}
+        {/* ── Evolution Comparison Overlay ── */}
         <AnimatePresence>
           {showEvolution && evolutionVariants && (
             <motion.div
@@ -756,12 +1072,13 @@ export default function DesignSystemBuilder() {
                 zIndex:50,
                 display:'flex', flexDirection:'column',
                 fontFamily:'"Geist Sans",system-ui',
+                pointerEvents:'auto',
               }}>
               {/* Header */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 24px', borderBottom:`1px solid ${P.border}` }}>
                 <div>
                   <span style={{ fontSize:13, fontWeight:700, color:P.text }}>⟳ System Evolution</span>
-                  <span style={{ fontSize:10, color:P.textMuted, marginLeft:10 }}>3 auto-generated variants — saved to history</span>
+                  <span style={{ fontSize:10, color:P.textMuted, marginLeft:10 }}>3 auto-generated variants, saved to history</span>
                 </div>
                 <button className="ds-btn" onClick={() => setShowEvolution(false)}
                   style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${P.border}`, background:'transparent', color:P.textMuted, fontSize:11, cursor:'pointer' }}>
@@ -820,8 +1137,8 @@ export default function DesignSystemBuilder() {
                             ['Shape',   vTokens.shape],
                             ['Shadow',  vTokens.shadows],
                             ['Colors',  (vTokens.colors?.swatches?.length ?? 0) + ' swatches'],
-                            ['Display', vTokens.typography?.display?.split(' ')[0] ?? '—'],
-                            ['Scale',   vTokens.typography?.scale ?? '—'],
+                            ['Display', vTokens.typography?.display?.split(' ')[0] ?? '?'],
+                            ['Scale',   vTokens.typography?.scale ?? '?'],
                           ].map(([k, v]) => (
                             <div key={k} style={{ display:'flex', flexDirection:'column', gap:1 }}>
                               <span style={{ fontSize:7, color:P.textDim, fontFamily:'"Geist Mono",monospace', letterSpacing:'0.06em' }}>{k.toUpperCase()}</span>
@@ -849,6 +1166,7 @@ export default function DesignSystemBuilder() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );

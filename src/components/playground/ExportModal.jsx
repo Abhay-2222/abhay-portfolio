@@ -182,14 +182,14 @@ function ShareTab({ tokens }) {
           </button>
         </div>
         <div style={{ fontSize: 10, color: M.dim, fontFamily: '"Geist Mono",monospace', marginTop: 6, lineHeight: 1.6 }}>
-          Encodes only source inputs — computed layers re-derived on load, URLs stay compact.
+          Encodes only source inputs. Computed layers are re-derived on load, so URLs stay compact.
         </div>
       </div>
 
       {/* Share card generator (Task 8.5) */}
       <div style={{ borderTop: `1px solid ${M.border}`, paddingTop: 16 }}>
         <div style={{ fontSize: 10, color: M.muted, fontFamily: '"Geist Mono",monospace', marginBottom: 10, letterSpacing: '0.06em' }}>
-          SHARE CARD — 1200×630 PNG
+          SHARE CARD  1200×630 PNG
         </div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <button onClick={generateCard} disabled={cardState === 'generating'}
@@ -252,6 +252,48 @@ const TABS = [
   { id: 'react',    label: 'React Kit', icon: '⚛' },
   { id: 'share',    label: 'Share',     icon: '🔗' },
 ];
+
+const HOW_TO_USE = {
+  css: {
+    step: '1. Copy  →  2. Paste into your global stylesheet (e.g. globals.css)',
+    detail: 'All tokens are CSS custom properties. Use them anywhere: color: var(--ds-primary), padding: var(--ds-space-3), etc.',
+  },
+  tailwind: {
+    step: '1. Copy  →  2. Merge theme.extend into your tailwind.config.js',
+    detail: 'The exported object adds your token values to Tailwind\'s design system so you can use class names like text-ds-primary or p-ds-3.',
+  },
+  json: {
+    step: '1. Copy  →  2. Import into Figma Tokens, Style Dictionary, or Token Transformer',
+    detail: 'Follows the W3C Design Tokens Community Group format. Compatible with most token pipeline tools.',
+  },
+  react: {
+    step: '1. Copy files  →  2. Place in your project under src/design-system/',
+    detail: 'tokens.js exports all values as JS constants. Import components directly: import { Button } from \'./design-system\'.',
+  },
+};
+
+function HowToUse({ tab }) {
+  const info = HOW_TO_USE[tab];
+  if (!info) return null;
+  return (
+    <div style={{
+      padding: '10px 14px', borderRadius: 7,
+      background: 'rgba(200,96,42,0.08)',
+      border: '1px solid rgba(200,96,42,0.2)',
+      flexShrink: 0,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: M.accent, fontFamily: '"Geist Mono",monospace', marginBottom: 4 }}>
+        HOW TO USE
+      </div>
+      <div style={{ fontSize: 11.5, color: M.text, fontFamily: '"Geist Sans",system-ui', marginBottom: 4, fontWeight: 500 }}>
+        {info.step}
+      </div>
+      <div style={{ fontSize: 10.5, color: M.muted, fontFamily: '"Geist Sans",system-ui', lineHeight: 1.55 }}>
+        {info.detail}
+      </div>
+    </div>
+  );
+}
 
 export default function ExportModal({ tokens, onClose }) {
   injectScrollbar();
@@ -318,12 +360,7 @@ export default function ExportModal({ tokens, onClose }) {
           borderBottom: `1px solid ${M.border}`,
           gap: 12, flexShrink: 0,
         }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: M.text }}>Export System</span>
-          {tokens.systemName && (
-            <span style={{ fontSize: 10, color: M.muted, fontFamily: '"Geist Mono",monospace' }}>
-              — {tokens.systemName}
-            </span>
-          )}
+          <span style={{ fontSize: 12, fontWeight: 700, color: M.text }}>Export Tokens</span>
           <div style={{ flex: 1 }} />
           <button
             ref={firstFocusRef}
@@ -368,11 +405,15 @@ export default function ExportModal({ tokens, onClose }) {
         {/* Content area */}
         <div style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {activeTab === 'react' ? (
-            <ReactKitTab tokens={tokens} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
+              <HowToUse tab="react" />
+              <ReactKitTab tokens={tokens} />
+            </div>
           ) : activeTab === 'share' ? (
             <ShareTab tokens={tokens} />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
+              <HowToUse tab={activeTab} />
               <div style={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
                 <CopyBtn text={code} label={`${TABS.find(t => t.id === activeTab)?.label ?? ''} output`} />
               </div>

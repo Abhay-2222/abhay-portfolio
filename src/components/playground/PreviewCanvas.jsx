@@ -20,7 +20,7 @@ import {
   computeTokens, computeAllTokens, tokensToCSSVars,
   SHAPE_RADIUS, generateTypeScale, hslToHex, hexToHsl,
   getContrastRatio, wcagLevel, auditTokens, getAutoFix, computeVibeScore,
-  getColorBase,
+  getColorBase, auditDesignQuality,
 } from './dsEngine';
 import { COMPONENT_DOCS } from './componentDocs';
 
@@ -70,19 +70,62 @@ function buildScopedVars(tokens, mode) {
   vars['--ds-font-body']    = `'${tokens.typography.body}', sans-serif`;
   vars['--ds-font-mono']    = `'${tokens.typography.mono}', monospace`;
   Object.entries(typeScale).forEach(([k, v]) => { vars[`--ds-text-${k}`] = `${v}px`; });
+  // Typography personality tokens
+  vars['--ds-font-weight-display'] = String(tokens.typography.displayWeight ?? 700);
+  vars['--ds-font-weight-body']    = String(tokens.typography.bodyWeight ?? 400);
+  const LS_MAP = { tight: '-0.02em', normal: '0em', wide: '0.04em' };
+  const LH_MAP = { compact: '1.3', normal: '1.5', relaxed: '1.75' };
+  vars['--ds-letter-spacing'] = LS_MAP[tokens.typography.letterSpacing ?? 'normal'] ?? '0em';
+  vars['--ds-line-height']    = LH_MAP[tokens.typography.lineHeight    ?? 'normal'] ?? '1.5';
 
-  // ── Spacing ──────────────────────────────────────────────
-  spacingSteps.forEach((v, i) => { vars[`--ds-space-${i+1}`] = `${v}px`; });
+  // ── Spacing (with density scale) ─────────────────────────
+  const DENSITY_SCALE = { compact: 0.75, regular: 1.0, comfortable: 1.25, spacious: 1.5 };
+  const densityMult = DENSITY_SCALE[tokens.density ?? 'regular'] ?? 1.0;
+  spacingSteps.forEach((v, i) => { vars[`--ds-space-${i+1}`] = `${Math.round(v * densityMult)}px`; });
+  vars['--ds-density-scale'] = String(densityMult);
 
   // ── Shape ────────────────────────────────────────────────
-  vars['--ds-radius']    = SHAPE_RADIUS[tokens.shape] ?? '4px';
-  vars['--ds-radius-sm'] = tokens.shape==='sharp' ? '0px' : `calc(${SHAPE_RADIUS[tokens.shape]} * 0.5)`;
-  vars['--ds-radius-lg'] = tokens.shape==='pill'  ? '9999px' : `calc(${SHAPE_RADIUS[tokens.shape]} * 2)`;
+  const shapeKey = typeof tokens.shape === 'number' ? null : tokens.shape;
+  const radiusVal = shapeKey ? (SHAPE_RADIUS[shapeKey] ?? '4px') : `${tokens.shape}px`;
+  vars['--ds-radius']    = radiusVal;
+  vars['--ds-radius-sm'] = (!shapeKey || shapeKey === 'sharp') ? '0px' : `calc(${radiusVal} * 0.5)`;
+  vars['--ds-radius-lg'] = (!shapeKey || shapeKey === 'pill')  ? '9999px' : `calc(${radiusVal} * 2)`;
 
   // ── Shadows ──────────────────────────────────────────────
   vars['--ds-shadow-sm'] = shadowDefs.sm;
   vars['--ds-shadow-md'] = shadowDefs.md;
   vars['--ds-shadow-lg'] = shadowDefs.lg;
+
+  // ── Surfaces ─────────────────────────────────────────────
+  const BW_MAP = { hairline: '0.5px', regular: '1px', thick: '2px' };
+  vars['--ds-border-width'] = BW_MAP[tokens.surfaces?.borderWeight ?? 'regular'] ?? '1px';
+  const elevModel = tokens.surfaces?.elevation ?? 'layered';
+  if (elevModel === 'flat') {
+    vars['--ds-bg-elevated'] = vars['--ds-bg'];
+    vars['--ds-bg-subtle']   = vars['--ds-bg'];
+  } else if (elevModel === 'floating') {
+    vars['--ds-bg-elevated'] = mode === 'dark' ? hslToHex(baseHue, Math.min(saturation*0.14,11), 20) : '#f7f6f5';
+    vars['--ds-bg-subtle']   = mode === 'dark' ? hslToHex(baseHue, Math.min(saturation*0.14,11), 24) : '#f0efee';
+  }
+  // 'layered' uses defaults already set above
+
+  // ── Motion personality ───────────────────────────────────
+  const DUR_MAP  = { instant: '80ms', snappy: '120ms', balanced: '200ms', expressive: '320ms' };
+  const EASE_MAP = {
+    spring:  'cubic-bezier(0.34,1.56,0.64,1)',
+    ease:    'cubic-bezier(0.4,0,0.2,1)',
+    linear:  'linear',
+    snappy:  'cubic-bezier(0.25,0,0,1)',
+  };
+  vars['--ds-duration-base'] = DUR_MAP[tokens.motion?.duration ?? 'balanced'] ?? '200ms';
+  vars['--ds-easing-base']   = EASE_MAP[tokens.motion?.easing ?? 'ease'] ?? 'cubic-bezier(0.4,0,0.2,1)';
+
+  // ── Gap #9: Custom semantic colors ───────────────────────
+  const customSemColors = tokens.colors?.semantic ?? {};
+  vars['--ds-success'] = customSemColors.success ?? sem['color.action.success'] ?? '#22c55e';
+  vars['--ds-warning'] = customSemColors.warning ?? sem['color.action.warning'] ?? '#f59e0b';
+  vars['--ds-error']   = customSemColors.error   ?? sem['color.action.danger']  ?? '#ef4444';
+  vars['--ds-info']    = customSemColors.info    ?? sem['color.action.info']    ?? '#0ea5e9';
 
   return vars;
 }
@@ -113,7 +156,7 @@ function Chip({ variant, children }) {
 }
 
 function SectionLabel({ children }) {
-  return <div style={{ fontSize:9,fontFamily:'var(--ds-font-mono)',color:'var(--ds-text-muted)',letterSpacing:'0.08em',marginBottom:8 }}>{children.toUpperCase()}</div>;
+  return <div style={{ fontSize:10,fontFamily:CHROME.mono,color:CHROME.label,letterSpacing:'0.09em',fontWeight:700,marginBottom:8 }}>{children.toUpperCase()}</div>;
 }
 
 /* ── Inline Component Docs Panel ── */
@@ -254,15 +297,20 @@ function DocPanel({ doc, onClose }) {
 }
 
 /* ── Editorial Section Header with description ── */
-function DSSection({ category, title, desc, children }) {
-  const doc = COMPONENT_DOCS[title];
+function DSSection({ category, title, desc, children, staticChrome = false }) {
+  const doc = staticChrome ? null : COMPONENT_DOCS[title];
   const [docsOpen, setDocsOpen] = useState(false);
+  const catColor   = staticChrome ? CHROME.accent   : 'var(--ds-primary)';
+  const titleColor = staticChrome ? CHROME.fg        : 'var(--ds-fg)';
+  const titleFont  = staticChrome ? CHROME.sans      : 'var(--ds-font-display)';
+  const descColor  = staticChrome ? CHROME.fgMuted   : 'var(--ds-text-muted)';
+  const descFont   = staticChrome ? CHROME.sans      : 'var(--ds-font-body)';
   return (
     <div>
       <div style={{ marginBottom:22 }}>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:7, opacity:0.85 }}>{category}</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, fontWeight:700, color:catColor, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8, opacity:0.9 }}>{category}</div>
         <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-          <div style={{ fontSize:20, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.025em', lineHeight:1.2 }}>{title}</div>
+          <div style={{ fontSize:20, fontWeight:700, fontFamily:titleFont, color:titleColor, letterSpacing:'-0.025em', lineHeight:1.2 }}>{title}</div>
           {doc && (
             <button
               onClick={() => setDocsOpen(o => !o)}
@@ -278,7 +326,7 @@ function DSSection({ category, title, desc, children }) {
             >{docsOpen ? 'docs ×' : '[i] docs'}</button>
           )}
         </div>
-        {desc && <div style={{ fontSize:12, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.7, maxWidth:520, marginTop:9 }}>{desc}</div>}
+        {desc && <div style={{ fontSize:12, color:descColor, fontFamily:descFont, lineHeight:1.7, marginTop:9 }}>{desc}</div>}
       </div>
       {doc && docsOpen && <DocPanel doc={doc} onClose={() => setDocsOpen(false)} />}
       {children}
@@ -362,9 +410,9 @@ function ButtonMatrix({ matrixRef }) {
       <table style={{ borderCollapse:'collapse', width:'100%', minWidth:460 }}>
         <thead>
           <tr>
-            <th style={{ width:72, padding:'4px 6px 8px', fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600, textAlign:'left' }}>Variant</th>
+            <th style={{ width:80, padding:'4px 6px 10px', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:700, textAlign:'left', letterSpacing:'0.05em' }}>Variant</th>
             {BTN_STATES.map(s => (
-              <th key={s} style={{ padding:'4px 4px 8px', fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600, textAlign:'center', whiteSpace:'nowrap' }}>{s}</th>
+              <th key={s} style={{ padding:'4px 4px 10px', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:700, textAlign:'center', whiteSpace:'nowrap', letterSpacing:'0.03em' }}>{s}</th>
             ))}
           </tr>
         </thead>
@@ -374,7 +422,7 @@ function ButtonMatrix({ matrixRef }) {
               initial={{ opacity:0, x:-6 }} animate={{ opacity:1, x:0 }}
               transition={{ duration:0.16, delay: ri * 0.04 }}
               style={{ borderTop:'1px solid var(--ds-border)' }}>
-              <td style={{ padding:'8px 6px', fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-text-muted)', fontWeight:500 }}>{label}</td>
+              <td style={{ padding:'8px 6px', fontSize:11, fontFamily:CHROME.mono, color:CHROME.text, fontWeight:600 }}>{label}</td>
               {BTN_STATES.map(st => (
                 <td key={st} style={{ padding:'7px 4px', textAlign:'center' }}>
                   <StaticBtn variant={key} state={st}/>
@@ -404,7 +452,7 @@ function InputStates() {
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px 16px', maxWidth:560 }}>
       {states.map(({ label, extra, value, placeholder, errMsg }) => (
         <div key={label}>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:4 }}>{label}</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:4 }}>{label}</div>
           <input readOnly value={value} placeholder={placeholder}
             style={{ ...inputBase, ...extra }}/>
           {errMsg && <div style={{ fontSize:10, color:'#ef4444', fontFamily:'var(--ds-font-body)', marginTop:3 }}>{errMsg}</div>}
@@ -419,115 +467,230 @@ function InputStates() {
 ───────────────────────────────────────────────────────── */
 function MotionTile({ label, tokenKey, tokenValue, children }) {
   return (
-    <div style={{ padding:'12px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', display:'flex', flexDirection:'column', gap:10, minWidth:0 }}>
-      <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
-        <span style={{ fontSize:10, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{label}</span>
-      </div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:52, overflow:'hidden', position:'relative' }}>
+    <div style={{ padding:'14px 12px', borderRight:'1px solid rgba(0,0,0,0.06)', display:'flex', flexDirection:'column', gap:10, minWidth:0 }}>
+      <div style={{ fontSize:10, fontWeight:700, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.5)', letterSpacing:'0.04em' }}>{label}</div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:68, overflow:'visible', position:'relative' }}>
         {children}
       </div>
-      <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'var(--ds-text-muted)', lineHeight:1.5 }}>
-        <span style={{ opacity:0.55 }}>{tokenKey}</span><br/>
-        <span>{tokenValue}</span>
+      <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.28)', lineHeight:1.6 }}>
+        <div style={{ color:'rgba(0,0,0,0.4)' }}>{tokenKey}</div>
+        <div style={{ fontWeight:600, color:'rgba(0,0,0,0.55)' }}>{tokenValue}</div>
       </div>
     </div>
   );
 }
 
 function MotionSection({ tokens }) {
-  const motRef    = useRef([]);
-  const cardRef   = useRef(null);
-  const modalRef  = useRef(null);
-  const inputRef  = useRef(null);
-  const pageRef   = useRef(null);
+  const motRef   = useRef([]);
+  const cardRef  = useRef(null);
+  const modalRef = useRef(null);
+  const inputRef = useRef(null);
+  const pageRef  = useRef(null);
 
-  const dur    = { fast:'100ms', normal:'200ms', slow:'350ms', deliberate:'500ms' };
-  const ease   = { standard:'cubic-bezier(0.4,0,0.2,1)', decelerate:'cubic-bezier(0,0,0.2,1)', spring:'cubic-bezier(0.34,1.56,0.64,1)' };
+  const preset  = tokens?.preset ?? 'minimal';
+  const fastMs  = preset==='brutalist' ? 50  : preset==='playful' ? 120 : preset==='glass' ? 140 : 100;
+  const normMs  = preset==='brutalist' ? 80  : preset==='playful' ? 240 : preset==='glass' ? 400 : 200;
+  const slowMs  = preset==='brutalist' ? 100 : preset==='playful' ? 420 : preset==='glass' ? 500 : 350;
+  const delibMs = preset==='brutalist' ? 150 : preset==='playful' ? 600 : preset==='glass' ? 650 : 500;
+  const instMs  = Math.round(fastMs * 0.5);
+  const easeKey = preset==='playful' ? 'cubic-bezier(0.34,1.56,0.64,1)' : preset==='glass' ? 'cubic-bezier(0,0,0.2,1)' : 'cubic-bezier(0.4,0,0.2,1)';
 
-  // Resolve preset-aware durations
-  const preset = tokens?.preset ?? 'minimal';
-  const fastMs  = preset === 'brutalist' ? 50  : preset === 'playful' ? 120 : preset === 'glass' ? 140 : 100;
-  const normMs  = preset === 'brutalist' ? 80  : preset === 'playful' ? 240 : preset === 'glass' ? 400 : 200;
-  const slowMs  = preset === 'brutalist' ? 100 : preset === 'playful' ? 420 : preset === 'glass' ? 500 : 350;
-  const delibMs = preset === 'brutalist' ? 150 : preset === 'playful' ? 600 : preset === 'glass' ? 650 : 500;
-  const easeKey = preset === 'playful' ? ease.spring : preset === 'glass' ? ease.decelerate : ease.standard;
+  // Inject CSS keyframes once
+  useEffect(() => {
+    if (typeof document==='undefined' || document.getElementById('ds-mot-kf2')) return;
+    const s = document.createElement('style');
+    s.id = 'ds-mot-kf2';
+    s.textContent = `
+      @keyframes ds-mot-track {
+        0%   { left:4px;                opacity:1; }
+        72%  { left:calc(100% - 14px);  opacity:1; }
+        84%  { left:calc(100% - 14px);  opacity:0; }
+        85%  { left:4px;                opacity:0; }
+        100% { left:4px;                opacity:1; }
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
 
+  // GSAP: component interaction demos
   useEffect(() => {
     const tls = [];
-
-    // 1. Button hover cycle
     if (motRef.current[0]) {
       const tl = gsap.timeline({ repeat:-1, repeatDelay:1.2 });
-      tl.to(motRef.current[0], { scale:1.04, duration:fastMs/1000, ease:easeKey })
-        .to(motRef.current[0], { scale:1,    duration:fastMs/1000, ease:easeKey, delay:0.3 });
+      tl.to(motRef.current[0], { scale:1.06, duration:fastMs/1000, ease:easeKey })
+        .to(motRef.current[0], { scale:1,    duration:fastMs/1000, ease:easeKey, delay:0.35 });
       tls.push(tl);
     }
-    // 2. Card elevation
     if (cardRef.current) {
       const tl = gsap.timeline({ repeat:-1, repeatDelay:1 });
-      tl.to(cardRef.current, { y:-5, boxShadow:'0 12px 32px rgba(0,0,0,0.18)', duration:normMs/1000, ease:easeKey })
-        .to(cardRef.current, { y:0,  boxShadow:'0 2px 8px rgba(0,0,0,0.08)',   duration:normMs/1000, ease:easeKey, delay:0.5 });
+      tl.to(cardRef.current, { y:-7, boxShadow:'0 16px 40px rgba(0,0,0,0.18)', duration:normMs/1000, ease:easeKey })
+        .to(cardRef.current, { y:0,  boxShadow:'0 2px 8px rgba(0,0,0,0.07)',   duration:normMs/1000, ease:easeKey, delay:0.55 });
       tls.push(tl);
     }
-    // 3. Modal entrance
     if (modalRef.current) {
       const tl = gsap.timeline({ repeat:-1, repeatDelay:0.8 });
-      tl.set(modalRef.current, { opacity:0, y:18 })
-        .to(modalRef.current, { opacity:1, y:0, duration:slowMs/1000, ease:easeKey })
-        .to(modalRef.current, { opacity:0, y:-6, duration:(normMs/1000)*0.6, ease:'power2.in', delay:0.8 });
+      tl.set(modalRef.current, { opacity:0, y:22, scale:0.93 })
+        .to(modalRef.current, { opacity:1, y:0, scale:1,    duration:slowMs/1000, ease:easeKey })
+        .to(modalRef.current, { opacity:0, y:-8, scale:0.96, duration:(normMs/1000)*0.6, ease:'power2.in', delay:0.9 });
       tls.push(tl);
     }
-    // 4. Input focus ring pulse
     if (inputRef.current) {
       const tl = gsap.timeline({ repeat:-1, repeatDelay:0.8 });
       tl.to(inputRef.current, { outlineWidth:3, outlineOffset:3, duration:fastMs/1000, ease:easeKey })
-        .to(inputRef.current, { outlineWidth:0, outlineOffset:0, duration:fastMs/1000, ease:easeKey, delay:0.6 });
+        .to(inputRef.current, { outlineWidth:0, outlineOffset:0, duration:fastMs/1000, ease:easeKey, delay:0.7 });
       tls.push(tl);
     }
-    // 5. Page slide-in
     if (pageRef.current) {
       const tl = gsap.timeline({ repeat:-1, repeatDelay:0.6 });
-      tl.set(pageRef.current, { x:60, opacity:0 })
-        .to(pageRef.current, { x:0, opacity:1, duration:delibMs/1000, ease:ease.decelerate })
-        .to(pageRef.current, { x:-60, opacity:0, duration:(delibMs/1000)*0.5, ease:'power2.in', delay:0.8 });
+      tl.set(pageRef.current,  { x:56, opacity:0 })
+        .to(pageRef.current,   { x:0,  opacity:1, duration:delibMs/1000, ease:'cubic-bezier(0,0,0.2,1)' })
+        .to(pageRef.current,   { x:-56,opacity:0, duration:(delibMs/1000)*0.45, ease:'power2.in', delay:0.9 });
       tls.push(tl);
     }
-
     return () => tls.forEach(t => t.kill());
-  }, [tokens?.preset, fastMs, normMs, slowMs, delibMs, easeKey]);
+  }, [preset, fastMs, normMs, slowMs, delibMs, easeKey]);
+
+  const CARD_STYLE = { borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#fff', overflow:'hidden' };
+  const SECTION_LABEL = { fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.35)', letterSpacing:'0.09em', textTransform:'uppercase', fontWeight:700 };
+
+  const durationRows = [
+    { label:'instant',    ms:instMs,  color:'#7c3aed', token:'motion.duration.instant'    },
+    { label:'fast',       ms:fastMs,  color:'#2563eb', token:'motion.duration.fast'        },
+    { label:'normal',     ms:normMs,  color:'#0891b2', token:'motion.duration.normal'      },
+    { label:'slow',       ms:slowMs,  color:'#059669', token:'motion.duration.slow'        },
+    { label:'deliberate', ms:delibMs, color:'#c8602a', token:'motion.duration.deliberate'  },
+  ];
+
+  const easingCurves = [
+    { label:'Standard',   curve:'cubic-bezier(0.4,0,0.2,1)',     sub:'ease-in-out',  color:'#7c3aed', desc:'Smooth, balanced' },
+    { label:'Decelerate', curve:'cubic-bezier(0,0,0.2,1)',        sub:'ease-out',     color:'#2563eb', desc:'Starts fast, slows' },
+    { label:'Accelerate', curve:'cubic-bezier(0.4,0,1,1)',        sub:'ease-in',      color:'#0891b2', desc:'Starts slow, rushes' },
+    { label:'Spring',     curve:'cubic-bezier(0.34,1.56,0.64,1)', sub:'overshoot',    color:'#059669', desc:'Bounces past target' },
+    { label:'Linear',     curve:'linear',                         sub:'constant',     color:'#c8602a', desc:'Constant velocity' },
+  ];
 
   return (
-    <div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
-        <MotionTile label="Button Hover" tokenKey="motion.transition.button" tokenValue={`${fastMs}ms ${easeKey.slice(0,18)}…`}>
-          <div ref={el => motRef.current[0] = el}
-            style={{ padding:'7px 14px', borderRadius:'var(--ds-radius)', background:'var(--ds-primary)', color:'#fff', fontSize:11, fontFamily:'var(--ds-font-body)', fontWeight:500, cursor:'default' }}>
-            Click me
-          </div>
-        </MotionTile>
-
-        <MotionTile label="Card Lift" tokenKey="motion.transition.card" tokenValue={`${normMs}ms ${easeKey.slice(0,18)}…`}>
-          <div ref={cardRef}
-            style={{ width:48, height:36, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-subtle)', border:'1px solid var(--ds-border)', boxShadow:'0 2px 8px rgba(0,0,0,0.08)' }}/>
-        </MotionTile>
-
-        <MotionTile label="Modal Enter" tokenKey="motion.transition.modal" tokenValue={`${slowMs}ms ${easeKey.slice(0,18)}…`}>
-          <div ref={modalRef}
-            style={{ width:52, height:38, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-elevated)', border:'1px solid var(--ds-border)', boxShadow:'var(--ds-shadow-lg)' }}/>
-        </MotionTile>
-
-        <MotionTile label="Focus Ring" tokenKey="motion.duration.fast" tokenValue={`${fastMs}ms`}>
-          <div ref={inputRef}
-            style={{ width:54, height:24, borderRadius:'var(--ds-radius)', border:'1.5px solid var(--ds-border)', background:'var(--ds-bg)', outline:'0px solid var(--ds-primary)', outlineOffset:0 }}/>
-        </MotionTile>
-
-        <MotionTile label="Page Slide" tokenKey="motion.transition.page" tokenValue={`${delibMs}ms decelerate`}>
-          <div ref={pageRef}
-            style={{ width:52, height:36, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-subtle)', border:'1px solid var(--ds-border)' }}/>
-        </MotionTile>
-
+      {/* ── Duration Scale ── */}
+      <div style={CARD_STYLE}>
+        <div style={{ padding:'14px 16px 12px', borderBottom:'1px solid rgba(0,0,0,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <span style={SECTION_LABEL}>Duration Scale</span>
+          <span style={{ fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.3)' }}>
+            preset: <strong style={{ color:'rgba(0,0,0,0.55)' }}>{preset}</strong>
+          </span>
+        </div>
+        <div style={{ padding:'14px 16px 16px', display:'flex', flexDirection:'column', gap:11 }}>
+          {durationRows.map(({ label, ms, color, token }) => (
+            <div key={label} style={{ display:'flex', alignItems:'center', gap:14 }}>
+              <div style={{ width:72, flexShrink:0 }}>
+                <div style={{ fontSize:10, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.6)', fontWeight:600 }}>{label}</div>
+                <div style={{ fontSize:8.5, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.28)' }}>{ms}ms</div>
+              </div>
+              <div style={{ flex:1, height:2, background:'rgba(0,0,0,0.07)', borderRadius:1, position:'relative' }}>
+                <div style={{
+                  position:'absolute', top:-4,
+                  width:10, height:10, borderRadius:'50%',
+                  background:color, boxShadow:`0 0 8px ${color}55`,
+                  animation:`ds-mot-track ${ms * 3.2}ms ease-in-out infinite`,
+                }}/>
+              </div>
+              <div style={{ width:160, fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.25)', flexShrink:0, textAlign:'right' }}>{token}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding:'10px 16px', borderTop:'1px solid rgba(0,0,0,0.05)', fontSize:10, color:'rgba(0,0,0,0.38)', fontFamily:'"DM Mono",monospace' }}>
+          All durations run independently — fastest loops most frequently, slowest least.
+        </div>
       </div>
+
+      {/* ── Easing Curves ── */}
+      <div style={CARD_STYLE}>
+        <div style={{ padding:'14px 16px 12px', borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
+          <span style={SECTION_LABEL}>Easing Curves</span>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:0 }}>
+          {easingCurves.map(({ label, curve, sub, color, desc }, i) => (
+            <div key={label} style={{
+              padding:'14px 12px 16px',
+              borderRight: i < 4 ? '1px solid rgba(0,0,0,0.06)' : 'none',
+            }}>
+              <div style={{ fontSize:10, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.7)', fontWeight:700, marginBottom:1 }}>{label}</div>
+              <div style={{ fontSize:8.5, fontFamily:'"DM Mono",monospace', color, marginBottom:2, fontWeight:600 }}>{sub}</div>
+              <div style={{ fontSize:9, color:'rgba(0,0,0,0.38)', fontFamily:'"DM Mono",monospace', marginBottom:12, lineHeight:1.4 }}>{desc}</div>
+              {/* Animated track — overflow visible so spring can overshoot */}
+              <div style={{ height:20, background:'rgba(0,0,0,0.04)', borderRadius:10, position:'relative', overflow:'visible' }}>
+                <div style={{
+                  position:'absolute', top:'50%', marginTop:-5,
+                  width:10, height:10, borderRadius:'50%',
+                  background:color,
+                  animation:`ds-mot-track ${normMs * 4}ms ${curve} infinite`,
+                }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding:'10px 16px', borderTop:'1px solid rgba(0,0,0,0.05)', fontSize:10, color:'rgba(0,0,0,0.38)', fontFamily:'"DM Mono",monospace' }}>
+          All shown at {normMs}ms (normal). Spring dot overshoots the track end then settles — that is the bounce.
+        </div>
+      </div>
+
+      {/* ── Component Interactions ── */}
+      <div style={{ ...CARD_STYLE, overflow:'visible' }}>
+        <div style={{ padding:'14px 16px 12px', borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
+          <span style={SECTION_LABEL}>Component Interactions</span>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)' }}>
+
+          <MotionTile label="Button Hover" tokenKey="motion.transition.button" tokenValue={`${fastMs}ms`}>
+            <div ref={el => motRef.current[0] = el}
+              style={{ padding:'9px 18px', borderRadius:'var(--ds-radius)', background:'var(--ds-primary)', color:'#fff', fontSize:12, fontFamily:'var(--ds-font-body)', fontWeight:600, cursor:'default', whiteSpace:'nowrap' }}>
+              Save
+            </div>
+          </MotionTile>
+
+          <MotionTile label="Card Lift" tokenKey="motion.transition.card" tokenValue={`${normMs}ms`}>
+            <div ref={cardRef}
+              style={{ width:62, padding:'9px 10px', borderRadius:'var(--ds-radius)', background:'var(--ds-bg-subtle)', border:'1px solid var(--ds-border)', boxShadow:'0 2px 8px rgba(0,0,0,0.07)' }}>
+              <div style={{ width:'100%', height:6, borderRadius:2, background:'var(--ds-border)', marginBottom:5 }}/>
+              <div style={{ width:'65%', height:4, borderRadius:2, background:'var(--ds-border)', opacity:0.5 }}/>
+            </div>
+          </MotionTile>
+
+          <MotionTile label="Modal Enter" tokenKey="motion.transition.modal" tokenValue={`${slowMs}ms`}>
+            <div ref={modalRef}
+              style={{ width:66, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-elevated)', border:'1px solid var(--ds-border)', boxShadow:'0 8px 28px rgba(0,0,0,0.15)', overflow:'hidden' }}>
+              <div style={{ height:8, background:'var(--ds-primary)', opacity:0.75 }}/>
+              <div style={{ padding:'7px 9px' }}>
+                <div style={{ width:'80%', height:4, borderRadius:2, background:'var(--ds-border)', marginBottom:5 }}/>
+                <div style={{ width:'55%', height:3, borderRadius:2, background:'var(--ds-border)', opacity:0.5 }}/>
+              </div>
+            </div>
+          </MotionTile>
+
+          <MotionTile label="Focus Ring" tokenKey="motion.duration.fast" tokenValue={`${fastMs}ms`}>
+            <div style={{ width:76, display:'flex', flexDirection:'column', gap:0 }}>
+              <div style={{ fontSize:8.5, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', marginBottom:4 }}>Email</div>
+              <div ref={inputRef}
+                style={{ width:'100%', height:26, borderRadius:'var(--ds-radius)', border:'1.5px solid var(--ds-border)', background:'var(--ds-bg)', outline:'0px solid var(--ds-primary)', outlineOffset:0 }}/>
+            </div>
+          </MotionTile>
+
+          <MotionTile label="Page Slide" tokenKey="motion.transition.page" tokenValue={`${delibMs}ms`}>
+            <div ref={pageRef}
+              style={{ width:62, height:50, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-subtle)', border:'1px solid var(--ds-border)', overflow:'hidden' }}>
+              <div style={{ height:9, background:'var(--ds-border)', opacity:0.5 }}/>
+              <div style={{ padding:'6px 7px', display:'flex', flexDirection:'column', gap:4 }}>
+                {[80,60,40].map((w,i) => (
+                  <div key={i} style={{ width:`${w}%`, height:3, borderRadius:1, background:'var(--ds-border)' }}/>
+                ))}
+              </div>
+            </div>
+          </MotionTile>
+
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -547,7 +710,7 @@ function FormControlsSection() {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px 24px' }}>
         {/* Checkbox group */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Checkboxes</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Checkboxes</div>
           {['Enable notifications','Dark mode','Auto-save (disabled)'].map((lbl, i) => (
             <label key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, cursor:i===2?'not-allowed':'pointer', opacity:i===2?0.4:1 }}>
               <div onClick={() => { if (i<2) { const n=[...checks]; n[i]=!n[i]; setChecks(n); } }}
@@ -560,7 +723,7 @@ function FormControlsSection() {
         </div>
         {/* Radio group */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Radio Buttons</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Radio Buttons</div>
           {['Free plan','Pro — $12/mo','Enterprise'].map((lbl, i) => (
             <label key={i} onClick={() => setRadio(i)} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, cursor:'pointer' }}>
               <div style={{ width:15, height:15, borderRadius:'50%', border:`1.5px solid ${radio===i?'var(--ds-primary)':'var(--ds-border-strong)'}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all .12s' }}>
@@ -572,7 +735,7 @@ function FormControlsSection() {
         </div>
         {/* Toggle switch */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Toggle Switch</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Toggle Switch</div>
           <div style={{ display:'flex', gap:20, alignItems:'center' }}>
             {[{ label:'On', on:toggleOn }, { label:'Off', on:!toggleOn }].map(({ label, on }, i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:7 }}>
@@ -587,7 +750,7 @@ function FormControlsSection() {
         </div>
         {/* Select */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Select</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Select</div>
           <div style={{ position:'relative' }}>
             <select style={{ ...inputBase, paddingRight:28, appearance:'none', cursor:'pointer' }}>
               <option>Product Designer</option><option>Engineer</option><option>Manager</option>
@@ -597,12 +760,12 @@ function FormControlsSection() {
         </div>
         {/* Textarea */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Textarea</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Textarea</div>
           <textarea readOnly rows={3} defaultValue="Tell us about your design process and how you approach system thinking…" style={{ ...inputBase, resize:'none' }}/>
         </div>
         {/* Search */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Search</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Search</div>
           <div style={{ position:'relative' }}>
             <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--ds-text-muted)', pointerEvents:'none' }}>⌕</span>
             <input readOnly defaultValue="Design tokens" style={{ ...inputBase, paddingLeft:28, paddingRight:28 }}/>
@@ -611,7 +774,7 @@ function FormControlsSection() {
         </div>
         {/* File upload */}
         <div style={{ gridColumn:'1 / -1' }}>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>File Upload</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>File Upload</div>
           <div style={{ border:'1.5px dashed var(--ds-border-strong)', borderRadius:'var(--ds-radius)', padding:'16px', display:'flex', flexDirection:'column', alignItems:'center', gap:5, background:'var(--ds-bg-subtle)', cursor:'pointer' }}>
             <span style={{ fontSize:20 }}>⬆</span>
             <span style={{ fontSize:12, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)', fontWeight:500 }}>Drop files here or click to upload</span>
@@ -633,7 +796,7 @@ function NavigationSection() {
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       {/* Topbar */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Topbar</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Topbar</div>
         <nav style={{ display:'flex', alignItems:'center', gap:4, padding:'8px 14px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', boxShadow:'var(--ds-shadow-sm)' }}>
           <span style={{ fontWeight:800, fontSize:14, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', marginRight:8 }}>Brand</span>
           {['Home','Work','About','Contact'].map(item => (
@@ -650,7 +813,7 @@ function NavigationSection() {
       </div>
       {/* Sidebar + content preview */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Sidebar Nav</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Sidebar Nav</div>
         <div style={{ display:'flex', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', overflow:'hidden', height:148 }}>
           <div style={{ width:148, background:'var(--ds-bg-subtle)', borderRight:'1px solid var(--ds-border)', padding:'10px 8px', display:'flex', flexDirection:'column', gap:2, flexShrink:0 }}>
             {sideItems.map(({ icon, label }) => (
@@ -672,7 +835,7 @@ function NavigationSection() {
       </div>
       {/* Breadcrumb */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Breadcrumb</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Breadcrumb</div>
         <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontFamily:'var(--ds-font-body)' }}>
           {['Home','Products','Checkout'].map((crumb, i, arr) => (
             <span key={i} style={{ display:'flex', alignItems:'center', gap:5 }}>
@@ -684,7 +847,7 @@ function NavigationSection() {
       </div>
       {/* Horizontal tabs */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Tabs</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Tabs</div>
         <div style={{ borderBottom:'1px solid var(--ds-border)' }}>
           {['Overview','Activity','Members','Settings'].map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
@@ -696,7 +859,7 @@ function NavigationSection() {
       </div>
       {/* Stepper */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:8 }}>Stepper</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:8 }}>Stepper</div>
         <div style={{ display:'flex', alignItems:'flex-start' }}>
           {['Account','Profile','Billing','Review'].map((step, i) => (
             <span key={i} style={{ display:'flex', alignItems:'flex-start', flex:i<3?1:'unset' }}>
@@ -713,7 +876,7 @@ function NavigationSection() {
       </div>
       {/* Pagination */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Pagination</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Pagination</div>
         <div style={{ display:'flex', alignItems:'center', gap:3 }}>
           {['←','1','2','3','4','5','…','12','→'].map((p, i) => (
             <button key={i} style={{ minWidth:28, height:28, borderRadius:'var(--ds-radius-sm)', border:`1px solid ${i===2?'var(--ds-primary)':'var(--ds-border)'}`, background:i===2?'var(--ds-primary)':'transparent', color:i===2?'#fff':'var(--ds-text-muted)', fontSize:11, cursor:'pointer', fontFamily:'var(--ds-font-body)', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', fontWeight:i===2?600:400 }}>{p}</button>
@@ -749,11 +912,11 @@ function DataTableSection() {
                 </div>
               </th>
               <th onClick={() => setSortDir(d=>d==='asc'?'desc':'asc')}
-                style={{ padding:'8px 10px', textAlign:'left', fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600, borderBottom:'1px solid var(--ds-border)', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap' }}>
+                style={{ padding:'8px 10px', textAlign:'left', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, fontWeight:600, borderBottom:'1px solid var(--ds-border)', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap' }}>
                 NAME <span style={{ opacity:0.5 }}>{sortDir==='asc'?'↑':'↓'}</span>
               </th>
               {['STATUS','DEPARTMENT','DATE','ACTIONS'].map(col => (
-                <th key={col} style={{ padding:'8px 10px', textAlign:'left', fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600, borderBottom:'1px solid var(--ds-border)', whiteSpace:'nowrap' }}>{col}</th>
+                <th key={col} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, fontWeight:600, borderBottom:'1px solid var(--ds-border)', whiteSpace:'nowrap' }}>{col}</th>
               ))}
             </tr>
           </thead>
@@ -861,7 +1024,7 @@ function OverlaysSection() {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         {/* Modal */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Dialog / Modal</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Dialog / Modal</div>
           <div style={{ borderRadius:'var(--ds-radius-lg)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', boxShadow:'var(--ds-shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--ds-border)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <span style={{ fontSize:12, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>Confirm Delete</span>
@@ -878,7 +1041,7 @@ function OverlaysSection() {
         </div>
         {/* Tooltip + Popover */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Tooltip & Popover</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Tooltip & Popover</div>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'flex-start', gap:4 }}>
               <div style={{ padding:'5px 9px', borderRadius:'var(--ds-radius-sm)', background:'#1a1814', color:'#f8f8f7', fontSize:10, fontFamily:'var(--ds-font-body)', fontWeight:500, boxShadow:'var(--ds-shadow-md)', whiteSpace:'nowrap', position:'relative', alignSelf:'flex-start' }}>
@@ -895,7 +1058,7 @@ function OverlaysSection() {
         </div>
         {/* Dropdown menu */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Dropdown Menu</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Dropdown Menu</div>
           <div style={{ position:'relative', display:'inline-block' }}>
             <button onClick={() => setDropdownOpen(o=>!o)}
               style={{ padding:'6px 12px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', color:'var(--ds-fg)', fontSize:11, cursor:'pointer', fontFamily:'var(--ds-font-body)', display:'flex', alignItems:'center', gap:5 }}>
@@ -922,7 +1085,7 @@ function OverlaysSection() {
         </div>
         {/* Command palette */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Command Palette</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Command Palette</div>
           <div style={{ borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border-strong)', background:'var(--ds-bg-elevated)', boxShadow:'var(--ds-shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'7px 10px', borderBottom:'1px solid var(--ds-border)', display:'flex', alignItems:'center', gap:7 }}>
               <span style={{ fontSize:12, color:'var(--ds-text-muted)' }}>⌕</span>
@@ -965,7 +1128,7 @@ function FeedbackSection() {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         {/* Progress bars */}
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Progress</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Progress</div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {[{ label:'Uploading…', pct:65, color:'var(--ds-primary)' },{ label:'Build complete', pct:100, color:'#22c55e' },{ label:'Processing', pct:30, color:'#f59e0b' }].map(({ label, pct, color }, i) => (
               <div key={i}>
@@ -980,7 +1143,7 @@ function FeedbackSection() {
         {/* Skeleton + Spinner + Toast */}
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           <div>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Skeleton</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Skeleton</div>
             <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
               {[85, 60, 75].map((w, i) => (
                 <div key={i} style={{ height:11, borderRadius:'var(--ds-radius-sm)', width:`${w}%`, background:'linear-gradient(90deg,var(--ds-bg-subtle) 25%,var(--ds-border) 50%,var(--ds-bg-subtle) 75%)', backgroundSize:'200% 100%', animation:`shimmer 1.5s ${i*0.15}s infinite linear` }}/>
@@ -988,7 +1151,7 @@ function FeedbackSection() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Spinner</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Spinner</div>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               {[14, 20, 28].map((sz, i) => (
                 <div key={i} style={{ width:sz, height:sz, borderRadius:'50%', border:`${i===0?1.5:2}px solid var(--ds-primary-l)`, borderTopColor:'var(--ds-primary)', animation:'pc-spin 0.7s linear infinite' }}/>
@@ -996,7 +1159,7 @@ function FeedbackSection() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:7 }}>Toast</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Toast</div>
             <div style={{ padding:'8px 11px', borderRadius:'var(--ds-radius)', background:'#1a1814', color:'#f8f8f7', fontSize:11, fontFamily:'var(--ds-font-body)', display:'inline-flex', alignItems:'center', gap:7, boxShadow:'var(--ds-shadow-lg)' }}>
               <span style={{ color:'#22c55e' }}>✓</span>Tokens exported!
             </div>
@@ -1005,7 +1168,7 @@ function FeedbackSection() {
       </div>
       {/* Empty state */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Empty State</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Empty State</div>
         <div style={{ padding:'22px', borderRadius:'var(--ds-radius-lg)', border:'1px dashed var(--ds-border-strong)', display:'flex', flexDirection:'column', alignItems:'center', gap:8, maxWidth:320 }}>
           <div style={{ width:44, height:44, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-subtle)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>📦</div>
           <div style={{ fontSize:14, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>No components yet</div>
@@ -1038,7 +1201,7 @@ function DataDisplaySection() {
       </div>
       {/* Activity feed */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Activity Feed</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Activity Feed</div>
         <div style={{ borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', overflow:'hidden' }}>
           {[
             { av:'AC', c:'#4f46e5', action:'exported CSS tokens', time:'2m ago' },
@@ -1052,14 +1215,14 @@ function DataDisplaySection() {
                 <span style={{ fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)', fontWeight:500 }}>{av} </span>
                 <span style={{ fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)' }}>{action}</span>
               </div>
-              <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', flexShrink:0 }}>{time}</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, flexShrink:0 }}>{time}</span>
             </div>
           ))}
         </div>
       </div>
       {/* Avatars */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:8 }}>Avatars</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:8 }}>Avatars</div>
         <div style={{ display:'flex', alignItems:'center', gap:20 }}>
           <div style={{ display:'flex' }}>
             {[{ i:'AC',c:'#4f46e5'},{ i:'BK',c:'#e54f4f'},{ i:'CS',c:'#22c55e'},{ i:'DL',c:'#f59e0b'}].map(({ i: init, c }, idx) => (
@@ -1107,7 +1270,7 @@ function BadgesSection() {
           ))}
         </div>
         <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-          <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>Notification badges:</span>
+          <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>Notification badges:</span>
           {[{ icon:'🔔', count:3 },{ icon:'📨', count:12 },{ icon:'⚙', count:null }].map(({ icon, count }, i) => (
             <div key={i} style={{ position:'relative', display:'inline-flex' }}>
               <span style={{ fontSize:22 }}>{icon}</span>
@@ -1163,7 +1326,7 @@ function DatePickerSection() {
           <button style={{ width:22, height:22, borderRadius:'var(--ds-radius-sm)', border:'1px solid var(--ds-border)', background:'transparent', color:'var(--ds-fg)', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:2, marginBottom:4 }}>
-          {days.map(d => <div key={d} style={{ textAlign:'center', fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600, padding:'2px 0' }}>{d}</div>)}
+          {days.map(d => <div key={d} style={{ textAlign:'center', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, fontWeight:600, padding:'2px 0' }}>{d}</div>)}
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:2 }}>
           {Array.from({ length: offset + total }).map((_, i) => {
@@ -1280,12 +1443,12 @@ function ColorRolesSection() {
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
         {roles.map(({ name, bg, light, desc }) => (
-          <div key={name} style={{ borderRadius:'var(--ds-radius)', overflow:'hidden', border:'1px solid var(--ds-border)' }}>
+          <div key={name} style={{ borderRadius:CHROME.radius, overflow:'hidden', border:`1px solid ${CHROME.borderColor}` }}>
             <div style={{ height:52, background:bg }}/>
             <div style={{ height:20, background:light }}/>
-            <div style={{ padding:'8px 10px', background:'var(--ds-bg-elevated)' }}>
-              <div style={{ fontSize:11, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{name}</div>
-              <div style={{ fontSize:9, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', marginTop:2 }}>{desc}</div>
+            <div style={{ padding:'8px 10px', background:CHROME.bgBase }}>
+              <div style={{ fontSize:11, fontWeight:600, fontFamily:CHROME.sans, color:CHROME.fg }}>{name}</div>
+              <div style={{ fontSize:9, color:CHROME.fgMuted, fontFamily:CHROME.sans, marginTop:2 }}>{desc}</div>
             </div>
           </div>
         ))}
@@ -1378,7 +1541,7 @@ function TimelineSection() {
               {i < events.length - 1 && <div style={{ width:2, flex:1, background:'var(--ds-border)', minHeight:24, margin:'4px 0' }}/>}
             </div>
             <div style={{ paddingBottom:16 }}>
-              <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:2 }}>{date}</div>
+              <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:2 }}>{date}</div>
               <div style={{ fontSize:12, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{title}</div>
               <div style={{ fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', marginTop:2 }}>{desc}</div>
             </div>
@@ -1408,7 +1571,7 @@ function ChartSection() {
           {bars.map(({ label, val, color }) => (
             <div key={label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
               <div style={{ width:'100%', borderRadius:'var(--ds-radius-sm) var(--ds-radius-sm) 0 0', background:color, height:`${(val/max)*72}px`, transition:'height .3s', minHeight:4 }}/>
-              <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{label}</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{label}</span>
             </div>
           ))}
         </div>
@@ -1446,7 +1609,7 @@ function NotificationPanelSection() {
             <div style={{ flex:1 }}>
               <div style={{ fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)', fontWeight: !read ? 600 : 400 }}>{title}</div>
             </div>
-            <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', flexShrink:0 }}>{time}</span>
+            <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, flexShrink:0 }}>{time}</span>
           </div>
         ))}
       </div>
@@ -1472,7 +1635,7 @@ function CommentThreadSection() {
               <div style={{ flex:1, borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', padding:'9px 12px' }}>
                 <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:4 }}>
                   <span style={{ fontSize:11, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{name}</span>
-                  <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{time}</span>
+                  <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{time}</span>
                 </div>
                 <p style={{ margin:0, fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', lineHeight:1.6 }}>{body}</p>
                 <button style={{ marginTop:6, border:'none', background:'none', padding:0, cursor:'pointer', fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-primary)', fontWeight:500 }}>Reply</button>
@@ -1484,7 +1647,7 @@ function CommentThreadSection() {
                 <div style={{ flex:1, borderRadius:'var(--ds-radius-sm)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-subtle)', padding:'7px 10px' }}>
                   <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:3 }}>
                     <span style={{ fontSize:10, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{r.name}</span>
-                    <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{r.time}</span>
+                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{r.time}</span>
                   </div>
                   <p style={{ margin:0, fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', lineHeight:1.6 }}>{r.body}</p>
                 </div>
@@ -1550,7 +1713,7 @@ function VideoPlayerSection() {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <button style={{ width:26, height:26, border:'none', background:'transparent', color:'var(--ds-fg)', fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>&#9654;</button>
-            <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>1:24 / 3:45</span>
+            <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>1:24 / 3:45</span>
             <div style={{ flex:1 }}/>
             <button style={{ width:22, height:22, border:'none', background:'transparent', color:'var(--ds-fg-muted)', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>&#128266;</button>
             <button style={{ width:22, height:22, border:'none', background:'transparent', color:'var(--ds-fg-muted)', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>&#9974;</button>
@@ -1590,7 +1753,7 @@ function RatingSection() {
     <div>
       <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
         <div>
-          <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:6 }}>Star Rating (3.5 / 5)</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Star Rating (3.5 / 5)</div>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
             <div style={{ display:'flex', gap:3 }}>
               {[1,2,3,4,5].map(i => (
@@ -1607,7 +1770,7 @@ function RatingSection() {
         </div>
         <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
           <div>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:5 }}>Thumbs</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:5 }}>Thumbs</div>
             <div style={{ display:'flex', gap:8 }}>
               {[['↑','var(--ds-secondary-500)','224'],['↓','#ef4444','18']].map(([icon,color,count]) => (
                 <button key={icon} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', borderRadius:'var(--ds-radius)', border:`1px solid ${color}`, background:`${color}18`, color, fontSize:12, cursor:'pointer', fontFamily:'var(--ds-font-body)', fontWeight:600 }}>{icon} {count}</button>
@@ -1615,7 +1778,7 @@ function RatingSection() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginBottom:5 }}>Score</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:5 }}>Score</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:3 }}>
               <span style={{ fontSize:28, fontWeight:800, fontFamily:'var(--ds-font-display)', color:'var(--ds-tertiary-500)', lineHeight:1 }}>8.4</span>
               <span style={{ fontSize:11, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)' }}>/10</span>
@@ -1705,7 +1868,7 @@ function DataFilterSection() {
           </div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-          <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>Active:</span>
+          <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>Active:</span>
           {activeFilters.map(f => (
             <span key={f} style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'3px 8px', borderRadius:'var(--ds-radius-lg)', background:'var(--ds-secondary-100)', color:'var(--ds-secondary-500)', fontSize:10, fontFamily:'var(--ds-font-body)', fontWeight:500 }}>
               {f} <span style={{ cursor:'pointer', fontSize:9 }}>✕</span>
@@ -1918,42 +2081,78 @@ const PROTO_COMPONENTS = [
   { key:'Data Table',         category:'Data',      group:'Data & Tables',       tier:'P3', mini: DataTableMini,  preview: () => <DataTableSection/> },
 ];
 
-/* Live computed token strip for the selected component */
+/* Live computed token strip for the selected component — compact inline legend */
+// Static neutrals for tool chrome — never change with user's palette
+const CHROME = {
+  label:       'rgba(0,0,0,0.32)',
+  text:        'rgba(0,0,0,0.5)',
+  value:       'rgba(0,0,0,0.62)',
+  divider:     'rgba(0,0,0,0.08)',
+  bg:          'rgba(0,0,0,0.03)',
+  border:      'rgba(0,0,0,0.1)',
+  mono:        '"Geist Mono",monospace',
+  // Foundation-page statics — never change with user palette
+  fg:          '#1a1814',
+  fgMuted:     'rgba(0,0,0,0.42)',
+  borderColor: 'rgba(0,0,0,0.08)',
+  borderStrong:'rgba(0,0,0,0.15)',
+  bgBase:      '#ffffff',
+  bgSubtle:    '#f8f8f7',
+  radius:      '8px',
+  radiusSm:    '4px',
+  accent:      '#6366f1',
+  sans:        '-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif',
+};
+
 function ContextualTokenStrip({ componentKey, scopedVars }) {
   const defs = COMPONENT_TOKENS[componentKey] ?? [];
   const colorDefs = defs.filter(t => { const v = scopedVars[t.key]; return v && (v.startsWith('#') || v.startsWith('rgb') || v.startsWith('hsl')); });
   const otherDefs = defs.filter(t => { const v = scopedVars[t.key]; return v && !v.startsWith('#') && !v.startsWith('rgb') && !v.startsWith('hsl'); });
   if (!defs.length) return null;
   return (
-    <div style={{ padding:'12px 16px', marginBottom:24, borderRadius:10, border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)' }}>
-      <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:10 }}>
-        Tokens affecting this component
-      </div>
-      <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
-        {colorDefs.map(t => {
-          const val = scopedVars[t.key] ?? '';
-          return (
-            <div key={t.key} style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 9px', borderRadius:6, border:'1px solid var(--ds-border)', background:'var(--ds-bg)' }}>
-              <div style={{ width:13, height:13, borderRadius:3, background:val, border:'1px solid rgba(0,0,0,0.1)', flexShrink:0 }}/>
-              <div>
-                <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-primary)', lineHeight:1.1 }}>{t.label}</div>
-                <div style={{ fontSize:8, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginTop:1 }}>{val.length > 18 ? val.slice(0,18)+'…' : val}</div>
-              </div>
-            </div>
-          );
-        })}
-        {otherDefs.map(t => {
-          const val = scopedVars[t.key] ?? '';
-          return (
-            <div key={t.key} style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 9px', borderRadius:6, border:'1px solid var(--ds-border)', background:'var(--ds-bg)' }}>
-              <div>
-                <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-primary)', lineHeight:1.1 }}>{t.label}</div>
-                <div style={{ fontSize:8, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', marginTop:1 }}>{val.length > 24 ? val.slice(0,24)+'…' : val}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:'8px 20px', padding:'12px 0 16px', borderBottom:`1px solid ${CHROME.divider}`, marginBottom:24 }}>
+      {/* Label — hardcoded neutral, never changes */}
+      <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, flexShrink:0 }}>
+        Tokens used
+      </span>
+
+      {/* Color tokens — larger circles + readable names */}
+      {colorDefs.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {/* Stacked circles — bigger */}
+          <div style={{ display:'flex', alignItems:'center' }}>
+            {colorDefs.map((t, i) => (
+              <div key={t.key} title={`${t.label}: ${scopedVars[t.key]}`}
+                style={{ width:22, height:22, borderRadius:'50%', background:scopedVars[t.key], border:'2.5px solid #fff', marginLeft: i > 0 ? -8 : 0, position:'relative', zIndex:colorDefs.length - i, boxShadow:'0 0 0 1.5px rgba(0,0,0,0.14)' }}/>
+            ))}
+          </div>
+          {/* Inline labels — hardcoded neutral */}
+          <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+            {colorDefs.map(t => (
+              <span key={t.key} style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontFamily:CHROME.mono, color:CHROME.text }}>
+                <span style={{ width:9, height:9, borderRadius:'50%', background:scopedVars[t.key], display:'inline-block', flexShrink:0, boxShadow:'0 0 0 1px rgba(0,0,0,0.15)' }}/>
+                {t.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Separator */}
+      {colorDefs.length > 0 && otherDefs.length > 0 && (
+        <div style={{ width:1, height:14, background:CHROME.divider, flexShrink:0 }}/>
+      )}
+
+      {/* Non-color tokens — plain key: value */}
+      {otherDefs.map(t => {
+        const val = scopedVars[t.key] ?? '';
+        const shortVal = val.length > 26 ? val.slice(0,26)+'…' : val;
+        return (
+          <span key={t.key} style={{ fontSize:11, fontFamily:CHROME.mono, color:CHROME.text }}>
+            <span style={{ color:CHROME.label }}>{t.label}: </span>{shortVal}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -1974,7 +2173,7 @@ function ComponentDetailPage({ comp, tokens, scopedVars, onBack }) {
         </button>
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16 }}>
           <div>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:7, opacity:0.85 }}>{comp.category}</div>
+            <div style={{ fontSize:10, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8, opacity:0.9 }}>{comp.category}</div>
             <h1 style={{ margin:0, fontSize:28, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.03em', lineHeight:1.15 }}>{comp.key}</h1>
             {doc && <p style={{ margin:'9px 0 0', fontSize:13, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', lineHeight:1.75, maxWidth:560 }}>{doc.description}</p>}
           </div>
@@ -2137,9 +2336,9 @@ function ComponentLibraryView({ tokens, scopedVars }) {
         <div>
           {/* Header */}
           <div style={{ marginBottom:32 }}>
-            <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:7, opacity:0.85 }}>Component Library</div>
+            <div style={{ fontSize:10, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8, opacity:0.9 }}>Component Library</div>
             <div style={{ fontSize:24, fontWeight:700, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', letterSpacing:'-0.025em', lineHeight:1.2 }}>5-component preview</div>
-            <div style={{ fontSize:13, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', marginTop:9, lineHeight:1.75, maxWidth:540 }}>
+            <div style={{ fontSize:13, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', marginTop:9, lineHeight:1.75 }}>
               Click any component to open its dedicated page — live preview, usage guidance, anatomy, and accessibility. Every preview reflects your current token choices in real time.
             </div>
           </div>
@@ -2558,15 +2757,19 @@ function DSOnlyPreview({ tokens }) {
 ───────────────────────────────────────────────────────── */
 function TypographyPreview({ tokens }) {
   const typeScale = useMemo(() => generateTypeScale(tokens.typography.baseSize, tokens.typography.scale), [tokens.typography]);
+  // Use token values directly for font families so sample text shows the actual chosen font
+  const fontDisplay = `'${tokens.typography.display}', serif`;
+  const fontBody    = `'${tokens.typography.body}', sans-serif`;
+  const fontMono    = `'${tokens.typography.mono}', monospace`;
   const levels = [
-    { key:'4xl', role:'Display',    weight:700, font:'var(--ds-font-display)', sample:'The Art of Systems' },
-    { key:'3xl', role:'H1',         weight:700, font:'var(--ds-font-display)', sample:'Building with Tokens' },
-    { key:'2xl', role:'H2',         weight:600, font:'var(--ds-font-display)', sample:'Colour & Typography' },
-    { key:'xl',  role:'H3',         weight:600, font:'var(--ds-font-body)',    sample:'Consistent, Accessible Design' },
-    { key:'lg',  role:'Lead',       weight:400, font:'var(--ds-font-body)',    sample:'Design systems create a shared language between design and code.' },
-    { key:'base',role:'Body',       weight:400, font:'var(--ds-font-body)',    sample:'Every value in a design system should encode a deliberate decision about aesthetics, usability, or brand identity.' },
-    { key:'sm',  role:'Label',      weight:500, font:'var(--ds-font-body)',    sample:'REQUIRED · MAX 48 CHARACTERS' },
-    { key:'xs',  role:'Mono/Caption',weight:400,font:'var(--ds-font-mono)',    sample:'const radius = tokens.shape.border;' },
+    { key:'4xl', role:'Display',     weight:700, font:fontDisplay, sample:'The Art of Systems' },
+    { key:'3xl', role:'H1',          weight:700, font:fontDisplay, sample:'Building with Tokens' },
+    { key:'2xl', role:'H2',          weight:600, font:fontDisplay, sample:'Colour & Typography' },
+    { key:'xl',  role:'H3',          weight:600, font:fontBody,    sample:'Consistent, Accessible Design' },
+    { key:'lg',  role:'Lead',        weight:400, font:fontBody,    sample:'Design systems create a shared language between design and code.' },
+    { key:'base',role:'Body',        weight:400, font:fontBody,    sample:'Every value in a design system should encode a deliberate decision about aesthetics, usability, or brand identity.' },
+    { key:'sm',  role:'Label',       weight:500, font:fontBody,    sample:'REQUIRED · MAX 48 CHARACTERS' },
+    { key:'xs',  role:'Mono/Caption',weight:400, font:fontMono,    sample:'const radius = tokens.shape.border;' },
   ];
 
   return (
@@ -2574,40 +2777,41 @@ function TypographyPreview({ tokens }) {
 
       {/* Header section with font metadata */}
       <DSSection
+        staticChrome
         category="Type System"
         title="Typography Scale"
-        desc={`Built on a ${tokens.typography.baseSize}px base with a ×${tokens.typography.scale} modular scale. Display headings use ${tokens.typography.display}, body copy uses ${tokens.typography.body}, and code/mono uses ${tokens.typography.mono}.`}
+        desc="A modular type scale generates harmonious heading and body sizes. Three font families cover display headings, body prose, and monospaced code — each size is a computed step in the scale."
       >
-        <div style={{ display:'flex', gap:0, borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', overflow:'hidden' }}>
+        <div style={{ display:'flex', gap:0, borderRadius:CHROME.radius, border:`1px solid ${CHROME.borderColor}`, overflow:'hidden' }}>
           {[['Display', tokens.typography.display, 'Headings & titles'],['Body', tokens.typography.body, 'Prose & UI labels'],['Mono', tokens.typography.mono, 'Code & tokens']].map(([l, v, sub], i, arr) => (
-            <div key={l} style={{ flex:1, padding:'12px 16px', borderRight: i < arr.length-1 ? '1px solid var(--ds-border)' : 'none', background: i===0 ? 'var(--ds-bg-subtle)' : 'var(--ds-bg-elevated)' }}>
-              <div style={{ fontSize:8, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.08em', marginBottom:5 }}>{l.toUpperCase()}</div>
-              <div style={{ fontSize:13, color:'var(--ds-fg)', fontFamily:'var(--ds-font-mono)', fontWeight:600, marginBottom:3 }}>{v}</div>
-              <div style={{ fontSize:10, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)' }}>{sub}</div>
+            <div key={l} style={{ flex:1, padding:'12px 16px', borderRight: i < arr.length-1 ? `1px solid ${CHROME.borderColor}` : 'none', background: i===0 ? CHROME.bgSubtle : CHROME.bgBase }}>
+              <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, letterSpacing:'0.08em', marginBottom:5 }}>{l.toUpperCase()}</div>
+              <div style={{ fontSize:13, color:CHROME.fg, fontFamily:CHROME.mono, fontWeight:600, marginBottom:3 }}>{v}</div>
+              <div style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans }}>{sub}</div>
             </div>
           ))}
-          <div style={{ flex:0, padding:'12px 16px', background:'var(--ds-bg-elevated)', display:'flex', flexDirection:'column', justifyContent:'center', borderLeft:'1px solid var(--ds-border)', minWidth:80 }}>
-            <div style={{ fontSize:8, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)', letterSpacing:'0.08em', marginBottom:5 }}>SCALE</div>
-            <div style={{ fontSize:13, color:'var(--ds-primary)', fontFamily:'var(--ds-font-mono)', fontWeight:700 }}>×{tokens.typography.scale}</div>
-            <div style={{ fontSize:10, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)', marginTop:3 }}>ratio</div>
+          <div style={{ flex:0, padding:'12px 16px', background:CHROME.bgBase, display:'flex', flexDirection:'column', justifyContent:'center', borderLeft:`1px solid ${CHROME.borderColor}`, minWidth:80 }}>
+            <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, letterSpacing:'0.08em', marginBottom:5 }}>SCALE</div>
+            <div style={{ fontSize:13, color:CHROME.accent, fontFamily:CHROME.mono, fontWeight:700 }}>×{tokens.typography.scale}</div>
+            <div style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans, marginTop:3 }}>ratio</div>
           </div>
         </div>
       </DSSection>
 
       {/* Type scale samples */}
       <div>
-        <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:16, opacity:0.85 }}>Type Scale</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, fontWeight:700, color:CHROME.accent, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8, opacity:0.9 }}>Type Scale</div>
         <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
           {levels.map(({ key, role, weight, font, sample }) => (
-            <div key={key} style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:16, padding:'14px 0', borderBottom:'1px solid var(--ds-border)' }}>
+            <div key={key} style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:16, padding:'14px 0', borderBottom:`1px solid ${CHROME.borderColor}` }}>
               <div style={{ paddingTop:4 }}>
-                <div style={{ fontSize:9, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)', marginBottom:3 }}>{role}</div>
-                <div style={{ fontSize:11, color:'var(--ds-primary)', fontFamily:'var(--ds-font-mono)', fontWeight:700 }}>{Math.round(typeScale[key])}px</div>
-                <div style={{ fontSize:8, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-mono)', marginTop:2 }}>{+(typeScale[key]/16).toFixed(2)}rem</div>
+                <div style={{ fontSize:9, color:CHROME.fgMuted, fontFamily:CHROME.mono, marginBottom:3 }}>{role}</div>
+                <div style={{ fontSize:11, color:CHROME.accent, fontFamily:CHROME.mono, fontWeight:700 }}>{Math.round(typeScale[key])}px</div>
+                <div style={{ fontSize:8, color:CHROME.fgMuted, fontFamily:CHROME.mono, marginTop:2 }}>{+(typeScale[key]/16).toFixed(2)}rem</div>
               </div>
               <div style={{
                 fontSize: Math.min(typeScale[key], ['4xl','3xl'].includes(key) ? (key==='4xl' ? 44 : 34) : 999),
-                fontWeight: weight, fontFamily: font, color:'var(--ds-fg)',
+                fontWeight: weight, fontFamily: font, color:CHROME.fg,
                 lineHeight: weight >= 600 ? 1.15 : 1.65,
                 letterSpacing: weight >= 700 ? '-0.03em' : weight >= 600 ? '-0.01em' : '0',
                 overflow:'hidden', display:'-webkit-box',
@@ -2656,21 +2860,21 @@ function LayoutPreview({ tokens }) {
 
       {/* ── Grid Visualizer ── */}
       <DSSection
+        staticChrome
         category="Grid"
-        title={`${cols}-Column Grid`}
-        desc={`A ${cols}-column grid with ${gutterPx}px gutters defines the horizontal rhythm of your layouts. Column count adapts by viewport: typically 4 columns on mobile, 8 on tablet, 12 on desktop.`}
+        title="Column Grid"
+        desc="A column grid defines the horizontal rhythm of layouts. Column count adapts by viewport — 4 on mobile, 8 on tablet, 12+ on desktop — with consistent gutters maintaining visual breathing room."
       >
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           {/* Full grid visualization */}
-          <div style={{ position:'relative', height:72, borderRadius:'var(--ds-radius)', overflow:'hidden', border:'1px solid var(--ds-border)', background:'var(--ds-bg-subtle)' }}>
+          <div style={{ position:'relative', height:72, borderRadius:CHROME.radius, overflow:'hidden', border:`1px solid ${CHROME.borderColor}`, background:CHROME.bgSubtle }}>
             {Array.from({ length: cols }).map((_, i) => (
               <div key={i} style={{
                 position:'absolute',
                 left:`calc(${(i/cols)*100}% + ${gutterPx/2}px)`,
                 width:`calc(${(1/cols)*100}% - ${gutterPx}px)`,
                 top:8, bottom:8,
-                background:'var(--ds-primary)',
-                opacity: 0.14,
+                background:'rgba(99,102,241,0.22)',
                 borderRadius:2,
               }}/>
             ))}
@@ -2681,16 +2885,15 @@ function LayoutPreview({ tokens }) {
                 left:`calc(${((i+1)/cols)*100}% - ${gutterPx/2}px)`,
                 width:gutterPx,
                 top:8, bottom:8,
-                background:'var(--ds-primary)',
-                opacity:0.04,
+                background:'rgba(99,102,241,0.06)',
               }}/>
             ))}
             <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-              <span style={{ fontSize:10, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600 }}>{cols} columns</span>
-              <span style={{ fontSize:10, color:'var(--ds-border-strong)' }}>·</span>
-              <span style={{ fontSize:10, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{gutterPx}px gutter</span>
-              <span style={{ fontSize:10, color:'var(--ds-border-strong)' }}>·</span>
-              <span style={{ fontSize:10, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{Math.round((100 - gutterPx * (cols-1) / 7.68) / cols * 10) / 10}% column width</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.fgMuted, fontWeight:600 }}>{cols} columns</span>
+              <span style={{ fontSize:10, color:CHROME.borderStrong }}>·</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.fgMuted }}>{gutterPx}px gutter</span>
+              <span style={{ fontSize:10, color:CHROME.borderStrong }}>·</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.fgMuted }}>{Math.round((100 - gutterPx * (cols-1) / 7.68) / cols * 10) / 10}% column width</span>
             </div>
           </div>
           {/* Column count examples */}
@@ -2700,14 +2903,14 @@ function LayoutPreview({ tokens }) {
               { label:'Tablet', cols:8, desc:'8 columns' },
               { label:'Desktop', cols:cols, desc:`${cols} columns` },
             ].map(({ label, cols: c, desc }) => (
-              <div key={label} style={{ padding:'10px 12px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)' }}>
+              <div key={label} style={{ padding:'10px 12px', borderRadius:CHROME.radius, border:`1px solid ${CHROME.borderColor}`, background:CHROME.bgBase }}>
                 <div style={{ display:'flex', gap:2, marginBottom:6, height:16 }}>
                   {Array.from({ length: c }).map((_, i) => (
-                    <div key={i} style={{ flex:1, borderRadius:1, background:'var(--ds-primary)', opacity:0.2 }}/>
+                    <div key={i} style={{ flex:1, borderRadius:1, background:'rgba(99,102,241,0.28)' }}/>
                   ))}
                 </div>
-                <div style={{ fontSize:10, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{label}</div>
-                <div style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{desc}</div>
+                <div style={{ fontSize:10, fontWeight:600, fontFamily:CHROME.sans, color:CHROME.fg }}>{label}</div>
+                <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{desc}</div>
               </div>
             ))}
           </div>
@@ -2716,6 +2919,7 @@ function LayoutPreview({ tokens }) {
 
       {/* ── Breakpoint Ruler ── */}
       <DSSection
+        staticChrome
         category="Responsive"
         title="Breakpoints"
         desc="Six breakpoints define how layouts adapt across screen sizes — from 375px mobile up to 1536px wide-screen. Each breakpoint is a CSS min-width threshold."
@@ -2723,15 +2927,15 @@ function LayoutPreview({ tokens }) {
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           {/* Ruler */}
           <div style={{ position:'relative', height:64, paddingTop:24 }}>
-            <div style={{ position:'absolute', left:0, right:0, top:32, height:2, background:'var(--ds-border)', borderRadius:2 }}/>
+            <div style={{ position:'absolute', left:0, right:0, top:32, height:2, background:CHROME.borderColor, borderRadius:2 }}/>
             {BREAKPOINTS.map(({ key, px }) => {
               const maxPx = 1536;
               const pct   = (px / maxPx) * 100;
               return (
                 <div key={key} style={{ position:'absolute', left:`${pct}%`, top:22, transform:'translateX(-50%)' }}>
-                  <div style={{ width:1.5, height:18, background:'var(--ds-border-strong)', margin:'0 auto' }}/>
-                  <div style={{ fontSize:8, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', textAlign:'center', whiteSpace:'nowrap', marginTop:4, lineHeight:1.4 }}>
-                    <span style={{ fontWeight:600 }}>{key}</span><br/>{px}px
+                  <div style={{ width:1.5, height:18, background:CHROME.borderStrong, margin:'0 auto' }}/>
+                  <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.fgMuted, textAlign:'center', whiteSpace:'nowrap', marginTop:4, lineHeight:1.4 }}>
+                    <span style={{ fontWeight:700 }}>{key}</span><br/>{px}px
                   </div>
                 </div>
               );
@@ -2740,10 +2944,10 @@ function LayoutPreview({ tokens }) {
           {/* Breakpoint chips */}
           <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
             {BREAKPOINTS.map(({ key, px }) => (
-              <div key={key} style={{ padding:'5px 10px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', display:'flex', alignItems:'center', gap:7 }}>
-                <span style={{ fontSize:10, fontWeight:700, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)' }}>{key}</span>
-                <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>{px}px</span>
-                <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-primary)' }}>{(px/16).toFixed(0)}rem</span>
+              <div key={key} style={{ padding:'8px 16px', borderRadius:CHROME.radius, border:`1px solid ${CHROME.borderColor}`, background:CHROME.bgBase, display:'flex', alignItems:'center', gap:10 }}>
+                <span style={{ fontSize:13, fontWeight:700, fontFamily:CHROME.mono, color:CHROME.fg, minWidth:24 }}>{key}</span>
+                <span style={{ fontSize:12, fontFamily:CHROME.mono, color:CHROME.fgMuted }}>{px}px</span>
+                <span style={{ fontSize:11, fontFamily:CHROME.mono, color:'#6366f1', opacity:0.8 }}>{(px/16).toFixed(0)}rem</span>
               </div>
             ))}
           </div>
@@ -2752,26 +2956,27 @@ function LayoutPreview({ tokens }) {
 
       {/* ── Spacing Scale ── */}
       <DSSection
+        staticChrome
         category="Spacing"
         title="Spacing Scale"
-        desc={`Derived from a ${tokens.spacing?.base ?? 8}px base unit. The scale follows a ${tokens.spacing?.scale ?? 'linear'} progression grouped into Micro (tight UI), Base (component padding), and Macro (section gaps).`}
+        desc="A structured spacing scale grouped into three tiers — Micro for tight inline gaps, Base for component padding and card spacing, and Macro for section and page-level layout margins."
       >
         <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
           {[['Micro', micro, 0, 'Inline gaps, icon margins, dense list padding'], ['Base', base, 3, 'Component padding, card gaps, form spacing'], ['Macro', macro, 8, 'Section gaps, page margins, layout spacing']].map(([gLabel, steps, offset, desc]) => (
             <div key={gLabel}>
               <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:10 }}>
-                <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', fontWeight:700, color:'var(--ds-primary)', letterSpacing:'0.1em', textTransform:'uppercase' }}>{gLabel}</span>
-                <span style={{ fontSize:10, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)' }}>{desc}</span>
+                <span style={{ fontSize:9, fontFamily:CHROME.mono, fontWeight:700, color:'#6366f1', letterSpacing:'0.1em', textTransform:'uppercase' }}>{gLabel}</span>
+                <span style={{ fontSize:10, color:CHROME.fgMuted, fontFamily:CHROME.sans }}>{desc}</span>
               </div>
-              <div style={{ borderRadius:'var(--ds-radius)', overflow:'hidden', border:'1px solid var(--ds-border)' }}>
+              <div style={{ borderRadius:CHROME.radius, overflow:'hidden', border:`1px solid ${CHROME.borderColor}` }}>
                 {steps.map((val, i) => (
-                  <div key={i} style={{ display:'grid', gridTemplateColumns:'56px 1fr 52px 52px', gap:10, alignItems:'center', padding:'6px 12px', borderBottom: i < steps.length-1 ? '1px solid var(--ds-border)' : 'none', background: i%2===0 ? 'transparent' : 'var(--ds-bg-subtle)' }}>
-                    <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', fontWeight:600 }}>{scaleKey}-{offset+i+1}</span>
+                  <div key={i} style={{ display:'grid', gridTemplateColumns:'56px 1fr 52px 52px', gap:10, alignItems:'center', padding:'6px 12px', borderBottom: i < steps.length-1 ? `1px solid ${CHROME.borderColor}` : 'none', background: i%2===0 ? 'transparent' : CHROME.bgSubtle }}>
+                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{scaleKey}-{offset+i+1}</span>
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ height:8, width:`${Math.max(4, (val/maxSpacing)*100)}%`, background:'var(--ds-primary)', borderRadius:2, opacity:0.45+((offset+i)/20)*0.55, transition:'width .3s', minWidth:4, maxWidth:'100%', flexShrink:0 }}/>
+                      <div style={{ height:8, width:`${Math.max(4, (val/maxSpacing)*100)}%`, background:'rgba(99,102,241,0.55)', borderRadius:2, opacity:0.45+((offset+i)/20)*0.55, transition:'width .3s', minWidth:4, maxWidth:'100%', flexShrink:0 }}/>
                     </div>
-                    <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', textAlign:'right', fontWeight:600 }}>{val}px</span>
-                    <span style={{ fontSize:9, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)', textAlign:'right' }}>{+(val/16).toFixed(2)}rem</span>
+                    <span style={{ fontSize:9, fontFamily:CHROME.mono, color:CHROME.fg, textAlign:'right', fontWeight:600 }}>{val}px</span>
+                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, textAlign:'right' }}>{+(val/16).toFixed(2)}rem</span>
                   </div>
                 ))}
               </div>
@@ -2782,6 +2987,7 @@ function LayoutPreview({ tokens }) {
 
       {/* ── Z-Index Stack ── */}
       <DSSection
+        staticChrome
         category="Layering"
         title="Z-Index Stack"
         desc="Seven stacking layers define the elevation hierarchy of floating UI. Each layer maps to a semantic name — Base content sits at 0, Toasts surface at 500 to always appear on top."
@@ -2792,17 +2998,17 @@ function LayoutPreview({ tokens }) {
             return (
               <div key={key} style={{
                 display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
-                borderRadius:'var(--ds-radius)',
+                borderRadius:CHROME.radius,
                 background: color,
                 border:'1px solid rgba(255,255,255,0.12)',
               }}>
-                <div style={{ width:32, height:32, borderRadius:'var(--ds-radius-sm)', background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <span style={{ fontSize:11, fontFamily:'var(--ds-font-mono)', color:'#fff', fontWeight:700 }}>{ri}</span>
+                <div style={{ width:32, height:32, borderRadius:CHROME.radiusSm, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <span style={{ fontSize:11, fontFamily:CHROME.mono, color:'#fff', fontWeight:700 }}>{ri}</span>
                 </div>
                 <div style={{ flex:1 }}>
-                  <span style={{ fontSize:12, fontFamily:'var(--ds-font-mono)', color:'var(--ds-fg)', fontWeight:700 }}>{key}</span>
+                  <span style={{ fontSize:12, fontFamily:CHROME.mono, color:CHROME.fg, fontWeight:700 }}>{key}</span>
                 </div>
-                <span style={{ fontSize:11, fontFamily:'var(--ds-font-mono)', color:'var(--ds-text-muted)' }}>z-index: {z}</span>
+                <span style={{ fontSize:11, fontFamily:CHROME.mono, color:CHROME.fgMuted }}>z-index: {z}</span>
               </div>
             );
           })}
@@ -2818,20 +3024,37 @@ function LayoutPreview({ tokens }) {
 ───────────────────────────────────────────────────────── */
 function AuditPreview({ tokens, mode, onTokenChange }) {
   const issues = useMemo(() => auditTokens(tokens, mode), [tokens, mode]);
+  const dq     = useMemo(() => auditDesignQuality(tokens), [tokens]);
 
   const errors   = issues.filter(i=>i.level==='error');
   const warnings = issues.filter(i=>i.level==='warning');
   const passes   = issues.filter(i=>i.level==='pass');
   const score    = Math.round((passes.length / issues.length) * 100);
 
-  // Auto-fix toast state
-  const [fixedId, setFixedId] = useState(null);
-  const applyFix = (issue) => {
-    if (!onTokenChange || !issue.autoFixKey) return;
-    const patch = getAutoFix(issue.autoFixKey, tokens);
-    if (!patch) return;
-    onTokenChange(prev => ({ ...prev, ...patch }));
-    setFixedId(issue.id);
+  const [dqExpanded, setDqExpanded] = useState(null);
+
+  // Gap #4: strategy dropdown state
+  const [fixedId,   setFixedId]   = useState(null);
+  const [fixOpenId, setFixOpenId] = useState(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!fixOpenId) return;
+    const handler = (e) => {
+      if (!e.target.closest('[data-fix-dropdown]')) setFixOpenId(null);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [fixOpenId]);
+
+  const applyStrategy = (strategy, issueId) => {
+    if (!onTokenChange || !strategy.apply) return;
+    onTokenChange(prev => {
+      const patch = strategy.apply(prev);
+      return patch ? { ...prev, ...patch } : prev;
+    });
+    setFixedId(issueId);
+    setFixOpenId(null);
     setTimeout(() => setFixedId(null), 1800);
   };
 
@@ -2857,47 +3080,102 @@ function AuditPreview({ tokens, mode, onTokenChange }) {
   return (
     <div style={{ display:'flex',flexDirection:'column',gap:24 }}>
 
-      {/* Score banner */}
-      <div style={{
-        padding:'16px 20px', borderRadius:'var(--ds-radius-lg)',
-        background: score>=80?'#dcfce7':score>=60?'#fef9c3':'#fee2e2',
-        border:`1px solid ${score>=80?'#86efac':score>=60?'#fde047':'#fca5a5'}`,
-        display:'flex', alignItems:'center', gap:16,
-      }}>
-        <div style={{ fontSize:36,fontWeight:800,fontFamily:'var(--ds-font-display)',color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b',lineHeight:1 }}>
-          {score}%
-        </div>
-        <div>
-          <div style={{ fontSize:14,fontWeight:700,fontFamily:'var(--ds-font-body)',color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b' }}>
-            {score>=80?'Looking good!':score>=60?'A few things to fix':'Needs attention'}
+      {/* ── Dual score cards ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+        {/* WCAG score */}
+        <div style={{
+          padding:'16px 18px', borderRadius:12,
+          background: score>=80?'#dcfce7':score>=60?'#fef9c3':'#fee2e2',
+          border:`1px solid ${score>=80?'#86efac':score>=60?'#fde047':'#fca5a5'}`,
+        }}>
+          <div style={{ fontSize:10,fontWeight:700,fontFamily:CHROME.mono,letterSpacing:'0.08em',color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b',marginBottom:8 }}>WCAG ACCESSIBILITY</div>
+          <div style={{ fontSize:32,fontWeight:800,fontFamily:CHROME.sans,color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b',lineHeight:1,marginBottom:6 }}>
+            {score}%
           </div>
-          <div style={{ fontSize:12,fontFamily:'var(--ds-font-body)',color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b',opacity:0.75,marginTop:2 }}>
-            {passes.length} passed · {warnings.length} warnings · {errors.length} errors
+          <div style={{ fontSize:12,fontFamily:CHROME.sans,color:score>=80?'#166534':score>=60?'#854d0e':'#991b1b',opacity:0.8 }}>
+            {passes.length} passed · {warnings.length} warn · {errors.length} err
+          </div>
+        </div>
+        {/* Design Quality score */}
+        <div style={{
+          padding:'16px 18px', borderRadius:12,
+          background: dq.score>=80?'#dbeafe':dq.score>=60?'#fef9c3':'#fee2e2',
+          border:`1px solid ${dq.score>=80?'#93c5fd':dq.score>=60?'#fde047':'#fca5a5'}`,
+        }}>
+          <div style={{ fontSize:10,fontWeight:700,fontFamily:CHROME.mono,letterSpacing:'0.08em',color:dq.score>=80?'#1e40af':dq.score>=60?'#854d0e':'#991b1b',marginBottom:8 }}>DESIGN QUALITY</div>
+          <div style={{ fontSize:32,fontWeight:800,fontFamily:CHROME.sans,color:dq.score>=80?'#1e40af':dq.score>=60?'#854d0e':'#991b1b',lineHeight:1,marginBottom:6 }}>
+            {dq.score}%
+          </div>
+          <div style={{ fontSize:12,fontFamily:CHROME.sans,color:dq.score>=80?'#1e40af':dq.score>=60?'#854d0e':'#991b1b',opacity:0.8 }}>
+            {dq.checks.filter(c=>c.pass).length}/{dq.checks.length} checks passing
           </div>
         </div>
       </div>
 
       {/* Contrast matrix */}
       <div>
-        <div style={{ fontSize:10,fontWeight:700,fontFamily:'var(--ds-font-body)',color:'var(--ds-fg)',marginBottom:10,letterSpacing:'0.02em' }}>Contrast Matrix</div>
-        <div style={{ display:'flex',flexDirection:'column',gap:0,borderRadius:'var(--ds-radius)',border:'1px solid var(--ds-border)',overflow:'hidden' }}>
+        <div style={{ fontSize:10,fontWeight:700,fontFamily:CHROME.sans,color:CHROME.fg,marginBottom:10,letterSpacing:'0.02em' }}>Contrast Matrix</div>
+        <div style={{ display:'flex',flexDirection:'column',gap:0,borderRadius:CHROME.radius,border:`1px solid ${CHROME.borderColor}`,overflow:'hidden' }}>
           {matrixRows.map(({ label,hex1,hex2 },i) => {
             let ratio;
             try { ratio = getContrastRatio(hex1.startsWith('rgba')?hex1.replace(/[\d.]+\)$/,()=>'1)'):hex1, hex2.startsWith('rgba')?'#6b7280':hex2); } catch { ratio = 1; }
             const { level, color } = wcagLevel(ratio);
             return (
-              <div key={i} style={{ display:'grid',gridTemplateColumns:'1fr auto auto',alignItems:'center',gap:12,padding:'9px 12px',background:i%2===0?'transparent':'rgba(0,0,0,0.02)',borderBottom:i<matrixRows.length-1?'1px solid var(--ds-border)':'none' }}>
+              <div key={i} style={{ display:'grid',gridTemplateColumns:'1fr auto auto',alignItems:'center',gap:12,padding:'9px 12px',background:i%2===0?'transparent':'rgba(0,0,0,0.02)',borderBottom:i<matrixRows.length-1?`1px solid ${CHROME.borderColor}`:'none' }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                   <div style={{ width:16,height:16,borderRadius:3,background:hex1.startsWith('rgba')?'rgba(107,114,128,0.4)':hex1,border:'1px solid rgba(0,0,0,0.1)',flexShrink:0 }}/>
                   <div style={{ width:16,height:16,borderRadius:3,background:hex2.startsWith('rgba')?'#f8f9fa':hex2,border:'1px solid rgba(0,0,0,0.1)',flexShrink:0 }}/>
-                  <span style={{ fontSize:11,fontFamily:'var(--ds-font-body)',color:'var(--ds-fg)' }}>{label}</span>
+                  <span style={{ fontSize:11,fontFamily:CHROME.sans,color:CHROME.fg }}>{label}</span>
                 </div>
-                <span style={{ fontSize:11,fontFamily:'var(--ds-font-mono)',color:'var(--ds-text-muted)',minWidth:40,textAlign:'right' }}>{ratio.toFixed(1)}:1</span>
-                <span style={{ fontSize:10,fontFamily:'var(--ds-font-mono)',color,fontWeight:700,minWidth:36,textAlign:'right' }}>{level}</span>
+                <span style={{ fontSize:11,fontFamily:CHROME.mono,color:CHROME.fgMuted,minWidth:40,textAlign:'right' }}>{ratio.toFixed(1)}:1</span>
+                <span style={{ fontSize:10,fontFamily:CHROME.mono,color,fontWeight:700,minWidth:36,textAlign:'right' }}>{level}</span>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* ── Design Quality checks ── */}
+      <div>
+        <div style={{ fontSize:10,fontWeight:700,fontFamily:CHROME.sans,color:'#1e40af',marginBottom:10,display:'flex',alignItems:'center',gap:5,letterSpacing:'0.02em' }}>
+          ◈ DESIGN QUALITY CHECKS
+          <span style={{ fontWeight:400,color:CHROME.fgMuted,fontSize:9 }}>({dq.checks.length} checks)</span>
+        </div>
+        <div style={{ display:'flex',flexDirection:'column',gap:5 }}>
+          {dq.checks.map((check) => {
+            const isOpen = dqExpanded === check.id;
+            const lvlColor = check.pass ? '#22c55e' : check.severity === 'error' ? '#ef4444' : check.severity === 'warning' ? '#f59e0b' : '#6b7280';
+            const lvlBg    = check.pass ? '#dcfce7' : check.severity === 'error' ? '#fee2e2' : check.severity === 'warning' ? '#fefce8' : 'rgba(0,0,0,0.03)';
+            const lvlBorder= check.pass ? CHROME.borderColor : check.severity === 'error' ? '#fca5a5' : check.severity === 'warning' ? '#fde047' : CHROME.borderColor;
+            return (
+              <div key={check.id} style={{ borderRadius:CHROME.radius,border:`1px solid ${lvlBorder}`,background:lvlBg,overflow:'hidden' }}>
+                <button
+                  onClick={() => setDqExpanded(isOpen ? null : check.id)}
+                  style={{ width:'100%',padding:'9px 12px',background:'none',border:'none',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'flex-start',gap:7 }}>
+                  <span style={{ fontSize:10,fontWeight:700,color:lvlColor,flexShrink:0,marginTop:1 }}>
+                    {check.pass ? '✓' : check.severity === 'error' ? '✕' : '⚠'}
+                  </span>
+                  <span style={{ flex:1,fontSize:11,fontFamily:CHROME.sans,color:check.pass?'#166534':check.severity==='error'?'#991b1b':'#854d0e',lineHeight:1.5 }}>
+                    {check.label}
+                  </span>
+                  <span style={{ fontSize:9,color:CHROME.fgMuted,flexShrink:0,marginTop:2 }}>{isOpen?'▲':'▾'}</span>
+                </button>
+                {isOpen && (
+                  <div style={{ padding:'0 12px 10px 28px' }}>
+                    <div style={{ fontSize:11,color:check.pass?'#166534':check.severity==='error'?'#991b1b':'#854d0e',lineHeight:1.55,marginBottom:4 }}>{check.message}</div>
+                    {check.detail && <div style={{ fontSize:10,color:CHROME.fgMuted,lineHeight:1.6 }}>{check.detail}</div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── WCAG Issues section header ── */}
+      <div style={{ fontSize:10,fontWeight:700,fontFamily:CHROME.sans,color:'#166534',marginBottom:-16,display:'flex',alignItems:'center',gap:5,letterSpacing:'0.02em' }}>
+        ✓ WCAG ACCESSIBILITY CHECKS
+        <span style={{ fontWeight:400,color:CHROME.fgMuted,fontSize:9 }}>({issues.length} checks)</span>
       </div>
 
       {/* Issues list */}
@@ -2906,10 +3184,10 @@ function AuditPreview({ tokens, mode, onTokenChange }) {
         if (!group.length) return null;
         return (
           <div key={lvl}>
-            <div style={{ fontSize:10,fontWeight:700,fontFamily:'var(--ds-font-body)',color:levelColor[lvl],marginBottom:8,display:'flex',alignItems:'center',gap:5 }}>
+            <div style={{ fontSize:10,fontWeight:700,fontFamily:CHROME.sans,color:levelColor[lvl],marginBottom:8,display:'flex',alignItems:'center',gap:5 }}>
               <span>{levelIcon[lvl]}</span>
               {lvl==='error'?'Errors':lvl==='warning'?'Warnings':'Passing checks'}
-              <span style={{ fontWeight:400,color:'var(--ds-text-muted)',fontSize:9 }}>({group.length})</span>
+              <span style={{ fontWeight:400,color:CHROME.fgMuted,fontSize:9 }}>({group.length})</span>
             </div>
             <div style={{ display:'flex',flexDirection:'column',gap:5 }}>
               {group.map((issue) => {
@@ -2918,32 +3196,70 @@ function AuditPreview({ tokens, mode, onTokenChange }) {
                   <motion.div key={issue.id}
                     animate={justFixed ? { scale:[1,1.02,1], backgroundColor:['#dcfce8','#dcfce8'] } : {}}
                     transition={{ duration:.4 }}
-                    style={{ padding:'9px 12px',borderRadius:'var(--ds-radius)',border:`1px solid ${justFixed?'#86efac':lvl==='pass'?'var(--ds-border)':lvl==='error'?'#fca5a5':'#fde047'}`,background:justFixed?'#dcfce8':lvl==='pass'?'var(--ds-bg-subtle)':lvl==='error'?'#fee2e2':'#fefce8',transition:'border .3s,background .3s' }}>
+                    style={{ padding:'9px 12px',borderRadius:CHROME.radius,border:`1px solid ${justFixed?'#86efac':lvl==='pass'?CHROME.borderColor:lvl==='error'?'#fca5a5':'#fde047'}`,background:justFixed?'#dcfce8':lvl==='pass'?CHROME.bgSubtle:lvl==='error'?'#fee2e2':'#fefce8',transition:'border .3s,background .3s' }}>
                     <div style={{ display:'flex',alignItems:'flex-start',gap:7 }}>
-                      <span style={{ fontSize:9,padding:'1px 5px',borderRadius:3,background:lvl==='pass'?'#dcfce7':lvl==='error'?'#fca5a5':'#fde047',color:lvl==='pass'?'#166534':lvl==='error'?'#991b1b':'#854d0e',fontFamily:'"Geist Mono",monospace',fontWeight:700,flexShrink:0,marginTop:2 }}>{issue.category ?? issue.cat}</span>
+                      <span style={{ fontSize:9,padding:'1px 5px',borderRadius:3,background:lvl==='pass'?'#dcfce7':lvl==='error'?'#fca5a5':'#fde047',color:lvl==='pass'?'#166534':lvl==='error'?'#991b1b':'#854d0e',fontFamily:CHROME.mono,fontWeight:700,flexShrink:0,marginTop:2 }}>{issue.category ?? issue.cat}</span>
                       <div style={{ flex:1 }}>
-                        <span style={{ fontSize:11,fontFamily:'var(--ds-font-body)',color:justFixed?'#166534':lvl==='pass'?'#166534':lvl==='error'?'#991b1b':'#854d0e',lineHeight:1.5 }}>
+                        <span style={{ fontSize:11,fontFamily:CHROME.sans,color:justFixed?'#166534':lvl==='pass'?'#166534':lvl==='error'?'#991b1b':'#854d0e',lineHeight:1.5 }}>
                           {justFixed ? '✓ Fixed!' : (issue.message ?? issue.msg)}
                         </span>
                         {(issue.suggestion ?? issue.fix) && !justFixed && (
-                          <div style={{ fontSize:10,fontFamily:'var(--ds-font-body)',color:lvl==='error'?'#b91c1c':'#92400e',opacity:0.8,marginTop:2 }}>
+                          <div style={{ fontSize:10,fontFamily:CHROME.sans,color:lvl==='error'?'#b91c1c':'#92400e',opacity:0.8,marginTop:2 }}>
                             → {issue.suggestion ?? issue.fix}
                           </div>
                         )}
                       </div>
-                      {/* Auto-Fix button (Task 9.2) */}
+                      {/* Gap #4: Fix options dropdown */}
                       {issue.autoFixKey && onTokenChange && lvl !== 'pass' && (
-                        <button onClick={() => applyFix(issue)}
-                          style={{
-                            padding:'3px 8px', borderRadius:4, flexShrink:0,
-                            border:`1px solid ${lvl==='error'?'#fca5a5':'#fde047'}`,
-                            background:'rgba(255,255,255,0.6)',
-                            color:lvl==='error'?'#991b1b':'#854d0e',
-                            fontSize:9, cursor:'pointer', fontFamily:'"Geist Mono",monospace',
-                            fontWeight:600, transition:'all .12s',
-                          }}>
-                          Auto-Fix
-                        </button>
+                        <div data-fix-dropdown style={{ position:'relative', flexShrink:0 }}>
+                          <button
+                            onClick={() => setFixOpenId(fixOpenId === issue.id ? null : issue.id)}
+                            style={{
+                              padding:'3px 8px', borderRadius:4,
+                              border:`1px solid ${lvl==='error'?'#fca5a5':'#fde047'}`,
+                              background: fixOpenId === issue.id ? (lvl==='error'?'#fee2e2':'#fef9c3') : 'rgba(255,255,255,0.6)',
+                              color:lvl==='error'?'#991b1b':'#854d0e',
+                              fontSize:9, cursor:'pointer', fontFamily:'"Geist Mono",monospace',
+                              fontWeight:600, transition:'all .12s', display:'flex', alignItems:'center', gap:3,
+                            }}>
+                            Fix <span style={{ fontSize:7, opacity:0.7 }}>▾</span>
+                          </button>
+                          {fixOpenId === issue.id && (() => {
+                            const strategies = getAutoFix(issue.autoFixKey, tokens);
+                            if (!strategies) return null;
+                            return (
+                              <div style={{
+                                position:'absolute', right:0, top:'calc(100% + 3px)', zIndex:30,
+                                background:'#fff', border:'1px solid rgba(0,0,0,0.12)', borderRadius:8,
+                                boxShadow:'0 4px 20px rgba(0,0,0,0.10)', minWidth:200, overflow:'hidden',
+                              }}>
+                                {strategies.map((strategy, idx) => (
+                                  <button key={idx}
+                                    onClick={() => applyStrategy(strategy, issue.id)}
+                                    disabled={!strategy.apply}
+                                    style={{
+                                      width:'100%', padding:'9px 12px', border:'none',
+                                      background:'transparent', textAlign:'left',
+                                      cursor: strategy.apply ? 'pointer' : 'default',
+                                      borderBottom: idx < strategies.length-1 ? '1px solid rgba(0,0,0,0.05)' : 'none',
+                                      opacity: strategy.apply ? 1 : 0.55,
+                                    }}
+                                    onMouseEnter={e => { if (strategy.apply) e.currentTarget.style.background='#f8f8f7'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background='transparent'; }}
+                                  >
+                                    <div style={{ fontSize:11, fontWeight:600, color: strategy.locked?'#f59e0b':'#1a1814', fontFamily:'"Geist Sans",system-ui', display:'flex', alignItems:'center', gap:4 }}>
+                                      {strategy.locked && <span style={{ fontSize:10 }}>🔒</span>}
+                                      {strategy.label}
+                                    </div>
+                                    <div style={{ fontSize:10, color:'rgba(0,0,0,0.42)', fontFamily:'"Geist Sans",system-ui', marginTop:1 }}>
+                                      {strategy.description}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       )}
                     </div>
                   </motion.div>
@@ -2970,8 +3286,8 @@ const HIER_NODES = [
 const NODE_H = 44; // px per node row
 
 function HierarchyDiagram() {
-  const dotRef    = useRef(null);
-  const totalH    = NODE_H * HIER_NODES.length;
+  const dotRef = useRef(null);
+  const totalH = NODE_H * HIER_NODES.length;
 
   useEffect(() => {
     const el = dotRef.current;
@@ -2987,19 +3303,19 @@ function HierarchyDiagram() {
   }, [totalH]);
 
   return (
-    <div aria-hidden="true" style={{ padding:'14px 16px', marginBottom:20, borderRadius:8, background:'#0d1117', border:'1px solid rgba(255,255,255,0.07)', position:'relative' }}>
-      <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.25)', letterSpacing:'0.08em', marginBottom:10 }}>TOKEN CASCADE</div>
+    <div aria-hidden="true" style={{ position:'relative', marginBottom:8 }}>
+      <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.28)', letterSpacing:'0.09em', marginBottom:10, textTransform:'uppercase' }}>Token cascade</div>
       {/* Vertical rail */}
-      <div style={{ position:'absolute', left:28, top:36, width:1, height:totalH - 14, background:'rgba(255,255,255,0.07)' }}/>
+      <div style={{ position:'absolute', left:4, top:28, width:1, height:totalH - 14, background:'rgba(0,0,0,0.08)' }}/>
       {/* Traveling dot */}
-      <div ref={dotRef} style={{ position:'absolute', left:24, top:36, width:9, height:9, borderRadius:'50%', background:'#c8602a', boxShadow:'0 0 10px #c8602a80', zIndex:2 }}/>
+      <div ref={dotRef} style={{ position:'absolute', left:0, top:28, width:9, height:9, borderRadius:'50%', background:'#c8602a', boxShadow:'0 0 8px rgba(200,96,42,0.5)', zIndex:2 }}/>
       {/* Nodes */}
       {HIER_NODES.map((node, i) => (
-        <div key={i} style={{ display:'flex', alignItems:'center', gap:10, height:NODE_H }}>
-          <div style={{ width:9, height:9, borderRadius:'50%', background:node.dot, flexShrink:0, zIndex:1, boxShadow:`0 0 6px ${node.dot}80` }}/>
+        <div key={i} style={{ display:'flex', alignItems:'center', gap:12, height:NODE_H, paddingLeft:18 }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:node.dot, flexShrink:0, zIndex:1, boxShadow:`0 0 4px ${node.dot}60` }}/>
           <div>
-            <div style={{ fontSize:11, fontFamily:'"DM Mono",monospace', color:'#e2e8f0', fontWeight:600, lineHeight:1 }}>{node.label}</div>
-            <div style={{ fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(226,232,240,0.30)', marginTop:3 }}>{node.sub}</div>
+            <div style={{ fontSize:11, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.72)', fontWeight:600, lineHeight:1 }}>{node.label}</div>
+            <div style={{ fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.35)', marginTop:3 }}>{node.sub}</div>
           </div>
         </div>
       ))}
@@ -3033,7 +3349,7 @@ function isColorValue(v) {
 
 function TkSwatch({ value }) {
   if (!isColorValue(value)) return null;
-  return <span style={{ display:'inline-block', width:10, height:10, borderRadius:2, background:value, border:'1px solid rgba(255,255,255,0.12)', flexShrink:0, verticalAlign:'middle', marginRight:4 }}/>;
+  return <span style={{ display:'inline-block', width:10, height:10, borderRadius:2, background:value, border:'1px solid rgba(0,0,0,0.1)', flexShrink:0, verticalAlign:'middle', marginRight:4 }}/>;
 }
 
 function TkRow({ name, value, delay=0 }) {
@@ -3042,9 +3358,9 @@ function TkRow({ name, value, delay=0 }) {
     <motion.div
       initial={{ opacity:0, x:-4 }} animate={{ opacity:1, x:0 }}
       transition={{ duration:0.18, delay }}
-      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 8px', borderRadius:4, gap:8, minWidth:0 }}>
-      <span style={{ fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(226,232,240,0.45)', flexShrink:0, minWidth:90 }}>{shortName}</span>
-      <span style={{ fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(226,232,240,0.75)', display:'flex', alignItems:'center', gap:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0, flexShrink:1 }}>
+      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 8px', borderRadius:4, gap:8, minWidth:0 }}>
+      <span style={{ fontSize:10.5, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.42)', flexShrink:0, minWidth:90 }}>{shortName}</span>
+      <span style={{ fontSize:10.5, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.65)', display:'flex', alignItems:'center', gap:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0, flexShrink:1 }}>
         <TkSwatch value={value}/>{value}
       </span>
     </motion.div>
@@ -3054,11 +3370,11 @@ function TkRow({ name, value, delay=0 }) {
 function TokenAccordion({ label, rows }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+    <div style={{ borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
       <button onClick={()=>setOpen(o=>!o)}
-        style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', background:'none', border:'none', cursor:'pointer', color:'rgba(226,232,240,0.65)', fontFamily:'"DM Mono",monospace', fontSize:10, fontWeight:600 }}>
+        style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 12px', background:'none', border:'none', cursor:'pointer', color:'rgba(0,0,0,0.6)', fontFamily:'"DM Mono",monospace', fontSize:11.5, fontWeight:600 }}>
         <span>{label}</span>
-        <span style={{ fontSize:8, opacity:0.5 }}>{open?'▲':'▼'}</span>
+        <span style={{ fontSize:9, opacity:0.45 }}>{open?'▲':'▼'}</span>
       </button>
       {open && (
         <div style={{ paddingBottom:6 }}>
@@ -3069,104 +3385,300 @@ function TokenAccordion({ label, rows }) {
   );
 }
 
+/* ── Section card wrapper ── */
+function TkCard({ title, children }) {
+  return (
+    <div style={{ borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#fff', overflow:'hidden' }}>
+      <div style={{ fontSize:9, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.35)', letterSpacing:'0.09em', textTransform:'uppercase', padding:'10px 16px 8px', background:'#fafaf9', borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
+        {title}
+      </div>
+      <div style={{ padding:'14px 16px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ── Token page section header ── */
+function TkSectionHeader({ label, id }) {
+  return (
+    <div id={id} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+      <div style={{ width:3, height:16, borderRadius:2, background:'rgba(200,96,42,0.55)', flexShrink:0 }} />
+      <span style={{ fontSize:11, fontWeight:700, color:'rgba(0,0,0,0.5)', fontFamily:'"Geist Mono",monospace', letterSpacing:'0.08em', textTransform:'uppercase' }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+const COLOR_ROLE_LABELS = ['Primary','Secondary','Tertiary','Accent','Neutral','Warning'];
+
 function TokensPreview({ tokens, mode }) {
   const { primitive, semantic, component } = useMemo(
     () => computeAllTokens(tokens, mode), [tokens, mode]
   );
   const { palette, spacingSteps, shadowDefs } = primitive;
 
-  return (
-    <div style={{ display:'flex', flexDirection:'column', gap:0, background:'#0d1117', borderRadius:10, overflow:'hidden', border:'1px solid rgba(255,255,255,0.06)', color:'#e2e8f0' }}>
+  const TK_NAV = [
+    { id:'tk-colors',    label:'Color Palette' },
+    { id:'tk-spacing',   label:'Spacing & Shape' },
+    { id:'tk-semantic',  label:'Semantic' },
+    { id:'tk-component', label:'Component' },
+  ];
 
-      {/* Hierarchy diagram */}
-      <div style={{ padding:'16px 16px 0' }}>
-        <HierarchyDiagram />
-        {/* Text equivalent for screen readers (Task 10.4) */}
-        <p style={{ position:'absolute', width:1, height:1, overflow:'hidden', clip:'rect(0,0,0,0)', whiteSpace:'nowrap' }}>
-          Token cascade: Palette → Primitive Tokens → Semantic Tokens → Component Tokens → UI Components
-        </p>
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:36 }}>
+
+      {/* ── Section jump nav ── */}
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', paddingBottom:20, borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
+        {TK_NAV.map(s => (
+          <button key={s.id}
+            onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior:'smooth', block:'start' })}
+            style={{ padding:'6px 14px', borderRadius:20, border:'1px solid rgba(0,0,0,0.1)', background:'rgba(0,0,0,0.03)', fontSize:12, cursor:'pointer', fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.5)', fontWeight:500, whiteSpace:'nowrap', transition:'all 0.12s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(200,96,42,0.08)'; e.currentTarget.style.borderColor='rgba(200,96,42,0.3)'; e.currentTarget.style.color='#c8602a'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor='rgba(0,0,0,0.1)'; e.currentTarget.style.color='rgba(0,0,0,0.5)'; }}>
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      {/* ── Section 1: Primitive ── */}
-      <div style={{ padding:'0 16px 16px' }}>
-        <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.25)', letterSpacing:'0.08em', padding:'10px 0 8px', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:10 }}>
-          PRIMITIVE TOKENS
-        </div>
-        {/* Palette mini-grid */}
-        <div style={{ marginBottom:10 }}>
-          {palette.map((shades, i) => (
-            <div key={i} style={{ display:'flex', gap:2, marginBottom:4 }}>
-              {SHADE_KEYS.map(k => (
-                <div key={k} title={`${COLOR_NAMES[i]??`c${i}`}-${k}: ${shades[k]}`}
-                  style={{ flex:1, height:14, borderRadius:2, background:shades[k] }}/>
-              ))}
-            </div>
-          ))}
-          <div style={{ display:'flex', gap:2 }}>
+      {/* ── 1. Color Palette ── full-width swatch table ── */}
+      <section id="tk-colors">
+        <TkSectionHeader label="Color Palette" id="tk-colors-h" />
+        <div style={{ borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', overflow:'hidden', background:'#fff' }}>
+          {/* Shade column headers */}
+          <div style={{ display:'grid', gridTemplateColumns:'80px repeat(10,1fr)', background:'#fafaf9', borderBottom:'1px solid rgba(0,0,0,0.07)', padding:'7px 0' }}>
+            <div />
             {SHADE_KEYS.map(k => (
-              <div key={k} style={{ flex:1, fontSize:7, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.2)', textAlign:'center' }}>{k}</div>
+              <div key={k} style={{ fontSize:9, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.32)', textAlign:'center', fontWeight:600, letterSpacing:'0.01em' }}>{k}</div>
             ))}
           </div>
-        </div>
-        {/* Spacing mini bars */}
-        <div style={{ display:'flex', gap:3, marginBottom:10, alignItems:'flex-end', height:24 }}>
-          {spacingSteps.slice(0,12).map((v, i) => {
-            const max = spacingSteps[11] ?? 64;
-            return <div key={i} title={`space-${i+1}: ${v}px`}
-              style={{ flex:1, height:`${Math.max(8,(v/max)*24)}px`, borderRadius:2, background:'rgba(99,102,241,0.45)' }}/>;
-          })}
-        </div>
-        {/* Radius + shadow */}
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          {['0px','4px','8px','16px','9999px'].map(r => (
-            <div key={r} style={{ width:22, height:22, borderRadius:r, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.15)' }} title={r}/>
-          ))}
-          <div style={{ flex:1 }}/>
-          {['sm','md','lg'].map(k => (
-            <div key={k} style={{ width:30, height:16, borderRadius:3, background:'rgba(255,255,255,0.06)', boxShadow:shadowDefs[k], display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <span style={{ fontSize:7, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.3)' }}>{k}</span>
+          {/* One row per palette role */}
+          {palette.map((shades, i) => (
+            <div key={i} style={{ display:'grid', gridTemplateColumns:'80px repeat(10,1fr)', borderBottom: i < palette.length-1 ? '1px solid rgba(0,0,0,0.04)' : 'none', alignItems:'stretch' }}>
+              {/* Role label */}
+              <div style={{ display:'flex', alignItems:'center', padding:'0 14px', borderRight:'1px solid rgba(0,0,0,0.04)' }}>
+                <span style={{ fontSize:11, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.42)', fontWeight:600, textTransform:'capitalize' }}>
+                  {COLOR_ROLE_LABELS[i] ?? `color-${i}`}
+                </span>
+              </div>
+              {/* Shade cells */}
+              {SHADE_KEYS.map(k => {
+                const hex = shades[k];
+                const isDark = k >= 500;
+                return (
+                  <div key={k} title={`${COLOR_ROLE_LABELS[i]??`c${i}`}-${k}: ${hex}`}
+                    style={{ height:56, background:hex, position:'relative', cursor:'default' }}>
+                    <span style={{
+                      position:'absolute', bottom:5, left:'50%', transform:'translateX(-50%)',
+                      fontSize:8, fontFamily:'"Geist Mono",monospace',
+                      color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.45)',
+                      whiteSpace:'nowrap', letterSpacing:'0.02em',
+                    }}>{hex?.slice(1).toUpperCase()}</span>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── 2. Spacing / Shape / Shadow in one row ── */}
+      <div id="tk-spacing" style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:16, alignItems:'stretch' }}>
+
+        {/* Spacing scale */}
+        <section style={{ display:'flex', flexDirection:'column' }}>
+          <TkSectionHeader label="Spacing Scale" id="tk-spacing-h" />
+          <div style={{ flex:1, borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#fff', padding:'20px 20px 14px' }}>
+            <div style={{ display:'flex', gap:5, alignItems:'flex-end', height:52, marginBottom:8 }}>
+              {spacingSteps.slice(0,12).map((v, i) => {
+                const max = spacingSteps[Math.min(11, spacingSteps.length-1)] ?? 64;
+                return (
+                  <div key={i} title={`space-${i+1}: ${v}px`}
+                    style={{ flex:1, height:`${Math.max(4,(v/max)*52)}px`, borderRadius:'3px 3px 0 0', background:'rgba(200,96,42,0.25)', transition:'height .2s' }}/>
+                );
+              })}
+            </div>
+            <div style={{ display:'flex', gap:5 }}>
+              {spacingSteps.slice(0,12).map((v, i) => (
+                <div key={i} style={{ flex:1, textAlign:'center' }}>
+                  <div style={{ fontSize:8, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.3)', lineHeight:1.2 }}>{v}</div>
+                  <div style={{ fontSize:7, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.18)' }}>px</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Border radius */}
+        <section style={{ display:'flex', flexDirection:'column' }}>
+          <TkSectionHeader label="Border Radius" />
+          <div style={{ flex:1, borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#fff', padding:'16px 14px', overflow:'hidden', display:'flex', alignItems:'center' }}>
+            <div style={{ display:'flex', gap:8, justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', width:'100%' }}>
+              {[['0px','Sharp'],['4px','Soft'],['8px','Round'],['16px','More'],['9999px','Pill']].map(([r, lbl]) => (
+                <div key={r} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, minWidth:0 }}>
+                  <div style={{ width:28, height:28, borderRadius:r, background:'rgba(0,0,0,0.06)', border:'1.5px solid rgba(0,0,0,0.12)', flexShrink:0 }} />
+                  <span style={{ fontSize:9, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.4)', textAlign:'center', lineHeight:1.2, whiteSpace:'nowrap' }}>{lbl}</span>
+                  <span style={{ fontSize:8, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.22)', textAlign:'center', whiteSpace:'nowrap' }}>{r}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Shadows */}
+        <section style={{ display:'flex', flexDirection:'column' }}>
+          <TkSectionHeader label="Shadows" />
+          <div style={{ flex:1, borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#f7f6f5', padding:'20px 20px', display:'flex', alignItems:'center' }}>
+            <div style={{ display:'flex', gap:12, justifyContent:'space-between', alignItems:'center', width:'100%' }}>
+              {(['sm','md','lg']).map(k => (
+                <div key={k} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+                  <div style={{ width:'100%', height:36, borderRadius:7, background:'#fff', boxShadow:shadowDefs[k], border:'1px solid rgba(0,0,0,0.04)' }} />
+                  <span style={{ fontSize:9, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.35)', fontWeight:600 }}>{k}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
 
-      {/* ── Section 2: Semantic ── */}
-      <div style={{ padding:'0 16px 16px', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.25)', letterSpacing:'0.08em', padding:'10px 0 8px', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:6 }}>
-          SEMANTIC TOKENS
-        </div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:0 }}>
-          {SEM_GROUPS.map(({ label, prefix }, gi) => {
-            const rows = Object.entries(semantic)
-              .filter(([k]) => k.startsWith(prefix))
-              .map(([k, v]) => ({ name:k, value:v }));
+      {/* ── 3. Semantic Tokens ── 2-column grouped cards ── */}
+      <section id="tk-semantic">
+        <TkSectionHeader label="Semantic Tokens" id="tk-semantic-h" />
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          {SEM_GROUPS.map(({ key, label, prefix }) => {
+            const rows = Object.entries(semantic).filter(([k]) => k.startsWith(prefix));
             if (!rows.length) return null;
             return (
-              <div key={gi} style={{ padding:'6px 4px', borderBottom:'1px solid rgba(255,255,255,0.05)', ...(gi%2===0?{ borderRight:'1px solid rgba(255,255,255,0.05)' }:{}) }}>
-                <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.28)', marginBottom:4, paddingLeft:4 }}>{label}</div>
-                {rows.map(({ name, value }, ri) => <TkRow key={name} name={name} value={value} delay={gi*0.04 + ri*0.015}/>)}
+              <div key={key} style={{ borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#fff', overflow:'hidden' }}>
+                {/* Group header */}
+                <div style={{ padding:'9px 14px', borderBottom:'1px solid rgba(0,0,0,0.05)', background:'#fafaf9', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <span style={{ fontSize:10, fontWeight:700, color:'rgba(0,0,0,0.4)', fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', textTransform:'uppercase' }}>{label}</span>
+                  <span style={{ fontSize:9, color:'rgba(0,0,0,0.25)', fontFamily:'"Geist Mono",monospace' }}>{rows.length} tokens</span>
+                </div>
+                {/* Token rows */}
+                {rows.map(([name, value], ri) => {
+                  const shortName = name.split('.').slice(2).join('.');
+                  return (
+                    <motion.div key={name}
+                      initial={{ opacity:0 }} animate={{ opacity:1 }}
+                      transition={{ duration:0.15, delay:ri*0.02 }}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 14px', borderBottom: ri < rows.length-1 ? '1px solid rgba(0,0,0,0.04)' : 'none', gap:12 }}>
+                      <span style={{ fontSize:11.5, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.5)', flexShrink:0, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {shortName}
+                      </span>
+                      <span style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+                        {isColorValue(value) && (
+                          <span style={{ width:14, height:14, borderRadius:3, background:value, border:'1px solid rgba(0,0,0,0.12)', flexShrink:0, display:'inline-block' }}/>
+                        )}
+                        <span style={{ fontSize:11, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.6)', maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {value}
+                        </span>
+                      </span>
+                    </motion.div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* ── Section 3: Component ── */}
-      <div style={{ padding:'0 16px 16px', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(255,255,255,0.25)', letterSpacing:'0.08em', padding:'10px 0 8px', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:4 }}>
-          COMPONENT TOKENS
+      {/* ── 4. Component Tokens ── 3-column flat cards matching semantic style ── */}
+      <section id="tk-component">
+        <TkSectionHeader label="Component Tokens" id="tk-component-h" />
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
+          {COMP_GROUPS.map(({ key, label }) => {
+            const rows = Object.entries(component)
+              .filter(([k]) => k.startsWith(key+'.'))
+              .map(([k, v]) => ({ name: k.split('.').slice(1).join('.'), value: v }));
+            if (!rows.length) return null;
+            const visible = rows.slice(0, 9);
+            return (
+              <div key={key} style={{ borderRadius:10, border:'1px solid rgba(0,0,0,0.07)', background:'#fff', overflow:'hidden' }}>
+                {/* Group header — matches semantic token cards */}
+                <div style={{ padding:'9px 14px', borderBottom:'1px solid rgba(0,0,0,0.05)', background:'#fafaf9', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <span style={{ fontSize:10, fontWeight:700, color:'rgba(0,0,0,0.4)', fontFamily:'"Geist Mono",monospace', letterSpacing:'0.07em', textTransform:'uppercase' }}>{label}</span>
+                  <span style={{ fontSize:9, color:'rgba(0,0,0,0.25)', fontFamily:'"Geist Mono",monospace' }}>{rows.length} tokens</span>
+                </div>
+                {/* Token rows */}
+                {visible.map(({ name, value }, ri) => {
+                  const shortName = name.split('.').pop();
+                  return (
+                    <div key={name}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 14px', borderBottom: ri < visible.length-1 ? '1px solid rgba(0,0,0,0.04)' : 'none', gap:8 }}>
+                      <span style={{ fontSize:11, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.5)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flexShrink:1, minWidth:0 }}>
+                        {shortName}
+                      </span>
+                      <span style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
+                        {isColorValue(value) && (
+                          <span style={{ width:12, height:12, borderRadius:3, background:value, border:'1px solid rgba(0,0,0,0.1)', flexShrink:0, display:'inline-block' }}/>
+                        )}
+                        <span style={{ fontSize:10.5, fontFamily:'"Geist Mono",monospace', color:'rgba(0,0,0,0.55)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110 }}>
+                          {value}
+                        </span>
+                      </span>
+                    </div>
+                  );
+                })}
+                {rows.length > 9 && (
+                  <div style={{ padding:'5px 14px 8px', fontSize:10, color:'rgba(0,0,0,0.28)', fontFamily:'"Geist Mono",monospace', fontStyle:'italic' }}>
+                    +{rows.length - 9} more
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-        {COMP_GROUPS.map(({ key, label }) => {
-          const rows = Object.entries(component)
-            .filter(([k]) => k.startsWith(key+'.'))
-            .map(([k, v]) => ({ name:k, value:v }));
-          if (!rows.length) return null;
-          return <TokenAccordion key={key} label={label} rows={rows}/>;
-        })}
-      </div>
+      </section>
+
     </div>
   );
 }
+
+/* ─────────────────────────────────────────────────────────
+   NAMED EXPORTS — for DSMainContent docs-site layout
+───────────────────────────────────────────────────────── */
+
+export {
+  buildScopedVars,
+  ContextualTokenStrip,
+  COMPONENT_TOKENS,
+  // Section components
+  ButtonMatrix,
+  InputStates,
+  FormControlsSection,
+  TagInputSection,
+  SliderSection,
+  RatingSection,
+  NavigationSection,
+  SidebarLayoutSection,
+  DataFilterSection,
+  DataTableSection,
+  KanbanSection,
+  ChartSection,
+  StatsGridSection,
+  TimelineSection,
+  CardsSection,
+  PricingCardsSection,
+  DataDisplaySection,
+  NotificationPanelSection,
+  CommentThreadSection,
+  OverlaysSection,
+  FeedbackSection,
+  BadgesSection,
+  RichTextEditorSection,
+  AccordionSection,
+  DatePickerSection,
+  VideoPlayerSection,
+  MotionSection,
+  ColorRolesSection,
+  // Foundation page views
+  TypographyPreview,
+  LayoutPreview,
+  AuditPreview,
+  TokensPreview,
+};
 
 /* ─────────────────────────────────────────────────────────
    MAIN
@@ -3179,9 +3691,32 @@ const PREVIEW_TABS = [
   { id:'tokens',     label:'Tokens'     },
 ];
 
+// Gap #33: Color blindness filter definitions
+const CB_FILTERS = {
+  normal:       null,
+  protanopia:   '0.567,0.433,0,0,0 0.558,0.442,0,0,0 0,0.242,0.758,0,0 0,0,0,1,0',
+  deuteranopia: '0.625,0.375,0,0,0 0.7,0.3,0,0,0 0,0.3,0.7,0,0 0,0,0,1,0',
+  tritanopia:   '0.95,0.05,0,0,0 0,0.433,0.567,0,0 0,0.475,0.525,0,0 0,0,0,1,0',
+  achromatopsia: null, // uses saturate type
+};
+const CB_LABELS = {
+  normal:       'Normal',
+  protanopia:   'Protan',
+  deuteranopia: 'Deutan',
+  tritanopia:   'Tritan',
+  achromatopsia:'Achrom',
+};
+const CB_DESCRIPTIONS = {
+  protanopia:   'Red-blind: reds appear dark/grey, greens appear yellow.',
+  deuteranopia: 'Green-blind: greens appear yellowish, reds hard to distinguish.',
+  tritanopia:   'Blue-blind: blues appear green, yellows appear pink.',
+  achromatopsia:'Full color blindness: sees only greyscale.',
+};
+
 export default function PreviewCanvas({ tokens, onTokenChange }) {
-  const [activeTab, setActiveTab] = useState('components');
-  const [mode, setMode]           = useState('light');
+  const [activeTab,      setActiveTab]      = useState('components');
+  const [mode,           setMode]           = useState('light');
+  const [colorBlindMode, setColorBlindMode] = useState('normal');
 
   const scopedVars = useMemo(() => buildScopedVars(tokens, mode), [tokens, mode]);
   // Memoize vibe score
@@ -3224,6 +3759,24 @@ export default function PreviewCanvas({ tokens, onTokenChange }) {
 
   return (
     <div style={{ flex:1,height:'100%',display:'flex',flexDirection:'column',overflow:'hidden' }}>
+
+      {/* Gap #33: Hidden SVG filter defs for color blindness simulation */}
+      <svg style={{ position:'absolute', width:0, height:0, overflow:'hidden' }} aria-hidden="true">
+        <defs>
+          <filter id="cb-filter-protanopia">
+            <feColorMatrix type="matrix" values="0.567,0.433,0,0,0 0.558,0.442,0,0,0 0,0.242,0.758,0,0 0,0,0,1,0"/>
+          </filter>
+          <filter id="cb-filter-deuteranopia">
+            <feColorMatrix type="matrix" values="0.625,0.375,0,0,0 0.7,0.3,0,0,0 0,0.3,0.7,0,0 0,0,0,1,0"/>
+          </filter>
+          <filter id="cb-filter-tritanopia">
+            <feColorMatrix type="matrix" values="0.95,0.05,0,0,0 0,0.433,0.567,0,0 0,0.475,0.525,0,0 0,0,0,1,0"/>
+          </filter>
+          <filter id="cb-filter-achromatopsia">
+            <feColorMatrix type="saturate" values="0"/>
+          </filter>
+        </defs>
+      </svg>
 
       {/* ── Tab bar ── */}
       <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px',height:44,borderBottom:'1px solid rgba(0,0,0,0.08)',background:'#fafaf9',flexShrink:0 }}>
@@ -3269,11 +3822,45 @@ export default function PreviewCanvas({ tokens, onTokenChange }) {
             style={{ display:'flex',alignItems:'center',gap:5,padding:'5px 10px',borderRadius:6,border:'1px solid rgba(0,0,0,0.1)',background:mode==='dark'?'#1a1814':'#fff',color:mode==='dark'?'#fff':'rgba(0,0,0,0.55)',fontSize:11,cursor:'pointer',fontFamily:'"Geist Sans",system-ui',fontWeight:500,transition:'all .15s' }}>
             {mode==='dark' ? '🌙' : '☀️'} {mode==='dark' ? 'Dark' : 'Light'}
           </button>
+
+          {/* Gap #33: Color blindness selector */}
+          <div style={{ display:'flex', alignItems:'center', gap:2, background: colorBlindMode !== 'normal' ? 'rgba(124,58,237,0.08)' : 'rgba(0,0,0,0.03)', borderRadius:6, border: colorBlindMode !== 'normal' ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(0,0,0,0.08)', padding:'2px 3px' }}>
+            {Object.keys(CB_LABELS).map(mode_cb => (
+              <button key={mode_cb}
+                onClick={() => setColorBlindMode(mode_cb)}
+                title={mode_cb === 'normal' ? 'Normal vision' : CB_DESCRIPTIONS[mode_cb]}
+                style={{
+                  padding:'3px 7px', borderRadius:4, border:'none',
+                  background: colorBlindMode === mode_cb ? (mode_cb === 'normal' ? '#fff' : '#7c3aed') : 'transparent',
+                  color: colorBlindMode === mode_cb ? (mode_cb === 'normal' ? '#1a1814' : '#fff') : 'rgba(0,0,0,0.45)',
+                  fontSize:10, cursor:'pointer', fontWeight: colorBlindMode === mode_cb ? 700 : 400,
+                  fontFamily:'"Geist Mono",monospace',
+                  transition:'all 0.12s',
+                  boxShadow: colorBlindMode === mode_cb ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
+                }}>
+                {CB_LABELS[mode_cb]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* Gap #33: Color blindness info banner */}
+      {colorBlindMode !== 'normal' && (
+        <div style={{ padding:'6px 16px', background:'rgba(124,58,237,0.07)', borderBottom:'1px solid rgba(124,58,237,0.15)', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+          <span style={{ fontSize:10, color:'#7c3aed', fontWeight:700, fontFamily:'"Geist Mono",monospace', flexShrink:0 }}>◉ {CB_LABELS[colorBlindMode].toUpperCase()}</span>
+          <span style={{ fontSize:11, color:'rgba(124,58,237,0.8)', fontFamily:'"Geist Sans",system-ui' }}>{CB_DESCRIPTIONS[colorBlindMode]}</span>
+          <button onClick={() => setColorBlindMode('normal')} style={{ marginLeft:'auto', border:'none', background:'none', cursor:'pointer', color:'rgba(124,58,237,0.6)', fontSize:14, lineHeight:1, padding:'0 4px', flexShrink:0 }}>×</button>
+        </div>
+      )}
+
       {/* ── Canvas ── */}
-      <div ref={canvasRef} style={{ flex:1, overflowY:'auto', position:'relative', background: mode==='dark' ? '#0d0c0b' : '#fff' }}>
+      <div ref={canvasRef} style={{
+        flex:1, overflowY:'auto', position:'relative',
+        background: mode==='dark' ? '#0d0c0b' : '#fff',
+        filter: colorBlindMode !== 'normal' ? `url(#cb-filter-${colorBlindMode})` : 'none',
+        transition: 'filter 0.2s',
+      }}>
         {/* Cascade ripple overlay */}
         <div data-cascade-overlay="1" style={{ position:'absolute',inset:0,pointerEvents:'none',zIndex:10,display:'none' }}/>
         <AnimatePresence mode="wait">
