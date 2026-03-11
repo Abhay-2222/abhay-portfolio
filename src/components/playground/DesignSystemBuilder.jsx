@@ -26,6 +26,7 @@ import {
   encodeTokensToURL, decodeTokensFromURL,
   generateEvolution,
   auditTokens,
+  trackEvent, importTokens,
 } from './dsEngine';
 
 /* ─────────────────────────────────────────────────────────
@@ -540,7 +541,7 @@ export default function DesignSystemBuilder() {
   }, []);
 
   // Keyboard shortcuts
-  const regenerate = useCallback(() => pushTokens(p => regenerateTokens(p, locks)), [locks, pushTokens]);
+  const regenerate = useCallback(() => { pushTokens(p => regenerateTokens(p, locks)); trackEvent('regenerate'); }, [locks, pushTokens]);
 
   const toggleLock  = key => setLocks(p => ({ ...p, [key]:!p[key] }));
   const patchColors = patch => pushTokens(p => ({ ...p, colors:{ ...p.colors, ...patch } }));
@@ -670,7 +671,10 @@ export default function DesignSystemBuilder() {
   if (isMobile) {
     return (
       <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-        {showSplash && <SplashScreen onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); }} />}
+        {showSplash && <SplashScreen
+  onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); trackEvent('splash_skipped'); }}
+  onApplyConfig={config => { pushTokens(t => ({ ...t, ...config, colors: { ...t.colors, ...(config.colors ?? {}) }, typography: { ...t.typography, ...(config.typography ?? {}) } })); trackEvent('wizard_completed'); }}
+/>}
         <DSMobileLayout
           tokens={tokens}
           scopedVars={scopedVars}
@@ -694,7 +698,10 @@ export default function DesignSystemBuilder() {
 
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', background:'#ffffff', fontFamily:'"Geist Sans",system-ui,sans-serif' }}>
-      {showSplash && <SplashScreen onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); }} />}
+      {showSplash && <SplashScreen
+  onClose={() => { sessionStorage.setItem('ds-splash-seen','1'); setShowSplash(false); trackEvent('splash_skipped'); }}
+  onApplyConfig={config => { pushTokens(t => ({ ...t, ...config, colors: { ...t.colors, ...(config.colors ?? {}) }, typography: { ...t.typography, ...(config.typography ?? {}) } })); trackEvent('wizard_completed'); }}
+/>}
 
       {/* Gap #10: Corrupted share URL banner */}
       <AnimatePresence>
@@ -776,6 +783,7 @@ export default function DesignSystemBuilder() {
           compareSelect={compareSelect}
           onTokenChange={pushTokens}
           onClearData={clearSavedData}
+          onImportTokens={raw => { const result = importTokens(raw, tokens); if (result) { pushTokens(result); trackEvent('tokens_imported'); } return result; }}
           onLocksChange={setLocks}
           onRegenerate={regenerate}
           onRunEvolution={runEvolution}

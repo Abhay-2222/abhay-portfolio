@@ -968,8 +968,180 @@ export function Card({ children, style }) {
 }
 `;
 
-  return { 'tokens.js': tokensJS, 'Button.jsx': buttonJSX, 'Input.jsx': inputJSX, 'Card.jsx': cardJSX, 'tokens.css': exportCSS(tokens) };
+  const selectJSX = `// Select.jsx — ${name}
+import { useState } from 'react';
+
+export function Select({ label, options = [], value, onChange, error, disabled }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find(o => (o.value ?? o) === value);
+  return (
+    <div style={{ position:'relative', display:'flex', flexDirection:'column', gap:4 }}>
+      {label && <label style={{ fontSize:'${component['form.labelSize']}', fontWeight:'${component['form.labelWeight']}', color:'${semantic['color.text.primary']}', fontFamily:'${tokens.typography.body}' }}>{label}</label>}
+      <button onClick={() => !disabled && setOpen(o => !o)}
+        style={{ height:'${component['input.height']}', padding:'0 ${component['input.paddingX']}', borderRadius:'${component['input.radius']}',
+          border:\`${component['input.borderWidth']} solid \${error ? '${semantic['color.action.danger']}' : '${semantic['color.border.default']}'}\`,
+          background:'${semantic['color.background.base']}', color: value ? '${semantic['color.text.primary']}' : '${semantic['color.text.muted']}',
+          fontFamily:'${tokens.typography.body}', fontSize:'${component['input.fontSize']}',
+          opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
+          display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', boxSizing:'border-box' }}>
+        <span>{selected ? (selected.label ?? selected) : 'Select…'}</span>
+        <span style={{ fontSize:10 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:50,
+          background:'${semantic['color.card.bg']}', border:'1px solid ${semantic['color.border.default']}',
+          borderRadius:'${component['card.radius']}', boxShadow:'${component['card.shadow']}', overflow:'hidden' }}>
+          {options.map(o => {
+            const v = o.value ?? o, l = o.label ?? o;
+            return (
+              <button key={v} onClick={() => { onChange?.(v); setOpen(false); }}
+                style={{ width:'100%', padding:'8px ${component['input.paddingX']}', border:'none', textAlign:'left', cursor:'pointer',
+                  background: v === value ? '${semantic['color.action.primarySubtle']}' : 'transparent',
+                  color: v === value ? '${semantic['color.action.primary']}' : '${semantic['color.text.primary']}',
+                  fontFamily:'${tokens.typography.body}', fontSize:'${component['input.fontSize']}' }}>
+                {l}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
+`;
+
+  const checkboxJSX = `// Checkbox.jsx — ${name}
+
+export function Checkbox({ label, checked, onChange, disabled }) {
+  return (
+    <label style={{ display:'flex', alignItems:'center', gap:8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1 }}>
+      <div onClick={() => !disabled && onChange?.(!checked)}
+        style={{ width:18, height:18, borderRadius:4,
+          border:\`2px solid \${checked ? '${semantic['color.action.primary']}' : '${semantic['color.border.default']}'}\`,
+          background: checked ? '${semantic['color.action.primary']}' : 'transparent',
+          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all .12s' }}>
+        {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </div>
+      <span style={{ fontFamily:'${tokens.typography.body}', fontSize:'${component['form.labelSize']}', color:'${semantic['color.text.primary']}' }}>{label}</span>
+    </label>
+  );
+}
+`;
+
+  const toggleJSX = `// Toggle.jsx — ${name}
+
+export function Toggle({ label, checked, onChange, disabled }) {
+  return (
+    <label style={{ display:'flex', alignItems:'center', gap:10, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1 }}>
+      <div onClick={() => !disabled && onChange?.(!checked)}
+        style={{ width:40, height:22, borderRadius:11, padding:2,
+          background: checked ? '${semantic['color.action.primary']}' : '${semantic['color.border.default']}',
+          display:'flex', alignItems:'center', transition:'background .18s',
+          justifyContent: checked ? 'flex-end' : 'flex-start' }}>
+        <div style={{ width:18, height:18, borderRadius:'50%', background:'#fff', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }}/>
+      </div>
+      {label && <span style={{ fontFamily:'${tokens.typography.body}', fontSize:'${component['form.labelSize']}', color:'${semantic['color.text.primary']}' }}>{label}</span>}
+    </label>
+  );
+}
+`;
+
+  const badgeJSX = `// Badge.jsx — ${name}
+
+const BADGE_STYLES = {
+  primary: { bg:'${semantic['color.badge.infoBg'] ?? semantic['color.action.primarySubtle']}', text:'${semantic['color.badge.infoText'] ?? semantic['color.action.primary']}' },
+  success: { bg:'${semantic['color.badge.successBg'] ?? '#dcfce7'}', text:'${semantic['color.badge.successText'] ?? '#15803d'}' },
+  warning: { bg:'${semantic['color.badge.warningBg'] ?? '#fef9c3'}', text:'${semantic['color.badge.warningText'] ?? '#a16207'}' },
+  danger:  { bg:'${semantic['color.badge.dangerBg']  ?? '#fee2e2'}', text:'${semantic['color.badge.dangerText']  ?? '#b91c1c'}' },
+};
+
+export function Badge({ variant = 'primary', children, dot }) {
+  const s = BADGE_STYLES[variant] ?? BADGE_STYLES.primary;
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:5,
+      padding:'2px 8px', borderRadius:'9999px',
+      background: s.bg, color: s.text,
+      fontSize:11, fontWeight:600, fontFamily:'${tokens.typography.body}' }}>
+      {dot && <span style={{ width:6, height:6, borderRadius:'50%', background:'currentColor' }}/>}
+      {children}
+    </span>
+  );
+}
+`;
+
+  const alertJSX = `// Alert.jsx — ${name}
+
+const ALERT_STYLES = {
+  info:    { bg:'${semantic['color.action.primarySubtle']}', border:'${semantic['color.action.primary']}', text:'${semantic['color.text.primary']}', icon:'ℹ' },
+  success: { bg:'#dcfce7', border:'#4ade80', text:'#14532d', icon:'✓' },
+  warning: { bg:'#fef9c3', border:'#facc15', text:'#713f12', icon:'⚠' },
+  danger:  { bg:'#fee2e2', border:'${semantic['color.action.danger']}', text:'#7f1d1d', icon:'✕' },
+};
+
+export function Alert({ variant = 'info', title, children, onDismiss }) {
+  const s = ALERT_STYLES[variant] ?? ALERT_STYLES.info;
+  return (
+    <div role="alert" style={{ display:'flex', gap:10, padding:'12px 14px', borderRadius:'${component['card.radius']}',
+      background: s.bg, border:\`1px solid \${s.border}\`, color: s.text }}>
+      <span style={{ fontSize:14, lineHeight:1, flexShrink:0, marginTop:1 }}>{s.icon}</span>
+      <div style={{ flex:1 }}>
+        {title && <div style={{ fontWeight:600, fontSize:13, fontFamily:'${tokens.typography.body}', marginBottom:2 }}>{title}</div>}
+        <div style={{ fontSize:12, fontFamily:'${tokens.typography.body}', lineHeight:1.5, opacity:0.85 }}>{children}</div>
+      </div>
+      {onDismiss && <button onClick={onDismiss} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'currentColor', opacity:0.5, padding:0, flexShrink:0 }}>✕</button>}
+    </div>
+  );
+}
+`;
+
+  const modalJSX = `// Modal.jsx — ${name}
+
+export function Modal({ open, onClose, title, children, footer }) {
+  if (!open) return null;
+  return (
+    <div role="dialog" aria-modal="true" aria-label={title}
+      onClick={e => e.target === e.currentTarget && onClose?.()}
+      style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.5)',
+        display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
+      <div style={{ width:'100%', maxWidth:480, background:'${semantic['color.card.bg']}',
+        border:'1px solid ${semantic['color.card.border']}', borderRadius:${parseInt(SHAPE_RADIUS[tokens.shape]) * 2 || 12}px,
+        boxShadow:'${component['card.shadow']}', display:'flex', flexDirection:'column' }}>
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'16px 20px', borderBottom:'1px solid ${semantic['color.border.default']}' }}>
+          <h2 style={{ margin:0, fontSize:15, fontWeight:600, fontFamily:'${tokens.typography.display}',
+            color:'${semantic['color.text.primary']}' }}>{title}</h2>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer',
+            fontSize:18, color:'${semantic['color.text.muted']}', padding:4 }}>✕</button>
+        </div>
+        {/* Body */}
+        <div style={{ padding:'20px', fontFamily:'${tokens.typography.body}',
+          fontSize:'${component['input.fontSize']}', color:'${semantic['color.text.primary']}', lineHeight:1.6 }}>
+          {children}
+        </div>
+        {/* Footer */}
+        {footer && (
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end',
+            padding:'12px 20px', borderTop:'1px solid ${semantic['color.border.default']}' }}>
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+`;
+
+  const allFiles = REACT_FILE_ORDER_FULL.reduce((acc, f) => {
+    const map = { 'tokens.js': tokensJS, 'Button.jsx': buttonJSX, 'Input.jsx': inputJSX, 'Card.jsx': cardJSX, 'Select.jsx': selectJSX, 'Checkbox.jsx': checkboxJSX, 'Toggle.jsx': toggleJSX, 'Badge.jsx': badgeJSX, 'Alert.jsx': alertJSX, 'Modal.jsx': modalJSX, 'tokens.css': exportCSS(tokens) };
+    acc[f] = map[f] ?? '';
+    return acc;
+  }, {});
+
+  return allFiles;
+}
+
+export const REACT_FILE_ORDER_FULL = ['tokens.js', 'tokens.css', 'Button.jsx', 'Input.jsx', 'Card.jsx', 'Select.jsx', 'Checkbox.jsx', 'Toggle.jsx', 'Badge.jsx', 'Alert.jsx', 'Modal.jsx'];
 
 export function encodeTokensToURL(tokens) {
   // Only encode source inputs — never computed layers
@@ -1768,4 +1940,303 @@ export function auditDesignQuality(tokens) {
   const score    = Math.max(0, Math.round(rawScore - errors * 4 - warnings * 1));
 
   return { score, checks };
+}
+
+/* ══════════════════════════════════════════════════════════
+   PHASE 3 — ORG ADOPTION: NEW EXPORT FORMATS
+══════════════════════════════════════════════════════════ */
+
+/** Gap #17 — SCSS Variables export */
+export function exportSCSS(tokens) {
+  const { palette, typeScale, spacingSteps, shadowDefs } = computeTokens(tokens);
+  const semantic = computeSemanticTokens(tokens, 'light');
+  const name = tokens.systemName ?? 'Design System';
+  const date = new Date().toISOString().slice(0, 10);
+
+  let out = `// ${'='.repeat(58)}\n// ${name} — SCSS Variables\n// Generated: ${date} · Design System Builder\n// ${'='.repeat(58)}\n\n`;
+
+  out += `// === PRIMITIVE COLORS ===\n`;
+  palette.forEach((shades, i) => {
+    const n = ROLE_NAMES[i] ?? `color-${i}`;
+    SHADE_KEYS.forEach(k => { out += `$color-${n}-${k}: ${shades[k]};\n`; });
+    out += '\n';
+  });
+
+  out += `// === TYPOGRAPHY ===\n`;
+  out += `$font-display: '${tokens.typography.display}', serif;\n`;
+  out += `$font-body: '${tokens.typography.body}', sans-serif;\n`;
+  out += `$font-mono: '${tokens.typography.mono}', monospace;\n`;
+  Object.entries(typeScale).forEach(([k, v]) => { out += `$text-${k}: ${v}px;\n`; });
+  out += '\n';
+
+  out += `// === SPACING ===\n`;
+  spacingSteps.forEach((v, i) => { out += `$space-${i + 1}: ${v}px;\n`; });
+  out += '\n';
+
+  out += `// === SHAPE & SHADOWS ===\n`;
+  out += `$radius: ${SHAPE_RADIUS[tokens.shape]};\n`;
+  out += `$radius-sm: ${tokens.shape === 'sharp' ? '0px' : `calc(${SHAPE_RADIUS[tokens.shape]} * 0.5)`};\n`;
+  out += `$radius-lg: ${tokens.shape === 'pill' ? '9999px' : `calc(${SHAPE_RADIUS[tokens.shape]} * 2)`};\n`;
+  out += `$shadow-sm: ${shadowDefs.sm};\n`;
+  out += `$shadow-md: ${shadowDefs.md};\n`;
+  out += `$shadow-lg: ${shadowDefs.lg};\n\n`;
+
+  out += `// === SEMANTIC TOKENS ===\n`;
+  Object.entries(semantic).forEach(([k, v]) => { out += `$${k.replace(/\./g, '-')}: ${v};\n`; });
+
+  out += `\n// === MIXINS ===\n`;
+  out += `@mixin card-surface {\n  background: $color-background-base;\n  border: 1px solid $color-border-default;\n  border-radius: $radius;\n  box-shadow: $shadow-sm;\n}\n\n`;
+  out += `@mixin focus-ring {\n  outline: 2px solid $color-border-focus;\n  outline-offset: 2px;\n}\n`;
+
+  return out;
+}
+
+/** Gap #17 — Figma Variables JSON (Tokens Studio compatible) */
+export function exportFigmaVariables(tokens) {
+  const { palette, typeScale, spacingSteps, shadowDefs } = computeTokens(tokens);
+  const semantic = computeSemanticTokens(tokens, 'light');
+  const semDark  = computeSemanticTokens(tokens, 'dark');
+
+  const out = {
+    $metadata: { tokenSetOrder: ['global', 'semantic', 'dark'] },
+    global: { colors: {}, typography: {}, spacing: {}, shape: {}, shadow: {} },
+    semantic: {},
+    dark: {},
+  };
+
+  palette.forEach((shades, i) => {
+    const n = ROLE_NAMES[i] ?? `color-${i}`;
+    out.global.colors[n] = {};
+    SHADE_KEYS.forEach(k => { out.global.colors[n][k] = { $value: shades[k], $type: 'color' }; });
+  });
+
+  out.global.typography = {
+    fontDisplay: { $value: tokens.typography.display, $type: 'fontFamilies' },
+    fontBody:    { $value: tokens.typography.body,    $type: 'fontFamilies' },
+    fontMono:    { $value: tokens.typography.mono,    $type: 'fontFamilies' },
+    scaleRatio:  { $value: tokens.typography.scale,   $type: 'other' },
+    baseSize:    { $value: `${tokens.typography.baseSize}px`, $type: 'fontSizes' },
+    ...Object.fromEntries(Object.entries(typeScale).map(([k, v]) => [`size-${k}`, { $value: `${v}px`, $type: 'fontSizes' }])),
+  };
+
+  spacingSteps.forEach((v, i) => { out.global.spacing[`space-${i + 1}`] = { $value: `${v}px`, $type: 'spacing' }; });
+
+  out.global.shape = {
+    radius:   { $value: SHAPE_RADIUS[tokens.shape], $type: 'borderRadius' },
+    radiusSm: { $value: tokens.shape === 'sharp' ? '0px' : `calc(${SHAPE_RADIUS[tokens.shape]} * 0.5)`, $type: 'borderRadius' },
+    radiusLg: { $value: tokens.shape === 'pill' ? '9999px' : `calc(${SHAPE_RADIUS[tokens.shape]} * 2)`, $type: 'borderRadius' },
+  };
+
+  out.global.shadow = {
+    sm: { $value: shadowDefs.sm, $type: 'boxShadow' },
+    md: { $value: shadowDefs.md, $type: 'boxShadow' },
+    lg: { $value: shadowDefs.lg, $type: 'boxShadow' },
+  };
+
+  Object.entries(semantic).forEach(([k, v]) => {
+    const type = typeof v === 'string' && (v.startsWith('#') || v.startsWith('rgb')) ? 'color' : 'other';
+    out.semantic[k] = { $value: v, $type: type };
+  });
+
+  Object.entries(semDark).forEach(([k, v]) => {
+    if (v !== semantic[k]) out.dark[k] = { $value: v, $type: 'color' };
+  });
+
+  return JSON.stringify(out, null, 2);
+}
+
+/** Gap #17 — Style Dictionary config */
+export function exportStyleDictionary(tokens) {
+  const name = (tokens.systemName ?? 'design-system').toLowerCase().replace(/\s+/g, '-');
+  const date = new Date().toISOString().slice(0, 10);
+
+  const config = {
+    source: ['tokens/global.json', 'tokens/semantic.json'],
+    platforms: {
+      css: {
+        transformGroup: 'css', prefix: 'ds', buildPath: 'dist/css/',
+        files: [
+          { destination: 'variables.css', format: 'css/variables', options: { outputReferences: true } },
+          { destination: 'dark.css', format: 'css/variables', filter: 'isDark', options: { selector: '[data-theme="dark"]' } },
+        ],
+      },
+      scss: {
+        transformGroup: 'scss', prefix: 'ds', buildPath: 'dist/scss/',
+        files: [
+          { destination: '_variables.scss', format: 'scss/variables' },
+          { destination: `_${name}-map.scss`, format: 'scss/map-deep', mapName: `${name}-tokens` },
+        ],
+      },
+      js: {
+        transformGroup: 'js', buildPath: 'dist/js/',
+        files: [
+          { destination: 'tokens.esm.js', format: 'javascript/es6' },
+          { destination: 'tokens.cjs.js', format: 'javascript/module' },
+        ],
+      },
+      json: {
+        transformGroup: 'js', buildPath: 'dist/',
+        files: [{ destination: 'tokens.json', format: 'json/nested' }],
+      },
+    },
+  };
+
+  return `// style-dictionary.config.js — ${tokens.systemName ?? 'Design System'}\n// Generated: ${date}\n// Install: npm install style-dictionary\n// Run: npx style-dictionary build\n\nmodule.exports = ${JSON.stringify(config, null, 2)};\n`;
+}
+
+/** Gap #18 — Full documentation export (DESIGN-SYSTEM.md) */
+export function exportDocumentation(tokens) {
+  const { palette, typeScale, spacingSteps } = computeTokens(tokens);
+  const semantic = computeSemanticTokens(tokens, 'light');
+  const name     = tokens.systemName ?? 'Design System';
+  const date     = new Date().toISOString().slice(0, 10);
+  const preset   = PRESETS[tokens.preset]?.label ?? 'Custom';
+  const platform = PLATFORMS[tokens.platform ?? 'web']?.label ?? 'Web';
+  const roleNames = ['Primary', 'Secondary', 'Tertiary', 'Accent', 'Neutral', 'Warning'];
+
+  let doc = `# ${name}\n\n> Generated: ${date} · Preset: ${preset} · Platform: ${platform}\n\n---\n\n`;
+  doc += `## Color System\n\n`;
+  palette.forEach((shades, i) => {
+    doc += `### ${roleNames[i] ?? `Color ${i + 1}`}\n\n| Shade | Value | Usage |\n|-------|-------|-------|\n`;
+    SHADE_KEYS.forEach(k => {
+      const use = +k <= 200 ? 'Backgrounds, tints' : +k >= 700 ? 'Text, dark fills' : +k === 500 ? '**Primary** — buttons, icons' : 'Mid fills';
+      doc += `| ${k} | \`${shades[k]}\` | ${use} |\n`;
+    });
+    doc += '\n';
+  });
+
+  doc += `## Typography\n\n**Display:** ${tokens.typography.display}  **Body:** ${tokens.typography.body}  **Mono:** ${tokens.typography.mono}\n\n`;
+  doc += `**Scale:** ${tokens.typography.scale} (${SCALE_NAMES[tokens.typography.scale] ?? 'Custom'}) · **Base:** ${tokens.typography.baseSize}px\n\n`;
+  doc += `| Role | Step | px | rem |\n|------|------|----|-----|\n`;
+  [['Display', '4xl'], ['H1', '3xl'], ['H2', '2xl'], ['H3', 'xl'], ['Lead', 'lg'], ['Body', 'base'], ['Label', 'sm'], ['Caption', 'xs']].forEach(([role, step]) => {
+    const px = Math.round(typeScale[step]);
+    doc += `| ${role} | ${step} | ${px}px | ${(px / 16).toFixed(3)}rem |\n`;
+  });
+  doc += '\n';
+
+  doc += `## Spacing\n\nBase: **${tokens.spacing.base}px** · Scale: **${tokens.spacing.scale}**\n\n`;
+  doc += `| Token | Value |\n|-------|-------|\n`;
+  spacingSteps.slice(0, 8).forEach((v, i) => { doc += `| \`--space-${i + 1}\` | \`${v}px\` |\n`; });
+  doc += '\n';
+
+  doc += `## Semantic Tokens\n\n| Token | Light | Usage |\n|-------|-------|-------|\n`;
+  const keyDesc = { 'color.background.base': 'Page bg', 'color.background.surface': 'Cards', 'color.text.primary': 'Body text', 'color.text.muted': 'Secondary', 'color.action.primary': 'Buttons', 'color.action.danger': 'Errors', 'color.action.success': 'Success', 'color.border.default': 'Borders', 'color.border.focus': 'Focus rings' };
+  Object.entries(keyDesc).forEach(([k, desc]) => { if (semantic[k]) doc += `| \`--${k.replace(/\./g, '-')}\` | \`${semantic[k]}\` | ${desc} |\n`; });
+  doc += '\n';
+
+  doc += `## Component Guidelines\n\n- **Buttons:** Primary = 1 CTA per view, Ghost = tertiary, Danger = destructive only\n- **Forms:** Visible label on all inputs; error state = color + text\n- **Cards:** Use \`--ds-bg-surface\`, \`--ds-shadow-sm\`, min padding \`--ds-space-4\`\n\n`;
+  doc += `## Accessibility\n\n- WCAG 2.1 AA contrast: 4.5:1 normal text, 3:1 large\n- Visible focus ring on all interactive elements\n- Touch targets: 44×44px (iOS) / 48×48dp (Android)\n- Respect \`prefers-reduced-motion\`\n- Never use color as the only differentiator\n\n`;
+  doc += `## Usage\n\n\`\`\`css\n@import 'design-system/variables.css';\n.button { background: var(--ds-action-primary); }\n\`\`\`\n\n`;
+  doc += `---\n*Generated by Design System Builder · ${date}*\n`;
+
+  return doc;
+}
+
+/** Gap #15 — README.md per export format */
+export function generateReadme(tokens, format = 'css') {
+  const name = tokens.systemName ?? 'Design System';
+  const date = new Date().toISOString().slice(0, 10);
+  const info = ({
+    css:            { install: 'No install needed — pure CSS custom properties', use: `@import './design-system/variables.css';\n\n.button { background: var(--ds-action-primary); }`, files: ['variables.css', 'dark.css'], tip: 'Add [data-theme="dark"] to <html> for dark mode.' },
+    scss:           { install: 'Drop into any SCSS project — no install needed', use: `@use './design-system/variables' as ds;\n\n.button { background: ds.$color-action-primary; }`, files: ['_variables.scss'], tip: 'Use @use with a namespace to avoid variable conflicts.' },
+    tailwind:       { install: 'npm install -D tailwindcss', use: `const ds = require('./tokens/tailwind-config');\nmodule.exports = { theme: { extend: ds.theme.extend } };`, files: ['tailwind-config.js'], tip: 'Merge into theme.extend, do not replace the entire theme.' },
+    json:           { install: 'npm install style-dictionary', use: 'npx style-dictionary build --config style-dictionary.config.js', files: ['tokens.json', 'style-dictionary.config.js'], tip: 'W3C DTCG format — works with Tokens Studio, Theo, and Style Dictionary.' },
+    figma:          { install: 'Install Tokens Studio plugin in Figma (free)', use: '1. Tokens Studio → Import → paste JSON\n2. Apply to selection', files: ['tokens.figma.json'], tip: 'Enable "Apply on change" to keep Figma in sync as tokens evolve.' },
+    react:          { install: 'Copy files into your project:\ncp *.jsx *.js src/design-system/', use: `import 'design-system/tokens.css'; // once at app root\nimport { Button, Card } from './design-system';\n\n<Button variant="primary">Submit</Button>`, files: ['tokens.js', 'tokens.css', 'Button.jsx', 'Input.jsx', 'Card.jsx', 'Select.jsx', 'Badge.jsx', 'Alert.jsx', 'Checkbox.jsx', 'Toggle.jsx', 'Modal.jsx'], tip: 'Import tokens.css once at the root. All components read CSS custom properties.' },
+    styledictionary:{ install: 'npm install style-dictionary', use: 'npx style-dictionary build --config style-dictionary.config.js', files: ['style-dictionary.config.js', 'tokens/global.json'], tip: 'Generates CSS, SCSS, and JS from the same token source.' },
+  })[format] ?? { install: 'N/A', use: 'Import the file', files: [], tip: '' };
+
+  let readme = `# ${name}\n\n> Generated: ${date} by Design System Builder\n\n`;
+  readme += `## Quick Start\n\n\`\`\`bash\n${info.install}\n\`\`\`\n\n`;
+  readme += `## Usage\n\n\`\`\`${['json', 'figma', 'styledictionary'].includes(format) ? 'bash' : format === 'react' ? 'jsx' : format}\n${info.use}\n\`\`\`\n\n`;
+  readme += `## Files\n\n` + info.files.map(f => `- \`${f}\``).join('\n') + '\n\n';
+  readme += `## Tip\n\n${info.tip}\n\n`;
+  readme += `## Token Reference\n\nSee \`DESIGN-SYSTEM.md\` for the full token table, component guidelines, and accessibility notes.\n`;
+  return readme;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PHASE 4 — PRODUCT-MARKET FIT
+══════════════════════════════════════════════════════════ */
+
+/** Gap #27 — localStorage analytics (anonymous, no backend) */
+export function trackEvent(event, meta = {}) {
+  if (typeof window === 'undefined') return;
+  try {
+    const key  = 'ds-analytics';
+    const data = JSON.parse(localStorage.getItem(key) ?? '{}');
+    data[event] = (data[event] ?? 0) + 1;
+    data._lastSeen = Date.now();
+    if (meta.format) data[`export_${meta.format}`] = (data[`export_${meta.format}`] ?? 0) + 1;
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+}
+
+export function getAnalytics() {
+  if (typeof window === 'undefined') return {};
+  try { return JSON.parse(localStorage.getItem('ds-analytics') ?? '{}'); } catch { return {}; }
+}
+
+/** Gap #32 — Import tokens from CSS variables or JSON (W3C DTCG / Tokens Studio) */
+export function importTokens(input, currentTokens) {
+  const text = input.trim();
+
+  try {
+    const json = JSON.parse(text);
+    const src  = json.global ?? json;
+    const colorSrc = src.colors ?? src.color ?? {};
+    const typSrc   = src.typography ?? {};
+    const spaceSrc = src.spacing ?? {};
+
+    const swatches = [];
+    const tryExtract = (obj) => {
+      if (!obj) return;
+      const v500 = obj['500']?.$value ?? obj['500'];
+      if (v500 && typeof v500 === 'string' && v500.startsWith('#')) swatches.push({ hex: v500, locked: false });
+    };
+    tryExtract(colorSrc.primary ?? colorSrc[Object.keys(colorSrc)[0]]);
+    tryExtract(colorSrc.secondary ?? colorSrc[Object.keys(colorSrc)[1]]);
+
+    const display  = typSrc.fontDisplay?.$value  ?? typSrc.fontDisplay  ?? currentTokens.typography.display;
+    const body     = typSrc.fontBody?.$value     ?? typSrc.fontBody     ?? currentTokens.typography.body;
+    const mono     = typSrc.fontMono?.$value     ?? typSrc.fontMono     ?? currentTokens.typography.mono;
+    const baseSize = typSrc.baseSize?.$value     ? parseInt(typSrc.baseSize.$value) : currentTokens.typography.baseSize;
+    const scale    = typSrc.scaleRatio?.$value   ?? currentTokens.typography.scale;
+    const spaceBase= spaceSrc['space-1']?.$value ? parseInt(spaceSrc['space-1'].$value) : currentTokens.spacing.base;
+
+    return {
+      ...currentTokens,
+      colors:     { ...currentTokens.colors, swatches: swatches.length ? swatches : currentTokens.colors.swatches },
+      typography: { ...currentTokens.typography, display, body, mono, baseSize, scale },
+      spacing:    { ...currentTokens.spacing, base: spaceBase },
+    };
+  } catch {}
+
+  const cssMatches = [...text.matchAll(/--([a-zA-Z0-9-]+)\s*:\s*([^;}\n]+)/g)];
+  if (cssMatches.length > 0) {
+    const vars = Object.fromEntries(cssMatches.map(([, k, v]) => [k.trim(), v.trim()]));
+    const swatches = [];
+    const prim = vars['color-primary-500'] ?? vars['ds-primary'] ?? vars['ds-action-primary'];
+    if (prim?.startsWith('#')) swatches.push({ hex: prim, locked: false });
+    const sec = vars['color-secondary-500'] ?? vars['ds-secondary'];
+    if (sec?.startsWith('#')) swatches.push({ hex: sec, locked: false });
+
+    const radiusStr = vars['radius'] ?? vars['ds-radius'];
+    let shape = currentTokens.shape;
+    if (radiusStr) {
+      const r = parseInt(radiusStr);
+      shape = !r ? 'sharp' : r <= 4 ? 'soft' : r <= 8 ? 'rounded' : r <= 16 ? 'veryRounded' : 'pill';
+    }
+
+    const spaceBase = vars['space-1'] ?? vars['ds-space-1'];
+
+    return {
+      ...currentTokens,
+      colors:  { ...currentTokens.colors, swatches: swatches.length ? swatches : currentTokens.colors.swatches },
+      spacing: { ...currentTokens.spacing, base: spaceBase ? parseInt(spaceBase) : currentTokens.spacing.base },
+      shape,
+    };
+  }
+
+  return null;
 }

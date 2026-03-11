@@ -9,6 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   exportCSS, exportTailwind, exportDesignTokensJSON,
   exportReactComponents, encodeTokensToURL,
+  exportSCSS, exportFigmaVariables, exportStyleDictionary,
+  exportDocumentation, generateReadme, trackEvent,
+  REACT_FILE_ORDER_FULL,
 } from './dsEngine';
 import { generateShareCard, downloadShareCard } from './shareCard';
 
@@ -80,8 +83,17 @@ function CodeBlock({ code, language = 'text' }) {
   );
 }
 
+/* ── Download helper ── */
+function downloadText(content, filename) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* ── React Kit sub-tabs ── */
-const REACT_FILE_ORDER = ['tokens.js', 'Button.jsx', 'Input.jsx', 'Card.jsx', 'tokens.css'];
+const REACT_FILE_ORDER = REACT_FILE_ORDER_FULL ?? ['tokens.js', 'Button.jsx', 'Input.jsx', 'Card.jsx', 'tokens.css'];
 
 function ReactKitTab({ tokens }) {
   const files = exportReactComponents(tokens);
@@ -246,30 +258,26 @@ function ShareTab({ tokens }) {
 ═══════════════════════════════════════════════════════════ */
 
 const TABS = [
-  { id: 'css',      label: 'CSS',       icon: '{}' },
-  { id: 'tailwind', label: 'Tailwind',  icon: '⚡' },
-  { id: 'json',     label: 'JSON',      icon: '[]' },
-  { id: 'react',    label: 'React Kit', icon: '⚛' },
-  { id: 'share',    label: 'Share',     icon: '🔗' },
+  { id: 'css',            label: 'CSS',          icon: '{}' },
+  { id: 'scss',           label: 'SCSS',         icon: '$S' },
+  { id: 'tailwind',       label: 'Tailwind',     icon: '⚡' },
+  { id: 'json',           label: 'JSON',         icon: '[]' },
+  { id: 'figma',          label: 'Figma',        icon: '⬡' },
+  { id: 'styledictionary',label: 'Style Dict',   icon: '⚙' },
+  { id: 'react',          label: 'React Kit',    icon: '⚛' },
+  { id: 'docs',           label: 'Docs',         icon: '📝' },
+  { id: 'share',          label: 'Share',        icon: '🔗' },
 ];
 
 const HOW_TO_USE = {
-  css: {
-    step: '1. Copy  →  2. Paste into your global stylesheet (e.g. globals.css)',
-    detail: 'All tokens are CSS custom properties. Use them anywhere: color: var(--ds-primary), padding: var(--ds-space-3), etc.',
-  },
-  tailwind: {
-    step: '1. Copy  →  2. Merge theme.extend into your tailwind.config.js',
-    detail: 'The exported object adds your token values to Tailwind\'s design system so you can use class names like text-ds-primary or p-ds-3.',
-  },
-  json: {
-    step: '1. Copy  →  2. Import into Figma Tokens, Style Dictionary, or Token Transformer',
-    detail: 'Follows the W3C Design Tokens Community Group format. Compatible with most token pipeline tools.',
-  },
-  react: {
-    step: '1. Copy files  →  2. Place in your project under src/design-system/',
-    detail: 'tokens.js exports all values as JS constants. Import components directly: import { Button } from \'./design-system\'.',
-  },
+  css:            { step: '1. Copy  →  2. Paste into your global stylesheet (e.g. globals.css)', detail: 'All tokens are CSS custom properties. Use them anywhere: color: var(--ds-primary), padding: var(--ds-space-3).' },
+  scss:           { step: '1. Copy  →  2. Drop into your SCSS project as _variables.scss', detail: 'SCSS variables and mixins. Use @use to namespace: ds.$color-action-primary. Includes card-surface and focus-ring mixins.' },
+  tailwind:       { step: '1. Copy  →  2. Merge theme.extend into your tailwind.config.js', detail: 'Adds your token values to Tailwind\'s design system. Use class names like text-ds-primary or p-ds-3.' },
+  json:           { step: '1. Copy  →  2. Import into Style Dictionary, Tokens Studio, or Theo', detail: 'W3C DTCG format. Compatible with most token pipeline tools. Includes primitive, semantic, and dark-mode sets.' },
+  figma:          { step: '1. Copy  →  2. Paste into Tokens Studio plugin → Import', detail: 'Tokens Studio format with global/semantic/dark sets. Enable "Apply on change" to keep Figma variables in sync.' },
+  styledictionary:{ step: '1. Copy config  →  2. Run: npx style-dictionary build', detail: 'Generates CSS, SCSS, and JS from the same token JSON. Install: npm install style-dictionary.' },
+  react:          { step: '1. Copy files  →  2. Place in src/design-system/', detail: 'Complete React component kit: 9 components + token constants + CSS variables. Import tokens.css once at your app root.' },
+  docs:           { step: '1. Download  →  2. Commit to your repo as DESIGN-SYSTEM.md', detail: 'Full documentation: token reference, color system, typography scale, spacing, component guidelines, and accessibility notes.' },
 };
 
 function HowToUse({ tab }) {
@@ -295,18 +303,58 @@ function HowToUse({ tab }) {
   );
 }
 
+/* ── Docs tab ── */
+function DocsTab({ tokens }) {
+  const [downloading, setDownloading] = useState(false);
+  const doc = exportDocumentation(tokens);
+  const readme = generateReadme(tokens, 'css');
+  const name = (tokens.systemName ?? 'design-system').toLowerCase().replace(/\s+/g, '-');
+
+  const handleDownload = () => {
+    setDownloading(true);
+    downloadText(doc, `${name}-DESIGN-SYSTEM.md`);
+    setTimeout(() => setDownloading(false), 1200);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
+      <HowToUse tab="docs" />
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <button onClick={handleDownload}
+          style={{
+            padding: '6px 14px', borderRadius: 6,
+            border: `1px solid ${M.green}`, background: 'rgba(63,185,80,0.1)',
+            color: M.green, fontSize: 11, cursor: 'pointer',
+            fontFamily: '"Geist Mono",monospace', fontWeight: 600,
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+          {downloading ? '✓ Downloaded' : '⬇ DESIGN-SYSTEM.md'}
+        </button>
+        <button onClick={() => downloadText(readme, `${name}-README.md`)}
+          style={{
+            padding: '6px 14px', borderRadius: 6,
+            border: `1px solid ${M.border}`, background: 'rgba(255,255,255,0.05)',
+            color: M.muted, fontSize: 11, cursor: 'pointer',
+            fontFamily: '"Geist Mono",monospace',
+          }}>
+          ⬇ README.md
+        </button>
+        <CopyBtn text={doc} label="Copy MD" style={{ marginLeft: 'auto' }} />
+      </div>
+      <CodeBlock code={doc} />
+    </div>
+  );
+}
+
 export default function ExportModal({ tokens, onClose }) {
   injectScrollbar();
   const [activeTab, setActiveTab] = useState('css');
   const backdropRef = useRef(null);
   const firstFocusRef = useRef(null);
 
-  // Focus trap + Escape
   useEffect(() => {
     firstFocusRef.current?.focus();
-    const handler = e => {
-      if (e.key === 'Escape') onClose();
-    };
+    const handler = e => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
@@ -315,14 +363,29 @@ export default function ExportModal({ tokens, onClose }) {
     if (e.target === backdropRef.current) onClose();
   }, [onClose]);
 
-  // Generate code lazily per tab
+  // Track export opens
+  useEffect(() => { trackEvent('export_opened'); }, []);
+
+  const CODE_TABS = new Set(['css', 'scss', 'tailwind', 'json', 'figma', 'styledictionary']);
+
   const getCode = () => {
-    if (activeTab === 'css')      return exportCSS(tokens);
-    if (activeTab === 'tailwind') return exportTailwind(tokens);
-    if (activeTab === 'json')     return exportDesignTokensJSON(tokens);
+    if (activeTab === 'css')            return exportCSS(tokens);
+    if (activeTab === 'scss')           return exportSCSS(tokens);
+    if (activeTab === 'tailwind')       return exportTailwind(tokens);
+    if (activeTab === 'json')           return exportDesignTokensJSON(tokens);
+    if (activeTab === 'figma')          return exportFigmaVariables(tokens);
+    if (activeTab === 'styledictionary')return exportStyleDictionary(tokens);
     return '';
   };
-  const code = (activeTab !== 'react' && activeTab !== 'share') ? getCode() : '';
+
+  const code = CODE_TABS.has(activeTab) ? getCode() : '';
+  const tabLabel = TABS.find(t => t.id === activeTab)?.label ?? '';
+  const name = (tokens.systemName ?? 'design-system').toLowerCase().replace(/\s+/g, '-');
+
+  const getDownloadName = () => ({
+    css: `${name}-tokens.css`, scss: `${name}-tokens.scss`, tailwind: `${name}-tailwind.config.js`,
+    json: `${name}-tokens.json`, figma: `${name}-figma-tokens.json`, styledictionary: `style-dictionary.config.js`,
+  })[activeTab] ?? `${name}.txt`;
 
   return (
     <div
@@ -344,7 +407,7 @@ export default function ExportModal({ tokens, onClose }) {
         exit={{ opacity: 0, scale: 0.94, y: 16 }}
         transition={{ duration: 0.25, ease: [0, 0, 0.2, 1] }}
         style={{
-          width: '100%', maxWidth: 820, height: '80vh', maxHeight: 680,
+          width: '100%', maxWidth: 860, height: '82vh', maxHeight: 700,
           background: M.bgCard, borderRadius: 12,
           border: `1px solid ${M.border}`,
           display: 'flex', flexDirection: 'column',
@@ -361,6 +424,9 @@ export default function ExportModal({ tokens, onClose }) {
           gap: 12, flexShrink: 0,
         }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: M.text }}>Export Tokens</span>
+          <span style={{ fontSize: 10, color: M.muted, fontFamily: '"Geist Mono",monospace' }}>
+            {tokens.systemName ?? 'Design System'} · {new Date().toISOString().slice(0,10)}
+          </span>
           <div style={{ flex: 1 }} />
           <button
             ref={firstFocusRef}
@@ -376,16 +442,16 @@ export default function ExportModal({ tokens, onClose }) {
           </button>
         </div>
 
-        {/* Tab bar */}
-        <div style={{
+        {/* Tab bar — scrollable */}
+        <div className="em-scroll" style={{
           display: 'flex', gap: 2, padding: '10px 20px 0',
           borderBottom: `1px solid ${M.border}`,
-          flexShrink: 0,
+          flexShrink: 0, overflowX: 'auto',
         }}>
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
+            <button key={t.id} onClick={() => { setActiveTab(t.id); trackEvent(`export_tab_${t.id}`); }}
               style={{
-                padding: '7px 16px', borderRadius: '6px 6px 0 0',
+                padding: '7px 14px', borderRadius: '6px 6px 0 0', whiteSpace: 'nowrap',
                 border: `1px solid ${activeTab === t.id ? M.border : 'transparent'}`,
                 borderBottom: activeTab === t.id ? `1px solid ${M.bgCard}` : '1px solid transparent',
                 marginBottom: -1,
@@ -394,7 +460,7 @@ export default function ExportModal({ tokens, onClose }) {
                 fontSize: 11, cursor: 'pointer',
                 fontFamily: '"Geist Mono",monospace',
                 display: 'flex', alignItems: 'center', gap: 5,
-                transition: 'color .12s',
+                transition: 'color .12s', flexShrink: 0,
               }}>
               <span style={{ fontSize: 10 }}>{t.icon}</span>
               {t.label}
@@ -411,11 +477,22 @@ export default function ExportModal({ tokens, onClose }) {
             </div>
           ) : activeTab === 'share' ? (
             <ShareTab tokens={tokens} />
+          ) : activeTab === 'docs' ? (
+            <DocsTab tokens={tokens} />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
               <HowToUse tab={activeTab} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-                <CopyBtn text={code} label={`${TABS.find(t => t.id === activeTab)?.label ?? ''} output`} />
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button onClick={() => { downloadText(code, getDownloadName()); trackEvent('export_downloaded', { format: activeTab }); }}
+                  style={{
+                    padding: '6px 14px', borderRadius: 6,
+                    border: `1px solid ${M.border}`, background: 'rgba(255,255,255,0.05)',
+                    color: M.muted, fontSize: 11, cursor: 'pointer',
+                    fontFamily: '"Geist Mono",monospace',
+                  }}>
+                  ⬇ Download {tabLabel}
+                </button>
+                <CopyBtn text={code} label={`Copy ${tabLabel}`} style={{ marginLeft: 'auto' }} />
               </div>
               <CodeBlock code={code} />
             </div>

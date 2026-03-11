@@ -418,6 +418,51 @@ function SemanticColorSection({ semantic, onChange }) {
 /* ═══════════════════════════════════════════════════════════
    MAIN EXPORT
 ═══════════════════════════════════════════════════════════ */
+/* ── Gap #32: Import tokens UI ── */
+function ImportTokensRow({ onImport }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [status, setStatus] = useState(null); // null | 'ok' | 'error'
+
+  const handleImport = () => {
+    if (!text.trim()) return;
+    const result = onImport(text);
+    if (result) { setStatus('ok'); setTimeout(() => { setOpen(false); setText(''); setStatus(null); }, 1000); }
+    else { setStatus('error'); setTimeout(() => setStatus(null), 2000); }
+  };
+
+  return (
+    <div>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', padding: '5px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 10, color: P.textDim, fontFamily: FONT, textAlign: 'center', transition: 'color .12s' }}
+        onMouseEnter={e => e.currentTarget.style.color = P.accent}
+        onMouseLeave={e => e.currentTarget.style.color = P.textDim}>
+        {open ? '▲ Close import' : '↑ Import tokens'}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .15 }} style={{ overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingBottom: 4 }}>
+              <p style={{ margin: 0, fontSize: 9.5, color: P.textMuted, fontFamily: FONT, lineHeight: 1.5 }}>
+                Paste CSS variables or JSON tokens (W3C DTCG / Tokens Studio format).
+              </p>
+              <textarea
+                value={text} onChange={e => setText(e.target.value)}
+                placeholder="Paste :root { --color-primary-500: #4f46e5; } or JSON…"
+                style={{ width: '100%', height: 80, padding: '8px', borderRadius: 6, border: `1px solid ${status === 'error' ? '#ef4444' : status === 'ok' ? '#22c55e' : P.border}`, background: '#fff', color: P.text, fontSize: 10, fontFamily: '"Geist Mono",monospace', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color .12s' }}
+              />
+              <button onClick={handleImport}
+                style={{ padding: '7px', borderRadius: 6, border: `1px solid ${P.accentBorder}`, background: P.accentSoft, color: P.accent, fontSize: 11, cursor: 'pointer', fontFamily: FONT, fontWeight: 600, transition: 'all .12s' }}>
+                {status === 'ok' ? '✓ Imported' : status === 'error' ? 'Could not parse — check format' : 'Import →'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function DSConfigPanel({
   open,
   onClose,
@@ -437,7 +482,8 @@ export default function DSConfigPanel({
   onCancelCompare,
   onShowExport,
   onGenerateHarmony,
-  onClearData,   // Gap #8
+  onClearData,      // Gap #8
+  onImportTokens,   // Gap #32
 }) {
   const SCALE_OPTS = [1.2, 1.25, 1.333, 1.414, 1.618].map(v => ({ value: v, label: v === 1.618 ? 'φ' : String(v) }));
   const toggleLock = key => onLocksChange(p => ({ ...p, [key]: !p[key] }));
@@ -748,6 +794,8 @@ export default function DSConfigPanel({
             Export System
             <kbd style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontFamily: '"Geist Mono",monospace', background: 'rgba(255,255,255,0.1)', padding: '1px 5px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.15)' }}>⌘E</kbd>
           </motion.button>
+          {/* Gap #32: Import tokens */}
+          {onImportTokens && <ImportTokensRow onImport={onImportTokens} />}
           {/* Gap #8: Clear saved data */}
           {onClearData && (
             <button onClick={onClearData}
