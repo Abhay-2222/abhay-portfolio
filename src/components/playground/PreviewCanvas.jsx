@@ -156,7 +156,7 @@ function Chip({ variant, children }) {
 }
 
 function SectionLabel({ children }) {
-  return <div style={{ fontSize:10,fontFamily:CHROME.mono,color:CHROME.label,letterSpacing:'0.09em',fontWeight:700,marginBottom:8 }}>{children.toUpperCase()}</div>;
+  return <div style={{ fontSize:10,fontFamily:CHROME.mono,color:'var(--ds-text-muted)',letterSpacing:'0.09em',fontWeight:700,marginBottom:8 }}>{children.toUpperCase()}</div>;
 }
 
 /* ── Inline Component Docs Panel ── */
@@ -410,9 +410,9 @@ function ButtonMatrix({ matrixRef }) {
       <table style={{ borderCollapse:'collapse', width:'100%', minWidth:460 }}>
         <thead>
           <tr>
-            <th style={{ width:80, padding:'4px 6px 10px', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:700, textAlign:'left', letterSpacing:'0.05em' }}>Variant</th>
+            <th style={{ width:80, padding:'4px 6px 10px', fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:700, textAlign:'left', letterSpacing:'0.05em' }}>Variant</th>
             {BTN_STATES.map(s => (
-              <th key={s} style={{ padding:'4px 4px 10px', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:700, textAlign:'center', whiteSpace:'nowrap', letterSpacing:'0.03em' }}>{s}</th>
+              <th key={s} style={{ padding:'4px 4px 10px', fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:700, textAlign:'center', whiteSpace:'nowrap', letterSpacing:'0.03em' }}>{s}</th>
             ))}
           </tr>
         </thead>
@@ -422,7 +422,7 @@ function ButtonMatrix({ matrixRef }) {
               initial={{ opacity:0, x:-6 }} animate={{ opacity:1, x:0 }}
               transition={{ duration:0.16, delay: ri * 0.04 }}
               style={{ borderTop:'1px solid var(--ds-border)' }}>
-              <td style={{ padding:'8px 6px', fontSize:11, fontFamily:CHROME.mono, color:CHROME.text, fontWeight:600 }}>{label}</td>
+              <td style={{ padding:'8px 6px', fontSize:11, fontFamily:CHROME.mono, color:'var(--ds-fg)', fontWeight:600 }}>{label}</td>
               {BTN_STATES.map(st => (
                 <td key={st} style={{ padding:'7px 4px', textAlign:'center' }}>
                   <StaticBtn variant={key} state={st}/>
@@ -452,7 +452,7 @@ function InputStates() {
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px 16px', maxWidth:560 }}>
       {states.map(({ label, extra, value, placeholder, errMsg }) => (
         <div key={label}>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:4 }}>{label}</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:4 }}>{label}</div>
           <input readOnly value={value} placeholder={placeholder}
             style={{ ...inputBase, ...extra }}/>
           {errMsg && <div style={{ fontSize:10, color:'#ef4444', fontFamily:'var(--ds-font-body)', marginTop:3 }}>{errMsg}</div>}
@@ -467,14 +467,14 @@ function InputStates() {
 ───────────────────────────────────────────────────────── */
 function MotionTile({ label, tokenKey, tokenValue, children }) {
   return (
-    <div style={{ padding:'14px 12px', borderRight:'1px solid rgba(0,0,0,0.06)', display:'flex', flexDirection:'column', gap:10, minWidth:0 }}>
-      <div style={{ fontSize:10, fontWeight:700, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.5)', letterSpacing:'0.04em' }}>{label}</div>
+    <div style={{ padding:'14px 12px', borderRight:'1px solid var(--ds-border)', display:'flex', flexDirection:'column', gap:10, minWidth:0 }}>
+      <div style={{ fontSize:10, fontWeight:700, fontFamily:'"DM Mono",monospace', color:'var(--ds-text-muted)', letterSpacing:'0.04em' }}>{label}</div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:68, overflow:'visible', position:'relative' }}>
         {children}
       </div>
-      <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'rgba(0,0,0,0.28)', lineHeight:1.6 }}>
-        <div style={{ color:'rgba(0,0,0,0.4)' }}>{tokenKey}</div>
-        <div style={{ fontWeight:600, color:'rgba(0,0,0,0.55)' }}>{tokenValue}</div>
+      <div style={{ fontSize:8, fontFamily:'"DM Mono",monospace', color:'var(--ds-text-muted)', lineHeight:1.6 }}>
+        <div style={{ color:'var(--ds-text-muted)' }}>{tokenKey}</div>
+        <div style={{ fontWeight:600, color:'var(--ds-fg)' }}>{tokenValue}</div>
       </div>
     </div>
   );
@@ -710,7 +710,7 @@ function FormControlsSection() {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px 24px' }}>
         {/* Checkbox group */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Checkboxes</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Checkboxes</div>
           {['Enable notifications','Dark mode','Auto-save (disabled)'].map((lbl, i) => (
             <label key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, cursor:i===2?'not-allowed':'pointer', opacity:i===2?0.4:1 }}>
               <div onClick={() => { if (i<2) { const n=[...checks]; n[i]=!n[i]; setChecks(n); } }}
@@ -723,7 +723,7 @@ function FormControlsSection() {
         </div>
         {/* Radio group */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Radio Buttons</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Radio Buttons</div>
           {['Free plan','Pro — $12/mo','Enterprise'].map((lbl, i) => (
             <label key={i} onClick={() => setRadio(i)} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, cursor:'pointer' }}>
               <div style={{ width:15, height:15, borderRadius:'50%', border:`1.5px solid ${radio===i?'var(--ds-primary)':'var(--ds-border-strong)'}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all .12s' }}>
@@ -735,7 +735,7 @@ function FormControlsSection() {
         </div>
         {/* Toggle switch */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Toggle Switch</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Toggle Switch</div>
           <div style={{ display:'flex', gap:20, alignItems:'center' }}>
             {[{ label:'On', on:toggleOn }, { label:'Off', on:!toggleOn }].map(({ label, on }, i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:7 }}>
@@ -750,7 +750,7 @@ function FormControlsSection() {
         </div>
         {/* Select */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Select</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Select</div>
           <div style={{ position:'relative' }}>
             <select style={{ ...inputBase, paddingRight:28, appearance:'none', cursor:'pointer' }}>
               <option>Product Designer</option><option>Engineer</option><option>Manager</option>
@@ -760,12 +760,12 @@ function FormControlsSection() {
         </div>
         {/* Textarea */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Textarea</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Textarea</div>
           <textarea readOnly rows={3} defaultValue="Tell us about your design process and how you approach system thinking…" style={{ ...inputBase, resize:'none' }}/>
         </div>
         {/* Search */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Search</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Search</div>
           <div style={{ position:'relative' }}>
             <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--ds-text-muted)', pointerEvents:'none' }}>⌕</span>
             <input readOnly defaultValue="Design tokens" style={{ ...inputBase, paddingLeft:28, paddingRight:28 }}/>
@@ -774,7 +774,7 @@ function FormControlsSection() {
         </div>
         {/* File upload */}
         <div style={{ gridColumn:'1 / -1' }}>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>File Upload</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>File Upload</div>
           <div style={{ border:'1.5px dashed var(--ds-border-strong)', borderRadius:'var(--ds-radius)', padding:'16px', display:'flex', flexDirection:'column', alignItems:'center', gap:5, background:'var(--ds-bg-subtle)', cursor:'pointer' }}>
             <span style={{ fontSize:20 }}>⬆</span>
             <span style={{ fontSize:12, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)', fontWeight:500 }}>Drop files here or click to upload</span>
@@ -796,7 +796,7 @@ function NavigationSection() {
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       {/* Topbar */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Topbar</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Topbar</div>
         <nav style={{ display:'flex', alignItems:'center', gap:4, padding:'8px 14px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', boxShadow:'var(--ds-shadow-sm)' }}>
           <span style={{ fontWeight:800, fontSize:14, fontFamily:'var(--ds-font-display)', color:'var(--ds-fg)', marginRight:8 }}>Brand</span>
           {['Home','Work','About','Contact'].map(item => (
@@ -813,7 +813,7 @@ function NavigationSection() {
       </div>
       {/* Sidebar + content preview */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Sidebar Nav</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Sidebar Nav</div>
         <div style={{ display:'flex', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', overflow:'hidden', height:148 }}>
           <div style={{ width:148, background:'var(--ds-bg-subtle)', borderRight:'1px solid var(--ds-border)', padding:'10px 8px', display:'flex', flexDirection:'column', gap:2, flexShrink:0 }}>
             {sideItems.map(({ icon, label }) => (
@@ -835,7 +835,7 @@ function NavigationSection() {
       </div>
       {/* Breadcrumb */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Breadcrumb</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Breadcrumb</div>
         <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontFamily:'var(--ds-font-body)' }}>
           {['Home','Products','Checkout'].map((crumb, i, arr) => (
             <span key={i} style={{ display:'flex', alignItems:'center', gap:5 }}>
@@ -847,7 +847,7 @@ function NavigationSection() {
       </div>
       {/* Horizontal tabs */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Tabs</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Tabs</div>
         <div style={{ borderBottom:'1px solid var(--ds-border)' }}>
           {['Overview','Activity','Members','Settings'].map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
@@ -859,7 +859,7 @@ function NavigationSection() {
       </div>
       {/* Stepper */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:8 }}>Stepper</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:8 }}>Stepper</div>
         <div style={{ display:'flex', alignItems:'flex-start' }}>
           {['Account','Profile','Billing','Review'].map((step, i) => (
             <span key={i} style={{ display:'flex', alignItems:'flex-start', flex:i<3?1:'unset' }}>
@@ -876,7 +876,7 @@ function NavigationSection() {
       </div>
       {/* Pagination */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Pagination</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Pagination</div>
         <div style={{ display:'flex', alignItems:'center', gap:3 }}>
           {['←','1','2','3','4','5','…','12','→'].map((p, i) => (
             <button key={i} style={{ minWidth:28, height:28, borderRadius:'var(--ds-radius-sm)', border:`1px solid ${i===2?'var(--ds-primary)':'var(--ds-border)'}`, background:i===2?'var(--ds-primary)':'transparent', color:i===2?'#fff':'var(--ds-text-muted)', fontSize:11, cursor:'pointer', fontFamily:'var(--ds-font-body)', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', fontWeight:i===2?600:400 }}>{p}</button>
@@ -912,11 +912,11 @@ function DataTableSection() {
                 </div>
               </th>
               <th onClick={() => setSortDir(d=>d==='asc'?'desc':'asc')}
-                style={{ padding:'8px 10px', textAlign:'left', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, fontWeight:600, borderBottom:'1px solid var(--ds-border)', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap' }}>
+                style={{ padding:'8px 10px', textAlign:'left', fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, fontWeight:600, borderBottom:'1px solid var(--ds-border)', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap' }}>
                 NAME <span style={{ opacity:0.5 }}>{sortDir==='asc'?'↑':'↓'}</span>
               </th>
               {['STATUS','DEPARTMENT','DATE','ACTIONS'].map(col => (
-                <th key={col} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, fontWeight:600, borderBottom:'1px solid var(--ds-border)', whiteSpace:'nowrap' }}>{col}</th>
+                <th key={col} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, fontWeight:600, borderBottom:'1px solid var(--ds-border)', whiteSpace:'nowrap' }}>{col}</th>
               ))}
             </tr>
           </thead>
@@ -1024,7 +1024,7 @@ function OverlaysSection() {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         {/* Modal */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Dialog / Modal</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Dialog / Modal</div>
           <div style={{ borderRadius:'var(--ds-radius-lg)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', boxShadow:'var(--ds-shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--ds-border)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <span style={{ fontSize:12, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>Confirm Delete</span>
@@ -1041,7 +1041,7 @@ function OverlaysSection() {
         </div>
         {/* Tooltip + Popover */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Tooltip & Popover</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Tooltip & Popover</div>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'flex-start', gap:4 }}>
               <div style={{ padding:'5px 9px', borderRadius:'var(--ds-radius-sm)', background:'#1a1814', color:'#f8f8f7', fontSize:10, fontFamily:'var(--ds-font-body)', fontWeight:500, boxShadow:'var(--ds-shadow-md)', whiteSpace:'nowrap', position:'relative', alignSelf:'flex-start' }}>
@@ -1058,7 +1058,7 @@ function OverlaysSection() {
         </div>
         {/* Dropdown menu */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Dropdown Menu</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Dropdown Menu</div>
           <div style={{ position:'relative', display:'inline-block' }}>
             <button onClick={() => setDropdownOpen(o=>!o)}
               style={{ padding:'6px 12px', borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', color:'var(--ds-fg)', fontSize:11, cursor:'pointer', fontFamily:'var(--ds-font-body)', display:'flex', alignItems:'center', gap:5 }}>
@@ -1085,7 +1085,7 @@ function OverlaysSection() {
         </div>
         {/* Command palette */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Command Palette</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Command Palette</div>
           <div style={{ borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border-strong)', background:'var(--ds-bg-elevated)', boxShadow:'var(--ds-shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'7px 10px', borderBottom:'1px solid var(--ds-border)', display:'flex', alignItems:'center', gap:7 }}>
               <span style={{ fontSize:12, color:'var(--ds-text-muted)' }}>⌕</span>
@@ -1128,7 +1128,7 @@ function FeedbackSection() {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         {/* Progress bars */}
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Progress</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Progress</div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {[{ label:'Uploading…', pct:65, color:'var(--ds-primary)' },{ label:'Build complete', pct:100, color:'#22c55e' },{ label:'Processing', pct:30, color:'#f59e0b' }].map(({ label, pct, color }, i) => (
               <div key={i}>
@@ -1143,7 +1143,7 @@ function FeedbackSection() {
         {/* Skeleton + Spinner + Toast */}
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           <div>
-            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Skeleton</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Skeleton</div>
             <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
               {[85, 60, 75].map((w, i) => (
                 <div key={i} style={{ height:11, borderRadius:'var(--ds-radius-sm)', width:`${w}%`, background:'linear-gradient(90deg,var(--ds-bg-subtle) 25%,var(--ds-border) 50%,var(--ds-bg-subtle) 75%)', backgroundSize:'200% 100%', animation:`shimmer 1.5s ${i*0.15}s infinite linear` }}/>
@@ -1151,7 +1151,7 @@ function FeedbackSection() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Spinner</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Spinner</div>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               {[14, 20, 28].map((sz, i) => (
                 <div key={i} style={{ width:sz, height:sz, borderRadius:'50%', border:`${i===0?1.5:2}px solid var(--ds-primary-l)`, borderTopColor:'var(--ds-primary)', animation:'pc-spin 0.7s linear infinite' }}/>
@@ -1159,7 +1159,7 @@ function FeedbackSection() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:7 }}>Toast</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:7 }}>Toast</div>
             <div style={{ padding:'8px 11px', borderRadius:'var(--ds-radius)', background:'#1a1814', color:'#f8f8f7', fontSize:11, fontFamily:'var(--ds-font-body)', display:'inline-flex', alignItems:'center', gap:7, boxShadow:'var(--ds-shadow-lg)' }}>
               <span style={{ color:'#22c55e' }}>✓</span>Tokens exported!
             </div>
@@ -1168,7 +1168,7 @@ function FeedbackSection() {
       </div>
       {/* Empty state */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Empty State</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Empty State</div>
         <div style={{ padding:'22px', borderRadius:'var(--ds-radius-lg)', border:'1px dashed var(--ds-border-strong)', display:'flex', flexDirection:'column', alignItems:'center', gap:8, maxWidth:320 }}>
           <div style={{ width:44, height:44, borderRadius:'var(--ds-radius)', background:'var(--ds-bg-subtle)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>📦</div>
           <div style={{ fontSize:14, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>No components yet</div>
@@ -1201,7 +1201,7 @@ function DataDisplaySection() {
       </div>
       {/* Activity feed */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Activity Feed</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Activity Feed</div>
         <div style={{ borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', overflow:'hidden' }}>
           {[
             { av:'AC', c:'#4f46e5', action:'exported CSS tokens', time:'2m ago' },
@@ -1215,14 +1215,14 @@ function DataDisplaySection() {
                 <span style={{ fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)', fontWeight:500 }}>{av} </span>
                 <span style={{ fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)' }}>{action}</span>
               </div>
-              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, flexShrink:0 }}>{time}</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, flexShrink:0 }}>{time}</span>
             </div>
           ))}
         </div>
       </div>
       {/* Avatars */}
       <div>
-        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:8 }}>Avatars</div>
+        <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:8 }}>Avatars</div>
         <div style={{ display:'flex', alignItems:'center', gap:20 }}>
           <div style={{ display:'flex' }}>
             {[{ i:'AC',c:'#4f46e5'},{ i:'BK',c:'#e54f4f'},{ i:'CS',c:'#22c55e'},{ i:'DL',c:'#f59e0b'}].map(({ i: init, c }, idx) => (
@@ -1270,7 +1270,7 @@ function BadgesSection() {
           ))}
         </div>
         <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-          <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>Notification badges:</span>
+          <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>Notification badges:</span>
           {[{ icon:'🔔', count:3 },{ icon:'📨', count:12 },{ icon:'⚙', count:null }].map(({ icon, count }, i) => (
             <div key={i} style={{ position:'relative', display:'inline-flex' }}>
               <span style={{ fontSize:22 }}>{icon}</span>
@@ -1326,7 +1326,7 @@ function DatePickerSection() {
           <button style={{ width:22, height:22, borderRadius:'var(--ds-radius-sm)', border:'1px solid var(--ds-border)', background:'transparent', color:'var(--ds-fg)', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:2, marginBottom:4 }}>
-          {days.map(d => <div key={d} style={{ textAlign:'center', fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, fontWeight:600, padding:'2px 0' }}>{d}</div>)}
+          {days.map(d => <div key={d} style={{ textAlign:'center', fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, fontWeight:600, padding:'2px 0' }}>{d}</div>)}
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:2 }}>
           {Array.from({ length: offset + total }).map((_, i) => {
@@ -1541,7 +1541,7 @@ function TimelineSection() {
               {i < events.length - 1 && <div style={{ width:2, flex:1, background:'var(--ds-border)', minHeight:24, margin:'4px 0' }}/>}
             </div>
             <div style={{ paddingBottom:16 }}>
-              <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:2 }}>{date}</div>
+              <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:2 }}>{date}</div>
               <div style={{ fontSize:12, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{title}</div>
               <div style={{ fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', marginTop:2 }}>{desc}</div>
             </div>
@@ -1571,7 +1571,7 @@ function ChartSection() {
           {bars.map(({ label, val, color }) => (
             <div key={label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
               <div style={{ width:'100%', borderRadius:'var(--ds-radius-sm) var(--ds-radius-sm) 0 0', background:color, height:`${(val/max)*72}px`, transition:'height .3s', minHeight:4 }}/>
-              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{label}</span>
+              <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>{label}</span>
             </div>
           ))}
         </div>
@@ -1609,7 +1609,7 @@ function NotificationPanelSection() {
             <div style={{ flex:1 }}>
               <div style={{ fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)', fontWeight: !read ? 600 : 400 }}>{title}</div>
             </div>
-            <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, flexShrink:0 }}>{time}</span>
+            <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, flexShrink:0 }}>{time}</span>
           </div>
         ))}
       </div>
@@ -1635,7 +1635,7 @@ function CommentThreadSection() {
               <div style={{ flex:1, borderRadius:'var(--ds-radius)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-elevated)', padding:'9px 12px' }}>
                 <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:4 }}>
                   <span style={{ fontSize:11, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{name}</span>
-                  <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{time}</span>
+                  <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>{time}</span>
                 </div>
                 <p style={{ margin:0, fontSize:11, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', lineHeight:1.6 }}>{body}</p>
                 <button style={{ marginTop:6, border:'none', background:'none', padding:0, cursor:'pointer', fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-primary)', fontWeight:500 }}>Reply</button>
@@ -1647,7 +1647,7 @@ function CommentThreadSection() {
                 <div style={{ flex:1, borderRadius:'var(--ds-radius-sm)', border:'1px solid var(--ds-border)', background:'var(--ds-bg-subtle)', padding:'7px 10px' }}>
                   <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:3 }}>
                     <span style={{ fontSize:10, fontWeight:600, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg)' }}>{r.name}</span>
-                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{r.time}</span>
+                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>{r.time}</span>
                   </div>
                   <p style={{ margin:0, fontSize:10, fontFamily:'var(--ds-font-body)', color:'var(--ds-fg-muted)', lineHeight:1.6 }}>{r.body}</p>
                 </div>
@@ -1713,7 +1713,7 @@ function VideoPlayerSection() {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <button style={{ width:26, height:26, border:'none', background:'transparent', color:'var(--ds-fg)', fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>&#9654;</button>
-            <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>1:24 / 3:45</span>
+            <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>1:24 / 3:45</span>
             <div style={{ flex:1 }}/>
             <button style={{ width:22, height:22, border:'none', background:'transparent', color:'var(--ds-fg-muted)', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>&#128266;</button>
             <button style={{ width:22, height:22, border:'none', background:'transparent', color:'var(--ds-fg-muted)', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>&#9974;</button>
@@ -1753,7 +1753,7 @@ function RatingSection() {
     <div>
       <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
         <div>
-          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:6 }}>Star Rating (3.5 / 5)</div>
+          <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:6 }}>Star Rating (3.5 / 5)</div>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
             <div style={{ display:'flex', gap:3 }}>
               {[1,2,3,4,5].map(i => (
@@ -1770,7 +1770,7 @@ function RatingSection() {
         </div>
         <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
           <div>
-            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:5 }}>Thumbs</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:5 }}>Thumbs</div>
             <div style={{ display:'flex', gap:8 }}>
               {[['↑','var(--ds-secondary-500)','224'],['↓','#ef4444','18']].map(([icon,color,count]) => (
                 <button key={icon} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', borderRadius:'var(--ds-radius)', border:`1px solid ${color}`, background:`${color}18`, color, fontSize:12, cursor:'pointer', fontFamily:'var(--ds-font-body)', fontWeight:600 }}>{icon} {count}</button>
@@ -1778,7 +1778,7 @@ function RatingSection() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, marginBottom:5 }}>Score</div>
+            <div style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, marginBottom:5 }}>Score</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:3 }}>
               <span style={{ fontSize:28, fontWeight:800, fontFamily:'var(--ds-font-display)', color:'var(--ds-tertiary-500)', lineHeight:1 }}>8.4</span>
               <span style={{ fontSize:11, color:'var(--ds-text-muted)', fontFamily:'var(--ds-font-body)' }}>/10</span>
@@ -1868,7 +1868,7 @@ function DataFilterSection() {
           </div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-          <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>Active:</span>
+          <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>Active:</span>
           {activeFilters.map(f => (
             <span key={f} style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'3px 8px', borderRadius:'var(--ds-radius-lg)', background:'var(--ds-secondary-100)', color:'var(--ds-secondary-500)', fontSize:10, fontFamily:'var(--ds-font-body)', fontWeight:500 }}>
               {f} <span style={{ cursor:'pointer', fontSize:9 }}>✕</span>
@@ -2112,7 +2112,7 @@ function ContextualTokenStrip({ componentKey, scopedVars }) {
   return (
     <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:'8px 20px', padding:'12px 0 16px', borderBottom:`1px solid ${CHROME.divider}`, marginBottom:24 }}>
       {/* Label — hardcoded neutral, never changes */}
-      <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, flexShrink:0 }}>
+      <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, flexShrink:0 }}>
         Tokens used
       </span>
 
@@ -2129,7 +2129,7 @@ function ContextualTokenStrip({ componentKey, scopedVars }) {
           {/* Inline labels — hardcoded neutral */}
           <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
             {colorDefs.map(t => (
-              <span key={t.key} style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontFamily:CHROME.mono, color:CHROME.text }}>
+              <span key={t.key} style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontFamily:CHROME.mono, color:'var(--ds-fg)' }}>
                 <span style={{ width:9, height:9, borderRadius:'50%', background:scopedVars[t.key], display:'inline-block', flexShrink:0, boxShadow:'0 0 0 1px rgba(0,0,0,0.15)' }}/>
                 {t.label}
               </span>
@@ -2148,8 +2148,8 @@ function ContextualTokenStrip({ componentKey, scopedVars }) {
         const val = scopedVars[t.key] ?? '';
         const shortVal = val.length > 26 ? val.slice(0,26)+'…' : val;
         return (
-          <span key={t.key} style={{ fontSize:11, fontFamily:CHROME.mono, color:CHROME.text }}>
-            <span style={{ color:CHROME.label }}>{t.label}: </span>{shortVal}
+          <span key={t.key} style={{ fontSize:11, fontFamily:CHROME.mono, color:'var(--ds-fg)' }}>
+            <span style={{ color:'var(--ds-text-muted)' }}>{t.label}: </span>{shortVal}
           </span>
         );
       })}
@@ -2910,7 +2910,7 @@ function LayoutPreview({ tokens }) {
                   ))}
                 </div>
                 <div style={{ fontSize:10, fontWeight:600, fontFamily:CHROME.sans, color:CHROME.fg }}>{label}</div>
-                <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{desc}</div>
+                <div style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.fgMuted, fontWeight:600 }}>{desc}</div>
               </div>
             ))}
           </div>
@@ -2971,12 +2971,12 @@ function LayoutPreview({ tokens }) {
               <div style={{ borderRadius:CHROME.radius, overflow:'hidden', border:`1px solid ${CHROME.borderColor}` }}>
                 {steps.map((val, i) => (
                   <div key={i} style={{ display:'grid', gridTemplateColumns:'56px 1fr 52px 52px', gap:10, alignItems:'center', padding:'6px 12px', borderBottom: i < steps.length-1 ? `1px solid ${CHROME.borderColor}` : 'none', background: i%2===0 ? 'transparent' : CHROME.bgSubtle }}>
-                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600 }}>{scaleKey}-{offset+i+1}</span>
+                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600 }}>{scaleKey}-{offset+i+1}</span>
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                       <div style={{ height:8, width:`${Math.max(4, (val/maxSpacing)*100)}%`, background:'rgba(99,102,241,0.55)', borderRadius:2, opacity:0.45+((offset+i)/20)*0.55, transition:'width .3s', minWidth:4, maxWidth:'100%', flexShrink:0 }}/>
                     </div>
                     <span style={{ fontSize:9, fontFamily:CHROME.mono, color:CHROME.fg, textAlign:'right', fontWeight:600 }}>{val}px</span>
-                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:CHROME.label, fontWeight:600, textAlign:'right' }}>{+(val/16).toFixed(2)}rem</span>
+                    <span style={{ fontSize:10, fontFamily:CHROME.mono, color:'var(--ds-text-muted)', fontWeight:600, textAlign:'right' }}>{+(val/16).toFixed(2)}rem</span>
                   </div>
                 ))}
               </div>
