@@ -593,9 +593,9 @@ export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, 
                 <>
                   <FoundationHeader label="Color System" title="Color Roles"
                     desc="How your palette swatches map to semantic roles. Primary drives CTAs and interactive elements. Secondary supports UI structure. Tertiary provides accent variation." />
-                  <PreviewStage scopedVars={scopedVars} mode={mode} canvasRef={canvasRef}>
+                  <div style={{ ...scopedVars }}>
                     <PC.ColorRolesSection />
-                  </PreviewStage>
+                  </div>
                 </>
               )}
 
@@ -603,9 +603,9 @@ export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, 
                 <>
                   <FoundationHeader label="Typography" title="Type Scale"
                     desc="Your display, body, and mono font stack with a live typographic scale. Every size step is derived from the scale ratio you set in the token controls." />
-                  <PreviewStage scopedVars={scopedVars} mode={mode} canvasRef={canvasRef}>
+                  <div style={{ ...scopedVars }}>
                     <PC.TypographyPreview tokens={tokens} />
-                  </PreviewStage>
+                  </div>
                 </>
               )}
 
@@ -613,9 +613,9 @@ export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, 
                 <>
                   <FoundationHeader label="Layout" title="Layout & Spacing"
                     desc="Spacing steps, grid patterns, and layout primitives derived from your base unit and scale type." />
-                  <PreviewStage scopedVars={scopedVars} mode={mode} canvasRef={canvasRef}>
+                  <div style={{ ...scopedVars }}>
                     <PC.LayoutPreview tokens={tokens} />
-                  </PreviewStage>
+                  </div>
                 </>
               )}
 
