@@ -4,8 +4,8 @@
  * Right 50%: sticky full-height photo carousel with padding.
  */
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 /* ─── Data ───────────────────────────────────────────────────────────── */
@@ -22,6 +22,16 @@ const EDUCATION = [
 ];
 
 const SKILLS = ['Figma', 'Salesforce', 'Unity', 'Jira', 'Maze', 'Miro', 'v0', 'Lovable', 'HTML/CSS', 'JavaScript'];
+
+/* ─── Gallery: auto-detect all images ────────────────────────────────
+ * Drop any jpg / png / webp into  src/assets/gallery/
+ * No naming convention needed — all files are picked up automatically.
+ * ──────────────────────────────────────────────────────────────────── */
+const _galleryModules = import.meta.glob(
+  '../assets/gallery/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+  { eager: true }
+);
+const GALLERY_SRCS = Object.values(_galleryModules).map((m) => m.default);
 
 const SLIDES = [
   { src: '/about/photo-me.jpg',      label: 'Me',            grad: 'linear-gradient(160deg,#c8bdb0 0%,#907060 100%)' },
@@ -87,9 +97,194 @@ function PhotoCarousel() {
   );
 }
 
+/* ─── Gallery image ──────────────────────────────────────────────────── */
+function GalleryImage({ src, index }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -32px 0px' });
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 18 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{
+        duration: 0.55,
+        delay: Math.min(index * 0.045, 0.35),
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      whileHover={{ scale: 1.015, transition: { duration: 0.3, ease: [0.22,1,0.36,1] } }}
+      style={{
+        breakInside: 'avoid',
+        marginBottom: 14,
+        borderRadius: 12,
+        overflow: 'hidden',
+        background: '#ede8e0',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 6px 24px rgba(0,0,0,0.06)',
+        cursor: 'zoom-in',
+        willChange: 'transform',
+      }}
+    >
+      {/* Shimmer while loading */}
+      {!loaded && (
+        <div style={{
+          minHeight: 180,
+          background: 'linear-gradient(90deg, #ede8e0 25%, #e4ddd4 50%, #ede8e0 75%)',
+          backgroundSize: '200% 100%',
+          animation: 'gal-shimmer 1.5s ease-in-out infinite',
+        }} />
+      )}
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        style={{
+          width: '100%',
+          height: 'auto',
+          display: loaded ? 'block' : 'none',
+        }}
+      />
+    </motion.div>
+  );
+}
+
+/* ─── Photo gallery overlay ──────────────────────────────────────────── */
+function PhotoGallery({ onClose }) {
+  const count = GALLERY_SRCS.length;
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 300,
+        background: '#f7f4ef',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
+      <style>{`
+        @keyframes gal-shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        padding: '28px 56px 24px',
+        background: '#f7f4ef',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
+          <span style={{
+            fontFamily: 'var(--serif)',
+            fontSize: 'clamp(20px, 2vw, 30px)',
+            fontWeight: 400,
+            fontStyle: 'italic',
+            letterSpacing: '-0.02em',
+            color: 'var(--text-primary)',
+          }}>
+            Shots
+          </span>
+          {count > 0 && (
+            <span style={{
+              fontFamily: 'var(--mono)', fontSize: 10,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+            }}>
+              {count} shot{count !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          data-cursor-hover
+          style={{
+            fontFamily: 'var(--mono)', fontSize: 10,
+            letterSpacing: '0.10em', textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            background: 'transparent',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 20, padding: '7px 16px',
+            cursor: 'pointer',
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.borderColor = 'var(--text-primary)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.color = 'var(--text-muted)';
+            e.currentTarget.style.borderColor = 'var(--border-strong)';
+          }}
+        >
+          ✕ Close
+        </button>
+      </div>
+
+      {/* Thin rule under header */}
+      <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 56px' }} />
+
+      {/* Empty state */}
+      {count === 0 && (
+        <div style={{
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          minHeight: 'calc(100vh - 100px)',
+          gap: 12,
+        }}>
+          <span style={{ fontSize: 28, opacity: 0.2 }}>◻</span>
+          <span style={{
+            fontFamily: 'var(--mono)', fontSize: 11,
+            letterSpacing: '0.10em', textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+          }}>
+            Drop photos into src/assets/gallery/
+          </span>
+        </div>
+      )}
+
+      {/* Masonry grid */}
+      {count > 0 && (
+        <div
+          className="ap-gallery-cols"
+          style={{
+            columns: 3,
+            columnGap: 14,
+            padding: '32px 56px 80px',
+            maxWidth: 1200,
+            margin: '0 auto',
+          }}
+        >
+          {GALLERY_SRCS.map((src, i) => (
+            <GalleryImage key={i} src={src} index={i} />
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 /* ─── Component ──────────────────────────────────────────────────────── */
 export default function About() {
   const navigate = useNavigate();
+  const [showGallery, setShowGallery] = useState(false);
 
   return (
     <>
@@ -416,9 +611,44 @@ export default function About() {
           .ap-hero-name { font-size: 22px; }
           .ap-right { height: 260px; }
         }
+
+        /* ── Gallery button ── */
+        .ap-gallery-btn {
+          position: fixed; top: 16px; right: 16px; z-index: 100;
+          display: flex; align-items: center; gap: 6px;
+          font-family: var(--mono); font-size: 10px; font-weight: 500;
+          letter-spacing: 0.10em; text-transform: uppercase;
+          color: rgba(0,0,0,0.55);
+          background: rgba(255,255,255,0.78);
+          backdrop-filter: blur(32px) saturate(180%);
+          -webkit-backdrop-filter: blur(32px) saturate(180%);
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 14px; padding: 8px 16px;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06);
+          cursor: pointer;
+          transition: transform 0.2s ease, background 0.2s ease, color 0.15s;
+        }
+        .ap-gallery-btn:hover {
+          background: rgba(255,255,255,0.95);
+          color: #0A0A0A;
+          transform: translateY(-3px);
+        }
+
+        /* ── Gallery responsive columns ── */
+        @media (max-width: 860px) {
+          .ap-gallery-cols { columns: 2 !important; padding: 16px 24px 48px !important; }
+        }
+        @media (max-width: 480px) {
+          .ap-gallery-cols { columns: 1 !important; padding: 12px 16px 40px !important; }
+        }
       `}</style>
 
       <div className="ap">
+
+        {/* Gallery overlay */}
+        <AnimatePresence>
+          {showGallery && <PhotoGallery onClose={() => setShowGallery(false)} />}
+        </AnimatePresence>
 
         {/* Back pill */}
         <motion.button
@@ -429,6 +659,17 @@ export default function About() {
           {...fadeUp(0)}
         >
           ← AS
+        </motion.button>
+
+        {/* Gallery pill */}
+        <motion.button
+          className="ap-gallery-btn"
+          onClick={() => setShowGallery(true)}
+          aria-label="Open gallery"
+          data-cursor-hover
+          {...fadeUp(0.04)}
+        >
+          Shots
         </motion.button>
 
         {/* Hero */}
