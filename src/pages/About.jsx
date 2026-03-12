@@ -141,8 +141,10 @@ function GalleryImage({ src, index }) {
         onLoad={() => setLoaded(true)}
         style={{
           width: '100%',
-          height: 'auto',
-          display: loaded ? 'block' : 'none',
+          height: loaded ? 'auto' : 0,
+          display: 'block',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.4s ease',
         }}
       />
     </motion.div>
