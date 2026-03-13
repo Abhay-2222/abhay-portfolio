@@ -14,6 +14,38 @@ import * as PC from './PreviewCanvas';
 import DSPagePreviews from './DSPagePreviews';
 
 /* ─────────────────────────────────────────────────────────
+   COLOR BLINDNESS SIMULATION
+───────────────────────────────────────────────────────── */
+const CB_FILTERS = [
+  { id: 'normal',        label: 'Normal'  },
+  { id: 'protanopia',    label: 'Protan'  },
+  { id: 'deuteranopia',  label: 'Deutan'  },
+  { id: 'tritanopia',    label: 'Tritan'  },
+  { id: 'achromatopsia', label: 'Achroma' },
+];
+
+function CBFilterDefs() {
+  return (
+    <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+      <defs>
+        <filter id="ds-cb-protanopia">
+          <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0" />
+        </filter>
+        <filter id="ds-cb-deuteranopia">
+          <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0" />
+        </filter>
+        <filter id="ds-cb-tritanopia">
+          <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0" />
+        </filter>
+        <filter id="ds-cb-achromatopsia">
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    DESIGN TOKENS FOR CHROME (never ds-* vars)
 ───────────────────────────────────────────────────────── */
 const FONT = `-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Geist Sans', system-ui, sans-serif`;
@@ -463,7 +495,8 @@ function FoundationHeader({ label, title, desc }) {
 /* ─────────────────────────────────────────────────────────
    PREVIEW CANVAS WRAPPER
 ───────────────────────────────────────────────────────── */
-function PreviewStage({ scopedVars, mode, canvasRef, children }) {
+function PreviewStage({ scopedVars, mode, canvasRef, cbFilter, children }) {
+  const filterStyle = cbFilter && cbFilter !== 'normal' ? { filter: `url(#ds-cb-${cbFilter})` } : {};
   return (
     <div ref={canvasRef} style={{ position: 'relative', borderRadius: 12 }}>
       <div data-cascade-overlay="1" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, display: 'none', borderRadius: 12 }} />
@@ -477,6 +510,7 @@ function PreviewStage({ scopedVars, mode, canvasRef, children }) {
       }} />
       <div className="ds-preview" style={{
         ...scopedVars,
+        ...filterStyle,
         position: 'relative', zIndex: 1,
         background: mode === 'dark' ? '#0f0e0d' : '#ffffff',
         borderRadius: 12,
@@ -497,15 +531,17 @@ function PreviewStage({ scopedVars, mode, canvasRef, children }) {
 ───────────────────────────────────────────────────────── */
 const DETAIL_TABS = ['Preview', 'Usage', 'Anatomy', 'A11y'];
 
-export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, onTokenChange, onNavigate }) {
+export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, onTokenChange, onNavigate, pageNote, onNoteChange }) {
   const [detailTab, setDetailTab] = useState('Preview');
   const [activeAnchor, setActiveAnchor] = useState('preview');
+  const [cbFilter, setCbFilter] = useState('normal');
+  const [notesOpen, setNotesOpen] = useState(false);
   const matrixRef     = useRef(null);
   const canvasRef     = useRef(null);
   const prevColorsRef = useRef(tokens.colors);
   const prevTypoRef   = useRef(tokens.typography);
 
-  useEffect(() => { setDetailTab('Preview'); setActiveAnchor('preview'); }, [selectedPage]);
+  useEffect(() => { setDetailTab('Preview'); setActiveAnchor('preview'); setCbFilter('normal'); }, [selectedPage]);
 
   // GSAP color cascade ripple — only for component pages, not foundation
   useEffect(() => {
@@ -576,6 +612,7 @@ export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, 
 
   return (
     <div style={{ flex: 1, height: '100%', overflowY: 'auto', position: 'relative', background: '#fff' }}>
+      <CBFilterDefs />
       <AnimatePresence mode="wait">
         <motion.div key={selectedPage}
           initial={{ opacity: 0, y: 12 }}
@@ -723,8 +760,28 @@ export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, 
 
                     {detailTab === 'Preview' ? (
                       <>
-                        <div style={{ marginTop: 28 }}>
-                          <PreviewStage scopedVars={scopedVars} mode={mode} canvasRef={canvasRef}>
+                        {/* Color blindness simulation toolbar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 20, marginBottom: 12 }}>
+                          <span style={{ fontSize: 10, fontFamily: MONO, color: T.tertiary, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, marginRight: 4, flexShrink: 0 }}>Vision</span>
+                          {CB_FILTERS.map(f => {
+                            const isActive = cbFilter === f.id;
+                            return (
+                              <button key={f.id} onClick={() => setCbFilter(f.id)} style={{
+                                padding: '3px 9px', borderRadius: 5,
+                                border: `1px solid ${isActive ? '#1a1814' : 'rgba(0,0,0,0.1)'}`,
+                                background: isActive ? '#1a1814' : 'transparent',
+                                color: isActive ? '#fff' : T.tertiary,
+                                fontSize: 11, cursor: 'pointer', fontFamily: FONT,
+                                fontWeight: isActive ? 600 : 400,
+                                transition: 'all 0.12s', letterSpacing: '-0.01em',
+                              }}>
+                                {f.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div>
+                          <PreviewStage scopedVars={scopedVars} mode={mode} canvasRef={canvasRef} cbFilter={cbFilter}>
                             {renderSection()}
                           </PreviewStage>
                         </div>
@@ -742,6 +799,41 @@ export default function DSMainContent({ selectedPage, tokens, scopedVars, mode, 
               {/* ── On This Page rail ── */}
               <div style={{ width: 196, flexShrink: 0, padding: '48px 20px 48px 4px' }}>
                 <OnThisPage items={anchorItems} activeId={activeAnchor} />
+
+                {/* ── Design Notes ── */}
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <button
+                    onClick={() => setNotesOpen(o => !o)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      fontSize: 10, fontWeight: 700, color: pageNote ? T.primary : T.tertiary,
+                      fontFamily: MONO, letterSpacing: '0.09em', textTransform: 'uppercase',
+                      padding: 0, marginBottom: notesOpen ? 10 : 0,
+                    }}>
+                    <span>Notes</span>
+                    {pageNote && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#c8602a', flexShrink: 0 }} />}
+                    <span style={{ marginLeft: 'auto', fontSize: 9, color: T.tertiary }}>{notesOpen ? '▲' : '▼'}</span>
+                  </button>
+                  {notesOpen && (
+                    <textarea
+                      value={pageNote ?? ''}
+                      onChange={e => onNoteChange?.(e.target.value)}
+                      placeholder="Add design notes, feedback, or review comments for this component…"
+                      rows={6}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', resize: 'vertical',
+                        fontSize: 12, lineHeight: 1.6, fontFamily: FONT,
+                        color: T.primary, background: '#f9f8f7',
+                        border: '1px solid rgba(0,0,0,0.1)', borderRadius: 6,
+                        padding: '8px 10px', outline: 'none',
+                        transition: 'border-color 0.15s',
+                      }}
+                      onFocus={e => { e.target.style.borderColor = 'rgba(0,0,0,0.25)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.1)'; }}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           )}

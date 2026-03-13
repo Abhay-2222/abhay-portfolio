@@ -13,6 +13,21 @@ export default function DiagramAmbiguity() {
         display: 'block',
       }}
     >
+      <style>{`
+        .da-card {
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-left-color 0.2s ease, background-color 0.2s ease;
+          border-left: 3px solid transparent !important;
+          cursor: default;
+        }
+        .da-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(45,106,159,0.14);
+          border-left-color: #2D6A9F !important;
+          background-color: rgba(45,106,159,0.06) !important;
+          z-index: 2;
+          position: relative;
+        }
+      `}</style>
       {/* matrix-container */}
       <div
         style={{
@@ -30,7 +45,7 @@ export default function DiagramAmbiguity() {
               fontSize: '10px',
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              color: 'rgba(0,0,0,0.08)',
+              color: 'rgba(0,0,0,0.35)',
               marginBottom: '10px',
             }}
           >
@@ -55,6 +70,16 @@ export default function DiagramAmbiguity() {
             }}
           >
             Structural tensions that had to be resolved before any design could begin.
+          </div>
+          <div style={{
+            fontFamily: '"Geist Mono", monospace',
+            fontSize: '9px',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'rgba(45,106,159,0.50)',
+            marginTop: '12px',
+          }}>
+            Hover each quadrant to see the resolution ↗
           </div>
         </div>
 
@@ -81,19 +106,20 @@ export default function DiagramAmbiguity() {
               transform: 'rotate(180deg)',
               fontFamily: '"Geist Mono", monospace',
               fontSize: '10px',
-              color: 'rgba(0,0,0,0.10)',
+              color: 'rgba(0,0,0,0.35)',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               gap: '8px',
             }}
           >
-            <span style={{ color: 'rgba(0,0,0,0.08)' }}>Individual Workflow</span>
-            <span style={{ color: 'rgba(0,0,0,0.10)' }}>↕</span>
-            <span style={{ color: 'rgba(0,0,0,0.08)' }}>Organisational Scale</span>
+            <span style={{ color: 'rgba(0,0,0,0.35)' }}>Individual Workflow</span>
+            <span style={{ color: 'rgba(0,0,0,0.35)' }}>↕</span>
+            <span style={{ color: 'rgba(0,0,0,0.35)' }}>Organisational Scale</span>
           </div>
 
           {/* Q1: Top Left — AI-first vs Clinician-first */}
           <div
+            className="da-card"
             style={{
               padding: '36px 40px',
               border: '1px solid rgba(0,0,0,0.09)',
@@ -121,7 +147,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
-                color: 'rgba(0,0,0,0.10)',
+                color: '#2D6A9F',
+                opacity: 0.5,
                 letterSpacing: '0.1em',
                 marginBottom: '16px',
               }}
@@ -132,7 +159,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Sans", system-ui, sans-serif',
                 fontStyle: 'italic',
-                fontSize: '22px',
+                fontSize: '20px',
+                fontWeight: 500,
                 color: '#1a1814',
                 marginBottom: '10px',
                 lineHeight: 1.2,
@@ -143,7 +171,7 @@ export default function DiagramAmbiguity() {
             <div
               style={{
                 fontSize: '12px',
-                color: 'rgba(0,0,0,0.38)',
+                color: 'rgba(0,0,0,0.58)',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
                 marginBottom: '16px',
@@ -153,10 +181,16 @@ export default function DiagramAmbiguity() {
             </div>
             <div
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
                 color: '#2D6A9F',
-                letterSpacing: '0.06em',
+                letterSpacing: '0.04em',
+                background: 'rgba(45,106,159,0.10)',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                marginTop: '4px',
               }}
             >
               → Resolved: AI prepares context. Clinicians decide.
@@ -165,6 +199,7 @@ export default function DiagramAmbiguity() {
 
           {/* Q2: Top Right — One product vs Role-based */}
           <div
+            className="da-card"
             style={{
               padding: '36px 40px',
               border: '1px solid rgba(0,0,0,0.09)',
@@ -190,7 +225,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
-                color: 'rgba(0,0,0,0.10)',
+                color: '#2D6A9F',
+                opacity: 0.5,
                 letterSpacing: '0.1em',
                 marginBottom: '16px',
               }}
@@ -201,7 +237,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Sans", system-ui, sans-serif',
                 fontStyle: 'italic',
-                fontSize: '22px',
+                fontSize: '20px',
+                fontWeight: 500,
                 color: '#1a1814',
                 marginBottom: '10px',
                 lineHeight: 1.2,
@@ -212,7 +249,7 @@ export default function DiagramAmbiguity() {
             <div
               style={{
                 fontSize: '12px',
-                color: 'rgba(0,0,0,0.38)',
+                color: 'rgba(0,0,0,0.58)',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
                 marginBottom: '16px',
@@ -222,10 +259,16 @@ export default function DiagramAmbiguity() {
             </div>
             <div
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
                 color: '#2D6A9F',
-                letterSpacing: '0.06em',
+                letterSpacing: '0.04em',
+                background: 'rgba(45,106,159,0.10)',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                marginTop: '4px',
               }}
             >
               → Resolved: Shared shell, role-gated views.
@@ -234,6 +277,7 @@ export default function DiagramAmbiguity() {
 
           {/* Q3: Bottom Left — Automate vs Augment */}
           <div
+            className="da-card"
             style={{
               padding: '36px 40px',
               border: '1px solid rgba(0,0,0,0.09)',
@@ -259,7 +303,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
-                color: 'rgba(0,0,0,0.10)',
+                color: '#2D6A9F',
+                opacity: 0.5,
                 letterSpacing: '0.1em',
                 marginBottom: '16px',
               }}
@@ -270,7 +315,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Sans", system-ui, sans-serif',
                 fontStyle: 'italic',
-                fontSize: '22px',
+                fontSize: '20px',
+                fontWeight: 500,
                 color: '#1a1814',
                 marginBottom: '10px',
                 lineHeight: 1.2,
@@ -281,7 +327,7 @@ export default function DiagramAmbiguity() {
             <div
               style={{
                 fontSize: '12px',
-                color: 'rgba(0,0,0,0.38)',
+                color: 'rgba(0,0,0,0.58)',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
                 marginBottom: '16px',
@@ -291,10 +337,16 @@ export default function DiagramAmbiguity() {
             </div>
             <div
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
                 color: '#2D6A9F',
-                letterSpacing: '0.06em',
+                letterSpacing: '0.04em',
+                background: 'rgba(45,106,159,0.10)',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                marginTop: '4px',
               }}
             >
               → Resolved: Copilot model. AI never auto-approves.
@@ -303,6 +355,7 @@ export default function DiagramAmbiguity() {
 
           {/* Q4: Bottom Right — Speed vs Trust */}
           <div
+            className="da-card"
             style={{
               padding: '36px 40px',
               border: '1px solid rgba(0,0,0,0.09)',
@@ -327,7 +380,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
-                color: 'rgba(0,0,0,0.10)',
+                color: '#2D6A9F',
+                opacity: 0.5,
                 letterSpacing: '0.1em',
                 marginBottom: '16px',
               }}
@@ -338,7 +392,8 @@ export default function DiagramAmbiguity() {
               style={{
                 fontFamily: '"Geist Sans", system-ui, sans-serif',
                 fontStyle: 'italic',
-                fontSize: '22px',
+                fontSize: '20px',
+                fontWeight: 500,
                 color: '#1a1814',
                 marginBottom: '10px',
                 lineHeight: 1.2,
@@ -349,7 +404,7 @@ export default function DiagramAmbiguity() {
             <div
               style={{
                 fontSize: '12px',
-                color: 'rgba(0,0,0,0.38)',
+                color: 'rgba(0,0,0,0.58)',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
                 marginBottom: '16px',
@@ -359,10 +414,16 @@ export default function DiagramAmbiguity() {
             </div>
             <div
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontFamily: '"Geist Mono", monospace',
                 fontSize: '10px',
                 color: '#2D6A9F',
-                letterSpacing: '0.06em',
+                letterSpacing: '0.04em',
+                background: 'rgba(45,106,159,0.10)',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                marginTop: '4px',
               }}
             >
               → Resolved: Explainability as core infrastructure.
@@ -379,17 +440,17 @@ export default function DiagramAmbiguity() {
               justifyContent: 'center',
               fontFamily: '"Geist Mono", monospace',
               fontSize: '10px',
-              color: 'rgba(0,0,0,0.10)',
+              color: 'rgba(0,0,0,0.35)',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               gap: '8px',
-              borderTop: '1px solid rgba(0,0,0,0.09)',
+              borderTop: '1px solid rgba(0,0,0,0.15)',
               paddingTop: '12px',
             }}
           >
-            <span style={{ color: 'rgba(0,0,0,0.08)' }}>System Autonomy</span>
-            <span style={{ color: 'rgba(0,0,0,0.10)' }}>←————————→</span>
-            <span style={{ color: 'rgba(0,0,0,0.08)' }}>Human Control</span>
+            <span style={{ color: 'rgba(0,0,0,0.35)' }}>System Autonomy</span>
+            <span style={{ color: 'rgba(0,0,0,0.25)' }}>←————————→</span>
+            <span style={{ color: 'rgba(0,0,0,0.35)' }}>Human Control</span>
           </div>
         </div>
       </div>

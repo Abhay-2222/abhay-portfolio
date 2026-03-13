@@ -5,7 +5,8 @@
  * Sections derived from existing episode data — no content changes.
  */
 
-import { useRef, useEffect, useCallback, useState, lazy, Suspense } from 'react';
+import React, { useRef, useEffect, useCallback, useState, lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import projects from '../data/projects.js';
 
@@ -149,6 +150,20 @@ function deriveSections(project) {
       diagramKey: ep.diagramKey || null,
       callout: i === 0 ? (project.insight || null) : null,
       subsections: subsections.length > 0 ? subsections : [],
+      /* new visual data fields */
+      ep:           ep.ep           || null,
+      readTime:     ep.readTime     || null,
+      stats:        ep.stats        || null,
+      auditData:    ep.auditData    || null,
+      impactStats:  ep.impactStats  || null,
+      productSteps: ep.productSteps || null,
+      quotes:       ep.quotes       || null,
+      powerMap:     ep.powerMap     || null,
+      hasDashboard: ep.hasDashboard || false,
+      timeline:     ep.timeline     || null,
+      pillars:      ep.pillars      || null,
+      principles:   ep.principles   || null,
+      seasons:      ep.seasons      || null,
     };
   });
 
@@ -172,33 +187,456 @@ function deriveSections(project) {
    IA DIAGRAM — horizontal node flow
 ───────────────────────────────────────────────────────── */
 
-function IADiagram({ iaText }) {
-  const nodes = iaText.trim().split('\n\n').map(block => {
-    const lines = block.trim().split('\n');
-    return { label: lines[0], body: lines.slice(1).join('\n') };
+/** Detect if a line reads like a stat: starts with number/%, $, or contains "%" */
+function isStatLine(line) {
+  return /^(\d+%|\$[\d.]+[MKB]?|\d+x|\d+\/\d+|\d+ to \d+|[\d.]+[MKB]?\s)/.test(line.trim());
+}
+
+/** Parse "Role: description" format */
+function parseRoleLine(line) {
+  const idx = line.indexOf(':');
+  if (idx > -1) return { role: line.slice(0, idx).trim(), desc: line.slice(idx + 1).trim() };
+  return null;
+}
+
+function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
+  const gridRef = useRef(null);
+  const [bentoVisible, setBentoVisible] = useState(false);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setBentoVisible(true); obs.disconnect(); }
+    }, { threshold: 0.05 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const hex = (accentColor || '#0a0a0a').replace('#', '');
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  const aa = (a) => `rgba(${r},${g},${b},${a})`;
+
+  const sections = iaText.trim().split('\n\n').map(block => {
+    const lines = block.trim().split('\n').filter(l => l.trim());
+    return { label: lines[0].trim(), lines: lines.slice(1).filter(l => l.trim()) };
   });
 
-  return (
-    <div className="ia-diagram-container">
-      <div className="ia-nodes">
-        {nodes.map((node, i) => (
-          <div key={i} className="ia-node-wrapper">
-            <div className="ia-node">
-              <div className="ia-node-label">{node.label}</div>
-              <div className="ia-node-body">{node.body}</div>
-            </div>
-            {i < nodes.length - 1 && (
-              <div className="ia-connector">
-                <div className="ia-connector-line" />
-                <div className="ia-connector-arrow">→</div>
-              </div>
-            )}
-          </div>
-        ))}
+  function tileType(label) {
+    const k = label.toUpperCase();
+    if (k.includes('SITUATION')) return 'situation';
+    if (k.includes('USER'))      return 'users';
+    if (k.includes('PROBLEM'))   return 'problem';
+    if (k.includes('CONSTRAINT'))return 'constraints';
+    if (k.includes('PROCESS'))   return 'process';
+    if (k.includes('DECISION'))  return 'decisions';
+    if (k.includes('PRODUCT'))   return 'product';
+    if (k.includes('OUTCOME') || k.includes('IMPACT') || k.includes('RESULT')) return 'outcome';
+    return 'misc';
+  }
+
+  function renderTile(sec, i) {
+    const type = tileType(sec.label);
+    const lines = sec.lines;
+
+    const baseDelay = { animationDelay: `${i * 55}ms` };
+
+    if (type === 'situation') return (
+      <div key={i} className="bt bt-situation" style={{ ...baseDelay, background: aa(0.05), border: `1px solid ${aa(0.12)}` }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-prose">{lines.map((l,j) => <p key={j} className="bt-line">{l}</p>)}</div>
       </div>
+    );
+
+    if (type === 'users') return (
+      <div key={i} className="bt bt-users" style={{ ...baseDelay, border: '1px solid rgba(0,0,0,0.08)' }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-user-stack">
+          {lines.map((line, j) => {
+            const p = parseRoleLine(line);
+            return p ? (
+              <div key={j} className="bt-user-row" style={{ borderBottomColor: aa(0.08) }}>
+                <span className="bt-user-role" style={{ color: accentColor }}>{p.role}</span>
+                <span className="bt-user-desc">{p.desc}</span>
+              </div>
+            ) : <p key={j} className="bt-line">{line}</p>;
+          })}
+        </div>
+      </div>
+    );
+
+    if (type === 'problem') return (
+      <div key={i} className="bt bt-problem" style={{ ...baseDelay, background: `linear-gradient(150deg, ${aa(0.88)} 0%, ${accentColor} 100%)` }}>
+        <span className="bt-label bt-label--inv">{sec.label}</span>
+        <div className="bt-problem-body">
+          {lines.map((l, j) => <p key={j} className="bt-problem-line">{l}</p>)}
+        </div>
+      </div>
+    );
+
+    if (type === 'constraints') return (
+      <div key={i} className="bt bt-constraints" style={{ ...baseDelay, background: 'rgba(0,0,0,0.025)', border: '1px solid rgba(0,0,0,0.07)' }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-constraint-list">
+          {lines.map((l, j) => (
+            <div key={j} className="bt-constraint-row">
+              <span className="bt-c-dot" style={{ background: aa(0.35) }} />
+              <span className="bt-c-text">{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    if (type === 'process') return (
+      <div key={i} className="bt bt-process" style={{ ...baseDelay, background: aa(0.04), border: `1px solid ${aa(0.10)}` }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-process-grid">
+          {lines.map((l, j) => (
+            <div key={j} className="bt-process-item">
+              <span className="bt-p-num" style={{ color: accentColor }}>{String(j+1).padStart(2,'0')}</span>
+              <span className="bt-p-text">{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    if (type === 'decisions') return (
+      <div key={i} className="bt bt-decisions" style={{ ...baseDelay, border: '1px solid rgba(0,0,0,0.08)' }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-decisions-grid">
+          {lines.map((l, j) => (
+            <div key={j} className="bt-decision-card" style={{ background: aa(0.05), border: `1px solid ${aa(0.12)}` }}>
+              <span className="bt-d-num" style={{ color: aa(0.45) }}>{String(j+1).padStart(2,'0')}</span>
+              <span className="bt-d-text">{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    if (type === 'product') return (
+      <div key={i} className="bt bt-product" style={{ ...baseDelay, background: aa(0.05), border: `1px solid ${aa(0.11)}` }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-product-list">
+          {lines.map((l, j) => (
+            <div key={j} className="bt-product-item">
+              <span className="bt-prod-dot" style={{ background: accentColor }} />
+              <span className="bt-prod-text">{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    if (type === 'outcome') {
+      const stats = lines.filter(isStatLine);
+      const prose = lines.filter(l => !isStatLine(l));
+      return (
+        <div key={i} className="bt bt-outcome" style={{ ...baseDelay, background: accentColor }}>
+          <span className="bt-label bt-label--inv">{sec.label}</span>
+          {stats.length > 0 && (
+            <div className="bt-stats">
+              {stats.map((s, j) => {
+                const parts = s.split(/\s+/);
+                return (
+                  <div key={j} className="bt-stat">
+                    <span className="bt-stat-num">{parts[0]}</span>
+                    {parts.length > 1 && <span className="bt-stat-label">{parts.slice(1).join(' ')}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {prose.map((l, j) => <p key={j} className="bt-outcome-prose">{l}</p>)}
+        </div>
+      );
+    }
+
+    /* misc / THE PRODUCT fallthrough */
+    return (
+      <div key={i} className="bt bt-misc" style={{ ...baseDelay, background: aa(0.04), border: `1px solid ${aa(0.10)}` }}>
+        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+        <div className="bt-prose">{lines.map((l,j) => <p key={j} className="bt-line">{l}</p>)}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={gridRef} className={`bento-grid${bentoVisible ? ' bento-visible' : ''}`}>
+      {sections.map((sec, i) => renderTile(sec, i))}
     </div>
   );
 }
+
+/* ─────────────────────────────────────────────────────────
+   VISUAL COMPONENTS — Phase 2–5
+───────────────────────────────────────────────────────── */
+
+const StatChipsRow = ({ stats, accentColor }) => (
+  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', margin: '24px 0' }}>
+    {stats.map((s, i) => (
+      <div key={i} style={{
+        background: accentColor + '10',
+        border: `1px solid ${accentColor}25`,
+        borderRadius: 10,
+        padding: '16px 20px',
+        minWidth: 120,
+        flex: '1 1 120px'
+      }}>
+        <div style={{ fontSize: 40, fontFamily: 'DM Mono, monospace', fontWeight: 700, color: accentColor, lineHeight: 1 }}>{s.number}</div>
+        <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 6, opacity: 0.6 }}>{s.label}</div>
+      </div>
+    ))}
+  </div>
+);
+
+const ProblemPullQuote = ({ body }) => {
+  const firstSentence = body.split('. ')[0] + '.';
+  return (
+    <p style={{ fontSize: 18, fontWeight: 500, lineHeight: 1.6, opacity: 0.85, margin: '0 0 16px' }}>
+      {firstSentence}
+    </p>
+  );
+};
+
+const ImpactGrid = ({ impactStats, accentColor }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, margin: '32px 0' }}>
+    {impactStats.map((item, i) => (
+      <div key={i} style={{ background: `${accentColor}06`, border: `1px solid ${accentColor}22`, borderRadius: 10, padding: '20px 24px' }}>
+        <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.5, marginBottom: 12 }}>{item.label}</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+          <span style={{ fontSize: 14, opacity: 0.4, textDecoration: 'line-through', fontFamily: 'DM Mono, monospace' }}>{item.before}</span>
+          <span style={{ fontSize: 28, fontWeight: 700, color: accentColor, fontFamily: 'DM Mono, monospace', lineHeight: 1 }}>{item.after}</span>
+        </div>
+        <div style={{ display: 'inline-block', background: accentColor + '18', color: accentColor, borderRadius: 4, padding: '3px 10px', fontSize: 11, fontFamily: 'DM Mono, monospace', fontWeight: 600 }}>{item.delta}</div>
+      </div>
+    ))}
+  </div>
+);
+
+const DSSpecimenCard = ({ type, accentColor }) => {
+  const base = { minWidth: 220, background: 'var(--surface-secondary)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, padding: 16, scrollSnapAlign: 'start', flexShrink: 0 };
+  if (type === 'colors') {
+    const swatches = [accentColor + 'ff', accentColor + 'cc', accentColor + '99', accentColor + '66', accentColor + '44', accentColor + '22'];
+    return (
+      <div style={base}>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Color Scale</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, height: 40 }}>
+          {swatches.map((s, i) => <div key={i} style={{ background: s, borderRadius: 3 }} />)}
+        </div>
+      </div>
+    );
+  }
+  if (type === 'typography') {
+    return (
+      <div style={base}>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Typography</div>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, lineHeight: 1 }}>Aa</div>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, marginTop: 8, opacity: 0.6 }}>Body text in DM Sans</div>
+        <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, marginTop: 6, color: accentColor }}>code()</div>
+      </div>
+    );
+  }
+  if (type === 'tokens') {
+    return (
+      <div style={base}>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Tokens</div>
+        {['--surface-primary', '--text-primary', '--accent', '--border-subtle', '--radius-md'].map(t => (
+          <div key={t} style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: accentColor, lineHeight: 2, opacity: 0.8 }}>{t}</div>
+        ))}
+      </div>
+    );
+  }
+  if (type === 'buttons') {
+    return (
+      <div style={base}>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Buttons</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ background: accentColor, color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>Primary</div>
+          <div style={{ border: `1.5px solid ${accentColor}`, color: accentColor, borderRadius: 6, padding: '6px 14px', fontSize: 12, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>Secondary</div>
+          <div style={{ color: accentColor, padding: '6px 14px', fontSize: 12, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', opacity: 0.8 }}>Ghost</div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const AuditBlock = ({ auditData, accentColor }) => (
+  <div style={{ margin: '32px 0' }}>
+    <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+      {auditData.stats.map((s, i) => (
+        <div key={i} style={{ background: accentColor + '10', border: `1px solid ${accentColor}25`, borderRadius: 10, padding: '16px 20px', flex: 1 }}>
+          <div style={{ fontSize: 40, fontFamily: 'DM Mono, monospace', fontWeight: 700, color: accentColor }}>{s.number}</div>
+          <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 6, opacity: 0.6 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{ background: '#0d1117', borderRadius: 8, padding: '20px 24px', marginBottom: 24 }}>
+      <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, marginBottom: 12 }}>GUARDRAILS</div>
+      <pre style={{ margin: 0, fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#e6edf3', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{auditData.codeSnippet}</pre>
+    </div>
+    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8 }}>
+      <DSSpecimenCard type="colors" accentColor={accentColor} />
+      <DSSpecimenCard type="typography" accentColor={accentColor} />
+      <DSSpecimenCard type="tokens" accentColor={accentColor} />
+      <DSSpecimenCard type="buttons" accentColor={accentColor} />
+    </div>
+  </div>
+);
+
+const ProductSteps = ({ steps, accentColor }) => (
+  <div style={{ overflowX: 'auto', margin: '32px 0' }}>
+    <div style={{ display: 'flex', gap: 0, minWidth: 'max-content', alignItems: 'flex-start' }}>
+      {steps.map((s, i) => (
+        <React.Fragment key={i}>
+          <div style={{ minWidth: 140, maxWidth: 160, padding: '0 12px' }}>
+            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 28, fontWeight: 700, color: accentColor, lineHeight: 1 }}>{s.step}</div>
+            <div style={{ fontWeight: 600, fontSize: 13, marginTop: 8, marginBottom: 6 }}>{s.name}</div>
+            <div style={{ fontSize: 12, opacity: 0.6, lineHeight: 1.5 }}>{s.description}</div>
+          </div>
+          {i < steps.length - 1 && (
+            <div style={{ alignSelf: 'flex-start', marginTop: 18, color: accentColor, opacity: 0.4, fontSize: 18, paddingTop: 6 }}>→</div>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  </div>
+);
+
+const PowerMap = ({ powerMap, accentColor }) => (
+  <div style={{ margin: '32px 0' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 16, alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ background: 'var(--surface-secondary)', borderRadius: 8, padding: 20 }}>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, marginBottom: 8 }}>KNOWS THE MOST</div>
+        <div style={{ fontWeight: 600, fontSize: 15 }}>{powerMap.left.role}</div>
+        <div style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>{powerMap.left.detail}</div>
+      </div>
+      <div style={{ textAlign: 'center', opacity: 0.5 }}>
+        <div style={{ fontSize: 24 }}>↕</div>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 4 }}>{powerMap.gap}</div>
+      </div>
+      <div style={{ background: 'var(--surface-secondary)', borderRadius: 8, padding: 20 }}>
+        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, marginBottom: 8 }}>HAS AUTHORITY</div>
+        <div style={{ fontWeight: 600, fontSize: 15 }}>{powerMap.right.role}</div>
+        <div style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>{powerMap.right.detail}</div>
+      </div>
+    </div>
+    {powerMap.stats && (
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {powerMap.stats.map((s, i) => (
+          <div key={i} style={{ background: accentColor + '10', borderRadius: 6, padding: '10px 16px', fontFamily: 'DM Mono, monospace', fontSize: 13, color: accentColor }}>{s}</div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const QuoteCards = ({ quotes, accentColor }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, margin: '32px 0' }}>
+    {quotes.map((q, i) => (
+      <div key={i} style={{ background: accentColor + '08', borderLeft: `3px solid ${accentColor}`, borderRadius: '0 8px 8px 0', padding: '16px 20px' }}>
+        <p style={{ margin: '0 0 8px', fontSize: 14, fontStyle: 'italic', lineHeight: 1.6, opacity: 0.85 }}>"{q.text}"</p>
+        <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{q.role}</div>
+      </div>
+    ))}
+  </div>
+);
+
+const DashboardTabSwitcher = ({ accentColor, children }) => {
+  const [tab, setTab] = React.useState('mobile');
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 2, marginBottom: 24, background: 'var(--surface-secondary)', borderRadius: 8, padding: 4, width: 'fit-content' }}>
+        {['mobile', 'dashboard'].map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
+            background: tab === t ? accentColor : 'transparent',
+            color: tab === t ? '#fff' : 'var(--text-primary)',
+            fontFamily: 'DM Mono, monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em',
+            transition: 'background 0.15s'
+          }}>{t}</button>
+        ))}
+      </div>
+      {tab === 'mobile' ? children : (
+        <div style={{ background: 'var(--surface-secondary)', borderRadius: 8, overflow: 'hidden', maxWidth: 480 }}>
+          <div style={{ background: '#2a2a2a', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {['#ff5f56', '#ffbd2e', '#27c93f'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />)}
+            </div>
+            <div style={{ background: '#3a3a3a', borderRadius: 4, padding: '3px 12px', fontSize: 11, fontFamily: 'DM Mono, monospace', color: '#888', marginLeft: 8, flex: 1, maxWidth: 200 }}>
+              app.meatinspector.gov.on.ca
+            </div>
+          </div>
+          <div style={{ height: 280, background: `linear-gradient(135deg, ${accentColor}15 0%, ${accentColor}05 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center', opacity: 0.5 }}>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dashboard View</div>
+              <div style={{ fontSize: 11, marginTop: 6 }}>Schedule management + reporting</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TimelineRow = ({ timeline, accentColor }) => (
+  <div style={{ overflowX: 'auto', margin: '32px 0', paddingBottom: 8 }}>
+    <div style={{ display: 'flex', minWidth: 'max-content', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 20, left: 0, right: 0, height: 2, background: accentColor + '30' }} />
+      {timeline.map((t, i) => (
+        <div key={i} style={{ minWidth: 160, padding: '0 16px', position: 'relative' }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: accentColor, marginBottom: 16, position: 'relative', zIndex: 1 }} />
+          <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{t.month}</div>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{t.phase}</div>
+          <div style={{ fontSize: 12, opacity: 0.6, lineHeight: 1.5 }}>{t.activities}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const PillarsGrid = ({ pillars, accentColor }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, margin: '32px 0' }}>
+    {pillars.map((p, i) => (
+      <div key={i} style={{ background: 'var(--surface-secondary)', borderRadius: 8, padding: '20px 24px', borderBottom: '2px solid transparent', transition: 'border-color 0.2s' }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = accentColor}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 28, fontWeight: 700, color: accentColor, lineHeight: 1 }}>{p.number}</div>
+          <div style={{ background: accentColor + '15', color: accentColor, borderRadius: 4, padding: '3px 8px', fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{p.tag}</div>
+        </div>
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10 }}>{p.title}</div>
+        <p style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.6, lineHeight: 1.6, margin: 0 }}>"{p.quote}"</p>
+      </div>
+    ))}
+  </div>
+);
+
+const PrincipleCards = ({ principles, accentColor }) => (
+  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '32px 0', paddingBottom: 8, scrollSnapType: 'x mandatory' }}>
+    {principles.map((p, i) => (
+      <div key={i} style={{ minWidth: 220, background: 'var(--surface-secondary)', borderRadius: 8, padding: '20px', scrollSnapAlign: 'start', flexShrink: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10, lineHeight: 1.4 }}>{p.rule}</div>
+        <div style={{ fontSize: 12, opacity: 0.6, lineHeight: 1.5 }}>{p.why}</div>
+      </div>
+    ))}
+  </div>
+);
+
+const SeasonCards = ({ seasons, accentColor }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, margin: '32px 0' }}>
+    {seasons.map((s, i) => (
+      <div key={i} style={{ background: 'var(--surface-secondary)', borderRadius: 8, padding: '20px 24px' }}>
+        <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>{s.season}</div>
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, opacity: 0.8 }}>{s.finding}</p>
+      </div>
+    ))}
+  </div>
+);
 
 /* ─────────────────────────────────────────────────────────
    STYLES — all overlay CSS in one string
@@ -212,9 +650,7 @@ const OVERLAY_CSS = `
     width: 100vw;
     height: 100vh;
     border-radius: 0;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(48px) saturate(180%);
-    -webkit-backdrop-filter: blur(48px) saturate(180%);
+    background: #ffffff;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -413,86 +849,218 @@ const OVERLAY_CSS = `
     letter-spacing: 0.08em;
   }
 
-  /* ── IA diagram ── */
-  .ia-diagram-container {
-    padding: 40px 80px 56px;
-    overflow-x: auto;
+  /* ── BENTO GRID ── */
+  @keyframes bento-enter {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  .ia-nodes {
-    display: flex;
-    align-items: flex-start;
-    gap: 0;
-    min-width: max-content;
-    padding-bottom: 8px;
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+      "situation situation users"
+      "problem constraints outcome"
+      "problem process process"
+      "decisions decisions product";
+    gap: 10px;
+    padding: 0 0 56px;
   }
 
-  .ia-node-wrapper {
-    display: flex;
-    align-items: flex-start;
-    gap: 0;
-  }
-
-  .ia-node {
-    width: 196px;
-    min-height: 140px;
-    background: rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.07);
-    border-radius: 12px;
-    padding: 16px 18px;
-    cursor: default;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  .ia-node:hover {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.13);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
-
-  .ia-node-label {
-    font-family: 'Geist Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(0, 0, 0, 0.35);
-    margin-bottom: 10px;
-  }
-
-  .ia-node-body {
-    font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 11.5px;
-    font-weight: 400;
-    color: rgba(0, 0, 0, 0.55);
-    line-height: 1.7;
-    white-space: pre-wrap;
-  }
-
-  .ia-connector {
+  .bt {
+    border-radius: 16px;
+    padding: 22px 24px;
+    opacity: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 58px;
-    width: 40px;
+    gap: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+  }
+  .bt:hover { box-shadow: 0 6px 30px rgba(0,0,0,0.09); }
+
+  .bento-visible .bt {
+    animation: bento-enter 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* grid area assignments */
+  .bt-situation   { grid-area: situation; }
+  .bt-users       { grid-area: users; background: #fff; }
+  .bt-problem     { grid-area: problem; }
+  .bt-constraints { grid-area: constraints; }
+  .bt-outcome     { grid-area: outcome; }
+  .bt-process     { grid-area: process; }
+  .bt-decisions   { grid-area: decisions; background: #fff; }
+  .bt-product     { grid-area: product; }
+  .bt-misc        { grid-area: auto; }
+
+  /* LABEL */
+  .bt-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.65;
     flex-shrink: 0;
-    gap: 0;
+  }
+  .bt-label--inv { color: rgba(255,255,255,0.6); opacity: 1; }
+
+  /* PROSE */
+  .bt-prose { display: flex; flex-direction: column; gap: 5px; }
+  .bt-line {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12.5px;
+    color: rgba(0,0,0,0.58);
+    line-height: 1.65;
+    margin: 0;
   }
 
-  .ia-connector-line {
-    width: 22px;
-    height: 1px;
-    background: rgba(0, 0, 0, 0.12);
+  /* USERS */
+  .bt-user-stack { display: flex; flex-direction: column; gap: 0; flex: 1; }
+  .bt-user-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 0;
+    border-bottom: 1px solid;
+  }
+  .bt-user-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .bt-user-role {
+    font-family: 'Geist Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .bt-user-desc {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px;
+    color: rgba(0,0,0,0.50);
+    line-height: 1.5;
   }
 
-  .ia-connector-arrow {
-    font-size: 10px;
-    color: rgba(0, 0, 0, 0.2);
-    margin-top: -1px;
-    margin-left: 10px;
-    line-height: 1;
+  /* PROBLEM — dark tile */
+  .bt-problem { justify-content: space-between; }
+  .bt-problem-body { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .bt-problem-line {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.78);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* CONSTRAINTS */
+  .bt-constraint-list { display: flex; flex-direction: column; gap: 8px; }
+  .bt-constraint-row { display: flex; align-items: flex-start; gap: 10px; }
+  .bt-c-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .bt-c-text {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: rgba(0,0,0,0.55); line-height: 1.55;
+  }
+
+  /* PROCESS */
+  .bt-process-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px 20px;
+  }
+  .bt-process-item { display: flex; flex-direction: column; gap: 5px; }
+  .bt-p-num {
+    font-family: 'Geist Mono', monospace;
+    font-size: 24px; font-weight: 300;
+    letter-spacing: -0.03em; line-height: 1;
+  }
+  .bt-p-text {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: rgba(0,0,0,0.55); line-height: 1.5;
+  }
+
+  /* KEY DECISIONS */
+  .bt-decisions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    flex: 1;
+  }
+  .bt-decision-card {
+    padding: 12px 14px; border-radius: 10px; border: 1px solid;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .bt-d-num {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px; letter-spacing: 0.06em;
+  }
+  .bt-d-text {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: rgba(0,0,0,0.68); line-height: 1.5;
+  }
+
+  /* PRODUCT */
+  .bt-product-list { display: flex; flex-direction: column; gap: 7px; }
+  .bt-product-item { display: flex; align-items: flex-start; gap: 9px; }
+  .bt-prod-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .bt-prod-text {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: rgba(0,0,0,0.62); line-height: 1.55;
+  }
+
+  /* OUTCOME — accent tile */
+  .bt-outcome { justify-content: space-between; }
+  .bt-stats { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .bt-stat { display: flex; flex-direction: column; gap: 2px; }
+  .bt-stat-num {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 28px; font-weight: 500;
+    letter-spacing: -0.04em; color: #fff; line-height: 1;
+  }
+  .bt-stat-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(255,255,255,0.5); line-height: 1.4;
+  }
+  .bt-outcome-prose {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: rgba(255,255,255,0.68); line-height: 1.6; margin: 0;
+  }
+
+  @media (max-width: 860px) {
+    .bento-grid {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "situation situation"
+        "problem problem"
+        "users constraints"
+        "process process"
+        "decisions decisions"
+        "outcome product";
+    }
+  }
+  @media (max-width: 520px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "situation" "users" "problem" "constraints"
+        "process" "decisions" "outcome" "product";
+    }
+  }
+
+  .bt:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+    z-index: 2;
+  }
+  .bt-problem:hover, .bt-outcome:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.20);
   }
 
   .meta-grid {
@@ -522,10 +1090,14 @@ const OVERLAY_CSS = `
 
   /* ── Content sections ── */
   .case-study-section {
-    padding: 48px 80px;
+    padding: 64px 80px 56px;
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .case-study-section:not(#overview) {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .section-eyebrow {
@@ -537,10 +1109,27 @@ const OVERLAY_CSS = `
     margin-bottom: 10px;
   }
 
+  .section-ep-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .section-ep-chip {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.05);
+    color: rgba(0,0,0,0.40);
+  }
+
   .section-headline {
     font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: clamp(18px, 2vw, 24px);
-    font-weight: 400;
+    font-weight: 500;
     color: #0A0A0A;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -549,15 +1138,24 @@ const OVERLAY_CSS = `
 
   .section-body {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 400;
-    color: rgba(0, 0, 0, 0.60);
-    line-height: 1.2;
+    color: rgba(0, 0, 0, 0.70);
+    line-height: 1.65;
     margin-bottom: 14px;
   }
 
   .section-body + .section-body {
     margin-top: 0;
+  }
+
+  .section-body--hook {
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.80);
+    line-height: 1.55;
+    margin-bottom: 20px;
+    font-style: italic;
   }
 
   /* Inline body list */
@@ -591,11 +1189,11 @@ const OVERLAY_CSS = `
 
   /* Full-bleed image block */
   .section-image-block {
-    width: calc(100% + 160px);
-    margin-left: -80px;
-    margin-right: -80px;
-    margin-bottom: 24px;
+    width: 100%;
+    margin: 40px 0 32px;
     overflow: hidden;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .section-image-block .image-fill {
@@ -609,30 +1207,66 @@ const OVERLAY_CSS = `
     font-size: 11px;
     color: rgba(0, 0, 0, 0.30);
     text-align: center;
-    padding: 12px 80px 0;
+    padding: 12px 0 0;
     letter-spacing: 0.04em;
+  }
+
+  /* Split layout — text left, mockup right */
+  .section-split {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+  }
+
+  .section-split-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .section-split-mockup {
+    width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 40px;
+  }
+
+  .mockup-phone {
+    width: 100%;
+    aspect-ratio: 9/19;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  @media (max-width: 800px) {
+    .section-split { flex-direction: column; }
+    .section-split-mockup { width: 100%; position: static; }
+    .mockup-phone { aspect-ratio: 9/16; max-height: 60vw; }
   }
 
   /* Subsections */
   .subsection {
     margin-top: 48px;
     padding-top: 40px;
+    padding-left: 16px;
+    border-left: 2px solid rgba(0,0,0,0.08);
   }
 
   .subsection-title {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     color: #0A0A0A;
     margin-bottom: 10px;
   }
 
   .subsection-body {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.58);
-    line-height: 1.2;
+    line-height: 1.65;
   }
 
   /* Overview section — compact intro, slightly smaller than episode sections */
@@ -744,6 +1378,7 @@ const OVERLAY_CSS = `
 ───────────────────────────────────────────────────────── */
 
 export default function ProjectOverlay({ projectId, originRect, onClose, onNext, closeRef }) {
+  const navigate     = useNavigate();
   const project      = projects.find(p => p.id === projectId);
   const sections     = deriveSections(project);
   const currentIndex = projects.findIndex(p => p.id === projectId);
@@ -916,15 +1551,13 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
           <div className="sidebar-back-bottom" onClick={handleClose}>
             ← All Projects
           </div>
-          <a
-            href="/resume.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
+          <div
             className="sidebar-back-bottom"
-            style={{ display: 'block', marginTop: 8, borderTop: 'none', paddingTop: 0 }}
+            onClick={() => navigate('/about')}
+            style={{ marginTop: 8, borderTop: 'none', paddingTop: 0 }}
           >
-            Resume ↗
-          </a>
+            About Me →
+          </div>
         </nav>
 
         {/* Scrollable content */}
@@ -1009,9 +1642,11 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                   key={sec.id}
                   id={sec.id}
                   className="case-study-section"
-                  style={{ padding: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+                  style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                 >
-                  <IADiagram iaText={project.ia} />
+                  <p className="section-eyebrow" style={{ color: project.accentColor }}>STRUCTURE</p>
+                  <h2 className="section-headline" style={{ marginBottom: 32 }}>Information Architecture</h2>
+                  <IADiagram iaText={project.ia} accentColor={project.accentColor} />
                 </section>
               );
             }
@@ -1025,55 +1660,161 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                 style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
               >
                 <p className="section-eyebrow" style={{ color: project.accentColor }}>{sec.eyebrow}</p>
-                {sec.headline.toUpperCase() !== sec.eyebrow && (
-                  <h2 className="section-headline">{sec.headline}</h2>
-                )}
-
-                {/* Body blocks: paragraphs + lists from episode content */}
-                {sec.bodyBlocks && sec.bodyBlocks.length > 0
-                  ? sec.bodyBlocks.map((block, i) =>
-                      block.type === 'ul'
-                        ? (
-                          <ul key={i} className="section-list">
-                            {block.items.map((item, j) => <li key={j}>{item}</li>)}
-                          </ul>
-                        )
-                        : <p key={i} className="section-body">{block.text}</p>
-                    )
-                  : sec.body && <p className="section-body">{sec.body}</p>
-                }
-
-                {sec.callout && (
-                  <div className="section-callout">
-                    <p>{sec.callout}</p>
+                {(sec.ep || sec.readTime) && (
+                  <div className="section-ep-meta">
+                    {sec.ep && <span className="section-ep-chip" style={{ background: project.accentColor + '12', color: project.accentColor }}>{`EP ${sec.ep}`}</span>}
+                    {sec.readTime && <span className="section-ep-chip" style={{ background: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' }}>{sec.readTime} read</span>}
                   </div>
                 )}
 
-                {/* Image block — diagram component or gradient fallback */}
-                <div className="section-image-block" style={sec.diagramKey ? { marginTop: 32 } : undefined}>
-                  {sec.diagramKey && DIAGRAM_MAP[sec.diagramKey] ? (
-                    <DiagramWrapper
-                      component={DIAGRAM_MAP[sec.diagramKey].component}
-                      diagramHeight={DIAGRAM_MAP[sec.diagramKey].height}
-                    />
-                  ) : (
-                    <div
-                      className="image-fill"
-                      style={{ background: sec.imageGradient }}
-                    />
-                  )}
-                  {sec.imageCaption && (
-                    <p className="image-caption">{sec.imageCaption}</p>
-                  )}
-                </div>
-
-                {/* Subsections */}
-                {sec.subsections.map((sub, i) => (
-                  <div key={i} className="subsection">
-                    <h3 className="subsection-title">{sub.title}</h3>
-                    <p className="subsection-body">{sub.body}</p>
+                {/* Split layout: text left, phone mockup right */}
+                {sec.layout === 'split' ? (
+                  <div className="section-split">
+                    <div className="section-split-text">
+                      {sec.headline.toUpperCase() !== sec.eyebrow && (
+                        <h2 className="section-headline">{sec.headline}</h2>
+                      )}
+                      {sec.stats && (
+                        <>
+                          <StatChipsRow stats={sec.stats} accentColor={project.accentColor} />
+                          {sec.body && <ProblemPullQuote body={sec.body} />}
+                          {sec.body && (() => {
+                            const rest = sec.body.split('. ').slice(1).join('. ');
+                            return rest ? <p className="section-body">{rest}</p> : null;
+                          })()}
+                        </>
+                      )}
+                      {!sec.stats && (
+                        <>
+                          {sec.body && sec.bodyBlocks && sec.bodyBlocks.length > 0 && (
+                            <p className="section-body section-body--hook">{sec.body}</p>
+                          )}
+                          {sec.bodyBlocks && sec.bodyBlocks.length > 0
+                            ? sec.bodyBlocks.map((block, i) =>
+                                block.type === 'ul'
+                                  ? <ul key={i} className="section-list">{block.items.map((item, j) => <li key={j}>{item}</li>)}</ul>
+                                  : <p key={i} className="section-body">{block.text}</p>
+                              )
+                            : (!sec.bodyBlocks || sec.bodyBlocks.length === 0) && sec.body && <p className="section-body">{sec.body}</p>
+                          }
+                        </>
+                      )}
+                      {sec.pillars && <PillarsGrid pillars={sec.pillars} accentColor={project.accentColor} />}
+                      {sec.subsections.map((sub, i) => (
+                        <div key={i} className="subsection" style={{ borderLeftColor: project.accentColor + '30' }}>
+                          <h3 className="subsection-title">{sub.title}</h3>
+                          <p className="subsection-body">{sub.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="section-split-mockup">
+                      {sec.hasDashboard ? (
+                        <DashboardTabSwitcher accentColor={project.accentColor}>
+                          <div
+                            className="mockup-phone"
+                            style={{ background: sec.mockupGradient || `linear-gradient(160deg, ${project.accentColor}22 0%, ${project.accentColor}44 100%)` }}
+                          >
+                            {sec.mockupUrl && (
+                              <img src={sec.mockupUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            )}
+                          </div>
+                        </DashboardTabSwitcher>
+                      ) : (
+                        <div
+                          className="mockup-phone"
+                          style={{ background: sec.mockupGradient || `linear-gradient(160deg, ${project.accentColor}22 0%, ${project.accentColor}44 100%)` }}
+                        >
+                          {sec.mockupUrl && (
+                            <img src={sec.mockupUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
+                ) : (
+                  <>
+                    {/* Stats chips always shown when present — even on diagram episodes */}
+                    {sec.stats && <StatChipsRow stats={sec.stats} accentColor={project.accentColor} />}
+
+                    {/* When a diagram is present it's self-contained — skip redundant headline + prose body */}
+                    {!sec.diagramKey && (
+                      <>
+                        {sec.headline.toUpperCase() !== sec.eyebrow && (
+                          <h2 className="section-headline">{sec.headline}</h2>
+                        )}
+                        {sec.stats ? (
+                          <>
+                            {sec.body && <ProblemPullQuote body={sec.body} />}
+                            {sec.body && (() => {
+                              const rest = sec.body.split('. ').slice(1).join('. ');
+                              return rest ? <p className="section-body">{rest}</p> : null;
+                            })()}
+                          </>
+                        ) : (
+                          <>
+                            {sec.body && sec.bodyBlocks && sec.bodyBlocks.length > 0 && (
+                              <p className="section-body section-body--hook">{sec.body}</p>
+                            )}
+                            {sec.bodyBlocks && sec.bodyBlocks.length > 0
+                              ? sec.bodyBlocks.map((block, i) =>
+                                  block.type === 'ul'
+                                    ? <ul key={i} className="section-list">{block.items.map((item, j) => <li key={j}>{item}</li>)}</ul>
+                                    : <p key={i} className="section-body">{block.text}</p>
+                                )
+                              : (!sec.bodyBlocks || sec.bodyBlocks.length === 0) && sec.body && <p className="section-body">{sec.body}</p>
+                            }
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {sec.callout && (
+                      <div className="section-callout" style={{ borderLeftColor: project.accentColor }}>
+                        <p>{sec.callout}</p>
+                      </div>
+                    )}
+
+                    {/* Overview video */}
+                    {sec.id === 'overview' && project.hero?.videoUrl && (
+                      <div style={{ marginTop: 28, paddingBottom: 32 }}>
+                        <video
+                          src={project.hero.videoUrl}
+                          autoPlay muted loop playsInline
+                          style={{ width: '100%', display: 'block', borderRadius: 0, boxShadow: 'none', margin: '40px 0' }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Diagram block */}
+                    {sec.diagramKey && DIAGRAM_MAP[sec.diagramKey] && (
+                      <div className="section-image-block" style={{ marginTop: 32 }}>
+                        <DiagramWrapper
+                          component={DIAGRAM_MAP[sec.diagramKey].component}
+                          diagramHeight={DIAGRAM_MAP[sec.diagramKey].height}
+                        />
+                      </div>
+                    )}
+
+                    {/* New visual components — rendered after body/diagram */}
+                    {sec.auditData    && <AuditBlock    auditData={sec.auditData}       accentColor={project.accentColor} />}
+                    {sec.productSteps && <ProductSteps  steps={sec.productSteps}        accentColor={project.accentColor} />}
+                    {sec.impactStats  && <ImpactGrid    impactStats={sec.impactStats}   accentColor={project.accentColor} />}
+                    {sec.powerMap     && <PowerMap      powerMap={sec.powerMap}         accentColor={project.accentColor} />}
+                    {sec.quotes       && <QuoteCards    quotes={sec.quotes}             accentColor={project.accentColor} />}
+                    {sec.timeline     && <TimelineRow   timeline={sec.timeline}         accentColor={project.accentColor} />}
+                    {sec.pillars      && <PillarsGrid   pillars={sec.pillars}           accentColor={project.accentColor} />}
+                    {sec.principles   && <PrincipleCards principles={sec.principles}   accentColor={project.accentColor} />}
+                    {sec.seasons      && <SeasonCards   seasons={sec.seasons}           accentColor={project.accentColor} />}
+
+                    {/* Subsections */}
+                    {sec.subsections.map((sub, i) => (
+                      <div key={i} className="subsection" style={{ borderLeftColor: project.accentColor + '30' }}>
+                        <h3 className="subsection-title">{sub.title}</h3>
+                        <p className="subsection-body">{sub.body}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
               </section>
             );
           })}

@@ -477,8 +477,48 @@ export default function DesignSystemBuilder() {
   const [configOpen,   setConfigOpen]   = useState(false);
   const [mode,         setMode]         = useState('light');
   const [systemName,   setSystemName]   = useState('Design System');
-  const scopedVars      = useMemo(() => buildScopedVars(tokens, mode), [tokens, mode]);
-  const auditErrorCount = useMemo(() => auditTokens(tokens, mode).filter(i => i.level === 'error').length, [tokens, mode]);
+
+  // ── Named themes (multi-theme) ──
+  const [namedThemes, setNamedThemes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ds-named-themes') ?? '[]'); } catch { return []; }
+  });
+  const [activeThemeId, setActiveThemeId] = useState(null);
+
+  const saveAsTheme = useCallback((name) => {
+    const theme = { id: Date.now().toString(), name, tokens: JSON.parse(JSON.stringify(tokens)) };
+    setNamedThemes(prev => {
+      const next = [...prev, theme].slice(0, 8);
+      try { localStorage.setItem('ds-named-themes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    trackEvent('theme_saved');
+  }, [tokens]);
+
+  // ── Page notes (collaboration) ──
+  const [pageNotes, setPageNotes] = useState(() => {
+    // Try URL notes param first
+    try {
+      const dsn = new URLSearchParams(window.location.search).get('dsn');
+      if (dsn) return JSON.parse(decodeURIComponent(atob(dsn)));
+    } catch {}
+    try { return JSON.parse(localStorage.getItem('ds-page-notes') ?? '{}'); } catch { return {}; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('ds-page-notes', JSON.stringify(pageNotes)); } catch {}
+  }, [pageNotes]);
+  const setPageNote = useCallback((pageId, text) => {
+    setPageNotes(prev => ({ ...prev, [pageId]: text }));
+  }, []);
+
+  // effectiveTokens — active named theme's tokens or working tokens
+  const effectiveTokens = useMemo(() => {
+    if (!activeThemeId) return tokens;
+    const found = namedThemes.find(t => t.id === activeThemeId);
+    return found ? found.tokens : tokens;
+  }, [tokens, namedThemes, activeThemeId]);
+
+  const scopedVars      = useMemo(() => buildScopedVars(effectiveTokens, mode), [effectiveTokens, mode]);
+  const auditErrorCount = useMemo(() => auditTokens(effectiveTokens, mode).filter(i => i.level === 'error').length, [effectiveTokens, mode]);
 
   // ── Mobile detection ──
   const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -559,6 +599,11 @@ export default function DesignSystemBuilder() {
     if (!enc) return;
     const u = new URL(window.location.href);
     u.searchParams.set('pg','1'); u.searchParams.set('ds',enc);
+    // Include non-empty notes in share URL
+    const noteEntries = Object.entries(pageNotes).filter(([, v]) => v?.trim());
+    if (noteEntries.length > 0) {
+      try { u.searchParams.set('dsn', btoa(encodeURIComponent(JSON.stringify(Object.fromEntries(noteEntries))))); } catch {}
+    }
     const shareURL = u.toString();
     // Gap #10: warn if URL may be too long for some browsers
     if (shareURL.length > 4000) {
@@ -570,9 +615,17 @@ export default function DesignSystemBuilder() {
 
   // Gap #8: clear all persisted data
   const clearSavedData = () => {
-    try { localStorage.removeItem('ds-tokens'); localStorage.removeItem('ds-versions'); } catch {}
+    try {
+      localStorage.removeItem('ds-tokens');
+      localStorage.removeItem('ds-versions');
+      localStorage.removeItem('ds-named-themes');
+      localStorage.removeItem('ds-page-notes');
+    } catch {}
     setVersions([]);
     setTokens(DEFAULT_TOKENS);
+    setNamedThemes([]);
+    setPageNotes({});
+    setActiveThemeId(null);
   };
 
   const SCALE_OPTS = [1.2,1.25,1.333,1.414,1.618].map(v => ({
@@ -749,6 +802,10 @@ export default function DesignSystemBuilder() {
         onConfigToggle={() => setConfigOpen(o => !o)}
         onExport={() => setShowExport(true)}
         auditErrorCount={auditErrorCount}
+        namedThemes={namedThemes}
+        activeThemeId={activeThemeId}
+        onThemeChange={setActiveThemeId}
+        onSaveTheme={saveAsTheme}
       />
 
       {/* ═══════════════ 3-PANEL BODY ═══════════════ */}
@@ -765,11 +822,13 @@ export default function DesignSystemBuilder() {
         {/* MAIN CONTENT */}
         <DSMainContent
           selectedPage={selectedPage}
-          tokens={tokens}
+          tokens={effectiveTokens}
           scopedVars={scopedVars}
           mode={mode}
-          onTokenChange={pushTokens}
+          onTokenChange={activeThemeId ? undefined : pushTokens}
           onNavigate={setSelectedPage}
+          pageNote={pageNotes[selectedPage] ?? ''}
+          onNoteChange={(text) => setPageNote(selectedPage, text)}
         />
 
         {/* RIGHT CONFIG PANEL */}

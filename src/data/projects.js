@@ -258,7 +258,7 @@ const projects = [
       }
     ],
     "reflection": "This project taught me that ambiguity is not a problem to avoid, it is a signal to refine product definition.",
-    "ia": "SITUATION\nHealthcare utilization review runs on 8 disconnected tools.\nUR nurses spend 40 minutes per case on data archaeology.\nDenial rates sit at 30 to 40%. Gaps found after submission, not before.\n\nUSERS\nPrimary: UR Nurse — 80% of volume, full accountability risk\nSecondary: Physician — escalations only, under 20% of cases\nTertiary: Medical Director — audit and oversight, under 5%\n\nPROBLEM\nThe toolchain was designed around physicians.\nThe people carrying the most risk had the worst tools.\nData existed. Decision readiness did not.\n\nCONSTRAINTS\nRegulated clinical environment — AI cannot make autonomous decisions\nEvery recommendation must be traceable and citable\nHIPAA compliance non-negotiable\nStakeholder trust in AI was low from day one\n\nPROCESS\n4 structural ambiguities resolved before wireframing\nPrimary user redefined from physician to UR nurse in week 4\n6 design mistakes documented across V1 and V2\n4 full iterations before V4 was accepted\n\nKEY DECISIONS\nWork Queue over Home screen — action-first product stance\nCareLens as mandatory sidebar — explainability is infrastructure\nAudit trail on every AI output — defensibility over convenience\nProactive gap resolution — surface problems before submission not after\n\nTHE PRODUCT\n7-stage workflow: Work Queue, Case Summary, Policy Validation,\nCareLens Sidebar, Gap Resolution, Physician Approval, Submission\nRole-based routing for nurse, physician, and director\nEvery AI output citable, every decision logged\n\nOUTCOME\n75% reduction in case prep time\n40% target denial rate reduction\n108% throughput increase per nurse\n$2.5M annual revenue protection per hospital",
+    "ia": "SITUATION\nHealthcare utilization review runs on 8 disconnected tools.\nUR nurses spend 40 minutes per case on data archaeology.\nDenial rates sit at 30 to 40%. Gaps found after submission, not before.\n\nUSERS\nPrimary: UR Nurse, 80% of volume, full accountability risk\nSecondary: Physician, escalations only, under 20% of cases\nTertiary: Medical Director, audit and oversight, under 5%\n\nPROBLEM\nThe toolchain was built around physicians, the least frequent user in the workflow.\nUR nurses handle 80% of cases and carry the full accountability risk, but had the worst tools in the system.\nEvery morning started the same way: 8 browser tabs, patient charts scattered across disconnected portals, 40 minutes of data archaeology per case.\nDenials were discovered after submission, at the point where appeals were expensive and time-consuming to fight.\nThe information needed to prevent every denial already existed somewhere in the system.\nNobody had designed a way to surface it before it was too late.\n\nCONSTRAINTS\nRegulated clinical environment, AI cannot make autonomous decisions\nEvery recommendation must be traceable and citable\nHIPAA compliance non-negotiable\nStakeholder trust in AI was low from day one\n\nPROCESS\n4 structural ambiguities resolved before wireframing\nPrimary user redefined from physician to UR nurse in week 4\n6 design mistakes documented across V1 and V2\n4 full iterations before V4 was accepted\n\nKEY DECISIONS\nWork Queue over Home screen, action-first product stance\nCareLens as mandatory sidebar, explainability is infrastructure\nAudit trail on every AI output, defensibility over convenience\nProactive gap resolution, surface problems before submission not after\n\nTHE PRODUCT\n7-stage workflow: Work Queue, Case Summary, Policy Validation,\nCareLens Sidebar, Gap Resolution, Physician Approval, Submission\nRole-based routing for nurse, physician, and director\nEvery AI output citable, every decision logged\n\nOUTCOME\n75% reduction in case prep time\n40% target denial rate reduction\n108% throughput increase per nurse\n$2.5M annual revenue protection per hospital",
     "heroColor": "#1a3a5c",
     "heroTagline": "Reducing denial rates from 40% to under 5%",
     "heroCategory": "AI · Healthcare",
@@ -280,7 +280,8 @@ const projects = [
         "Sep 2024 – Feb 2025",
         "Product Designer & Engineer",
         "Solo"
-      ]
+      ],
+      "videoUrl": "/projects/healthcare/Caresummariser%20Overview.mp4"
     },
     "episodes": [
       {
@@ -289,6 +290,11 @@ const projects = [
         "teaser": "UR nurses spend 40 or more minutes per case doing data archaeology across 8 or more tools.  The data exists.  The decisi.",
         "readTime": "4 min",
         "diagramKey": "problem",
+        "stats": [
+          { "number": "40 min", "label": "per case, data archaeology" },
+          { "number": "8+", "label": "tools open simultaneously" },
+          { "number": "30–40%", "label": "industry denial rate" }
+        ],
         "content": [
           {
             "type": "p",
@@ -319,18 +325,29 @@ const projects = [
       },
       {
         "ep": "03",
-        "title": "Six Mistakes",
-        "teaser": "I built the wrong thing twice.  Here are all six mistakes and what each one taught me. Mistake one: assumed the physicia.",
+        "title": "Design System Audit",
+        "teaser": "We built fast. Then we looked at what we actually built. Three competing color systems, 39 files off-token, and an AI quietly making it worse.",
         "readTime": "4 min",
-        "diagramKey": "mistakes",
+        "auditData": {
+          "stats": [
+            { "number": "3", "label": "Competing color systems" },
+            { "number": "39", "label": "Files bypassing token system" },
+            { "number": "20%", "label": "Token adoption at audit" }
+          ],
+          "codeSnippet": "# CLAUDE.md — Token Enforcement\nALWAYS use CSS variables from tokens.css\nNEVER hardcode hex colors — use --color-[semantic-name]\nComponents: background → var(--surface-primary), text → var(--text-primary)"
+        },
         "content": [
           {
             "type": "p",
-            "text": "I built the wrong thing twice.  Here are all six mistakes and what each one taught me."
+            "text": "When you move fast, the codebase tells the story of every shortcut taken. We audited what we had built and found three competing color systems that had drifted in independently. 39 files were bypassing the token system entirely. Total token adoption: 20%."
           },
           {
             "type": "p",
-            "text": "Mistake one: assumed the physician was the primary user.  Spent three weeks designing a physician-centric approval flow.  Research in week four revealed UR nurses do 80% of the work."
+            "text": "The more interesting problem was invisible. AI-assisted development was generating new components that looked fine visually but quietly broke the token contract every time. There was no enforcement layer, so every new feature was a coin flip. We needed guardrails, not just cleanup."
+          },
+          {
+            "type": "p",
+            "text": "We built a custom component library with Claude Code and wrote a CLAUDE.md that enforces token usage at the generation layer. Now the AI produces compliant code by default. The design system is still evolving as the product grows, but the floor is solid."
           }
         ]
       },
@@ -354,32 +371,47 @@ const projects = [
       {
         "ep": "06",
         "title": "The Product",
-        "teaser": "Seven stages.  One clear handoff at every step. Stage one is the Work Queue: prioritized by denial risk, time sensitivit.",
+        "teaser": "A nurse should never have to wonder what to do next. Seven stages, each with one job, each handing off to the next.",
         "readTime": "4 min",
+        "productSteps": [
+          { "step": "01", "name": "Work Queue", "description": "Cases ranked by denial risk and time sensitivity" },
+          { "step": "02", "name": "CareSummarizer", "description": "Clinical narrative generated from raw EHR data" },
+          { "step": "03", "name": "CareLens", "description": "Confidence scores and reasoning at every AI output" },
+          { "step": "04", "name": "Policy Validation", "description": "Documentation gaps flagged before submission" },
+          { "step": "05", "name": "Gap Resolution", "description": "Nurse resolves gaps inline, not after denial" },
+          { "step": "06", "name": "Physician Approval", "description": "Escalation routing for under 20% of cases" },
+          { "step": "07", "name": "Submission", "description": "Clean, compliant, complete — first time" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Seven stages.  One clear handoff at every step."
+            "text": "The product is built around one principle: a nurse should never have to wonder what to do next. The work queue tells her which cases need attention and why, ranked by denial risk and time sensitivity. No triage. No archaeology. Just the next case."
           },
           {
             "type": "p",
-            "text": "Stage one is the Work Queue: prioritized by denial risk, time sensitivity, and documentation completeness.  Nurses arrive knowing exactly what to do next.  No triage required."
+            "text": "CareSummarizer generates the clinical narrative from raw EHR data. CareLens surfaces confidence scores and reasoning traces at every AI output, so nothing is a black box. Policy validation flags documentation gaps before submission, not after denial. Seven stages, each with one job, each handing off cleanly to the next."
           }
         ]
       },
       {
         "ep": "07",
         "title": "The Impact",
-        "teaser": "75% reduction in case preparation time.  40 minutes to 8 to 12 minutes per case.  This comes directly from CareSummarize.",
+        "teaser": "A nurse used to spend 40 minutes per case just finding the data to make a decision. Not making the decision. Finding the data.",
         "readTime": "4 min",
+        "impactStats": [
+          { "before": "40 min", "after": "8–12 min", "label": "Case prep time", "delta": "−75%" },
+          { "before": "30–40%", "after": "<5%", "label": "Target denial rate", "delta": "target" },
+          { "before": "1×", "after": "2.08×", "label": "Throughput per nurse", "delta": "+108%" },
+          { "before": "—", "after": "$2.5M", "label": "Revenue protection / hospital", "delta": "annual" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "75% reduction in case preparation time.  40 minutes to 8 to 12 minutes per case.  This comes directly from CareSummarizer auto-generating the clinical narrative, policy validation surfacing gaps proactively, and AI-drafted justification text in the resolution modal."
+            "text": "A nurse used to spend 40 minutes per case doing data archaeology across 8 tools. Not making the decision. Not writing the justification. Just finding the information she needed to get started. CareSummarizer brought that down to 8 to 12 minutes. The recovered time goes back to care."
           },
           {
             "type": "p",
-            "text": "40% target reduction in denial rate.  Current denial rates sit at 30 to 40%.  Target: below 5%."
+            "text": "Denial rates sit at 30 to 40% across the industry. The target is below 5%. That gap is not a data problem, it is a preparation problem. When nurses can surface and resolve documentation gaps before submission, the denial rate has nowhere to hide."
           }
         ]
       }
@@ -720,7 +752,7 @@ const projects = [
       }
     ],
     "reflection": "Designing within a government ecosystem taught me that impact goes far beyond improving interfaces. Good design does not replace human judgment, it empowers it.",
-    "ia": "SITUATION\n600 Ontario meat inspectors. 5 districts.\nLegacy Siebel system unchanged for over a decade.\nSingle schedule change took 40 minutes.\n\nUSERS\nPrimary: Area Coordinators — daily shift management\nSecondary: Area Managers — district coverage oversight\nTertiary: Meat Inspectors — field execution, no mobile access\n\nPROBLEM\nTool designed for the system, not the person using it.\nNo exception handling. No mobile access. No real-time conflict detection.\nInspectors running shadow workarounds management did not know about.\n\nCONSTRAINTS\nGovernment procurement — FSL licenses already purchased\nAODA compliance required under Ontario law\nMultiple approval chains before any design decision\nSalesforce FSL defaults could not be changed without documented justification\n\nPROCESS\n12 stakeholder interviews across 3 roles\nService blueprinting revealed gap between official and actual schedules\n6 FSL components required custom AODA-compliant overrides\nField testing in slaughterhouse environments\n\nKEY DECISIONS\nMobile-first for field inspectors — single task screens, 48px tap targets\nTreat FSL constraints as creative input not blockers\nDocument every custom component with accessibility rationale\nOffline capability non-negotiable for low-signal facilities\n\nTHE PRODUCT\nDesktop scheduling tool for coordinators and managers\nMobile field app for inspectors\nEmergency override workflow bypassing normal routing\nBulk shift creation across multiple facilities\nReal-time conflict detection\n\nOUTCOME\n93% faster scheduling\n80% faster emergency response\nInspectors described it as the first system built for them",
+    "ia": "SITUATION\n600 Ontario meat inspectors. 5 districts.\nLegacy Siebel system unchanged for over a decade.\nSingle schedule change took 40 minutes.\n\nUSERS\nPrimary: Area Coordinators, daily shift management\nSecondary: Area Managers, district coverage oversight\nTertiary: Meat Inspectors, field execution, no mobile access\n\nPROBLEM\nSiebel was designed for administrative compliance, not for the people doing the work.\nA single schedule change, something that should take 30 seconds, required navigating multiple screens, making phone calls, and manually resolving conflicts the software could not detect.\nInspectors had built their own shadow system: personal spreadsheets, group texts, handwritten notes that management did not know existed.\nThe official workflow and the actual workflow had diverged so far that nobody had a clear picture of what was happening in the field.\nWhen emergencies hit, reassigning inspectors took 40 minutes. Districts absorbed errors in silence because escalating them required even more paperwork.\nThe system was not broken. It was simply never designed for the humans running it.\n\nCONSTRAINTS\nGovernment procurement, FSL licenses already purchased\nAODA compliance required under Ontario law\nMultiple approval chains before any design decision\nSalesforce FSL defaults could not be changed without documented justification\n\nPROCESS\n12 stakeholder interviews across 3 roles\nService blueprinting revealed gap between official and actual schedules\n6 FSL components required custom AODA-compliant overrides\nField testing in slaughterhouse environments\n\nKEY DECISIONS\nMobile-first for field inspectors, single task screens, 48px tap targets\nTreat FSL constraints as creative input not blockers\nDocument every custom component with accessibility rationale\nOffline capability non-negotiable for low-signal facilities\n\nTHE PRODUCT\nDesktop scheduling tool for coordinators and managers\nMobile field app for inspectors\nEmergency override workflow bypassing normal routing\nBulk shift creation across multiple facilities\nReal-time conflict detection\n\nOUTCOME\n93% faster scheduling\n80% faster emergency response\nInspectors described it as the first system built for them",
     "heroColor": "#0a2744",
     "heroTagline": "A schedule change from 40 minutes to 3",
     "heroCategory": "Enterprise · Government",
@@ -746,96 +778,124 @@ const projects = [
       {
         "ep": "01",
         "title": "The Legacy Problem",
-        "teaser": "600 inspectors.  5 districts.  One system so rigid that scheduling a single shift change took up to 40 minutes. What the.",
+        "teaser": "A single schedule change took 40 minutes. Not because the work was hard. Because the tool was designed for the system, not the person doing the work.",
         "readTime": "4 min",
+        "stats": [
+          { "number": "40 min", "label": "for one schedule change" },
+          { "number": "600+", "label": "inspectors across Ontario" },
+          { "number": "5", "label": "districts, no mobile access" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "600 inspectors.  5 districts.  One system so rigid that scheduling a single shift change took up to 40 minutes."
+            "text": "A single schedule change took up to 40 minutes. Not because scheduling an Ontario meat inspector is a complex problem. Because the tool they were using, a legacy Siebel system built for the system rather than the person, made every small task into a multi-screen ordeal."
           },
           {
             "type": "p",
-            "text": "What the system could not do: no support for part-day shifts or emergency overrides.  No real-time conflict detection.  No mobile access for field inspectors."
+            "text": "No support for part-day shifts. No emergency override flow. No real-time conflict detection. No mobile access for the 600 inspectors who were never at a desk. The system had been in place so long that workarounds had become the workflow."
           }
         ]
       },
       {
         "ep": "02",
         "title": "Stakeholder Complexity",
-        "teaser": "12 interviews across 3 roles over the first six weeks.  Government clients do not have users, they have constituents, b.",
+        "teaser": "Government clients do not have users. They have constituents, bureaucracies, and approval chains. Designing for all three at once is its own discipline.",
         "readTime": "4 min",
+        "powerMap": {
+          "left": { "role": "Area Coordinators", "detail": "8+ years experience, daily pain points" },
+          "right": { "role": "Director Level", "detail": "4 levels up, final sign-off authority" },
+          "gap": "The Gap",
+          "stats": ["12 interviews", "3 roles", "4 approval levels"]
+        },
         "content": [
           {
             "type": "p",
-            "text": "12 interviews across 3 roles over the first six weeks.  Government clients do not have users, they have constituents, bureaucracies, and procurement cycles.  Designing for all three simultaneously is its own discipline."
+            "text": "We ran 12 interviews across three roles in the first six weeks. What became clear quickly: the people who knew the most about what needed to change had the least authority to approve it. Area coordinators had lived with the pain for years. The sign-off chain ran four levels above them."
           },
           {
             "type": "p",
-            "text": "Government design constraints shaped every decision: AODA compliance requirements under the Accessibility for Ontarians with Disabilities Act, procurement timelines that governed what could be built versus configured, and approval chains requiring sign-off at multiple levels before any design decision could be acted on."
+            "text": "AODA compliance was not a checklist item here, it was a legal obligation. Procurement timelines governed what could be built versus configured. Every design decision needed approval before it could move. We learned to ship nothing we were not prepared to defend in writing."
           }
         ]
       },
       {
         "ep": "03",
-        "title": "Salesforce FSL Constraints",
-        "teaser": "Designing within a platform is harder than designing from scratch.  Every decision required negotiating with what Salesf.",
+        "title": "Design Insights",
+        "teaser": "Government design is not just public sector UX. Every decision carries compliance weight, procurement constraints, and the accountability of 600 working people.",
         "readTime": "4 min",
+        "quotes": [
+          { "text": "The people who knew the most about what needed to change had the least authority to approve it.", "role": "Area Coordinator" },
+          { "text": "We learned to ship nothing we were not prepared to defend in writing.", "role": "Design Lead observation" },
+          { "text": "Accessibility was a legal obligation, not a nice-to-have.", "role": "AODA requirement" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Designing within a platform is harder than designing from scratch.  Every decision required negotiating with what Salesforce Field Service Lightning would and would not allow.  The constraint was real and non-negotiable, the client had already purchased FSL licenses and the procurement decision was final."
+            "text": "12 interviews across three roles revealed a consistent pattern: the people with the deepest operational knowledge were never the ones with approval authority. Area coordinators knew exactly what needed to change. The sign-off chain ran four levels above them."
           },
           {
             "type": "p",
-            "text": "What FSL gave us for free: appointment scheduling, resource management, service territory mapping, work order lifecycle, and mobile field service app.  These covered roughly 60% of the requirements without custom development."
+            "text": "Government design carries obligations that corporate work does not. AODA compliance is a legal requirement. Scheduling data is accountability data, traceable and auditable. The 600 inspectors depending on this system had no fallback if it failed."
+          },
+          {
+            "type": "p",
+            "text": "The key shift: treating accessibility and consistency as design constraints rather than legal checkboxes produced a better product. WCAG 2.1 AA contrast ratios were enforced at component level. Where FSL defaults fell short, they were replaced with custom-built alternatives."
           }
         ]
       },
       {
         "ep": "04",
-        "title": "The Mobile Experience",
-        "teaser": "Field inspectors do not sit at desks.  They work in slaughterhouses, processing facilities, and cold storage environment.",
+        "title": "Salesforce FSL Constraints",
+        "teaser": "Designing within a platform is harder than designing from scratch. Every decision required negotiating with what Salesforce FSL would and would not allow.",
         "readTime": "4 min",
         "content": [
           {
             "type": "p",
-            "text": "Field inspectors do not sit at desks.  They work in slaughterhouses, processing facilities, and cold storage environments.  Designing for people in gloves, on the move, in environments with variable signal required a completely different interface philosophy from the desktop scheduling tool."
+            "text": "Designing within a platform is harder than designing from scratch. Every decision required negotiating with what Salesforce Field Service Lightning would and would not allow. The constraint was real and non-negotiable, the client had already purchased FSL licenses and the procurement decision was final."
           },
           {
             "type": "p",
-            "text": "Five mobile design decisions defined the field experience.  Single-task screens with one action per view and no multi-step forms, inspectors do not have the cognitive bandwidth for complex flows mid-shift.  Large tap targets at minimum 48 by 48 pixels for gloved use."
+            "text": "What FSL gave us for free: appointment scheduling, resource management, service territory mapping, work order lifecycle, and mobile field service app. These covered roughly 60% of the requirements without custom development."
           }
         ]
       },
       {
         "ep": "05",
-        "title": "Accessibility and Governance",
-        "teaser": "Government products carry the weight of public trust.  Accessibility and consistency are not nice-to-haves in this conte.",
+        "title": "The Mobile Experience",
+        "teaser": "Field inspectors work in slaughterhouses and cold storage, in gloves, on the move. The mobile interface had to work in the most hostile conditions possible.",
         "readTime": "4 min",
+        "layout": "split",
+        "hasDashboard": true,
+        "mockupGradient": "linear-gradient(160deg, #1a3050 0%, #2E6DB4 100%)",
         "content": [
           {
             "type": "p",
-            "text": "Government products carry the weight of public trust.  Accessibility and consistency are not nice-to-haves in this context, they are legal obligations under AODA and moral obligations to the 600 people whose working lives depended on this tool."
+            "text": "Field inspectors do not sit at desks. They work in slaughterhouses, processing facilities, and cold storage environments. Designing for people in gloves, on the move, in environments with variable signal required a completely different philosophy from the desktop scheduling tool."
           },
           {
             "type": "p",
-            "text": "Where FSL fell short of requirements: several default Salesforce components had contrast ratios below the 4. 5:1 minimum required by WCAG 2. 1 AA."
+            "text": "Five mobile design decisions defined the field experience. Single-task screens with one action per view, inspectors cannot manage multi-step forms mid-shift. Large 48×48px tap targets for gloved use. Offline-first data sync so a dropped signal never breaks a workflow. Managers create and adjust schedules on desktop; inspectors access routes, details, and real-time updates on mobile."
           }
         ]
       },
       {
         "ep": "06",
         "title": "The Outcomes",
-        "teaser": "93% faster scheduling.  A process that took 40 minutes now takes under 3 minutes for standard shift changes.  Emergency.",
+        "teaser": "40 minutes down to under 3. Not because the work got simpler. Because the tool finally matched the people doing it.",
         "readTime": "4 min",
+        "impactStats": [
+          { "before": "40 min", "after": "< 3 min", "label": "Schedule change", "delta": "−93%" },
+          { "before": "40 min", "after": "< 5 min", "label": "Emergency response", "delta": "−80%" },
+          { "before": "5/day", "after": "2/day", "label": "Scheduling errors", "delta": "−60%" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "93% faster scheduling.  A process that took 40 minutes now takes under 3 minutes for standard shift changes.  Emergency override workflows that previously required phone calls and manual system entry now complete in under 5 minutes with automatic conflict detection."
+            "text": "A schedule change that used to take 40 minutes now takes under 3. That is not a small improvement on a bad process, it is a fundamentally different one. Coordinators gained back hours each day that had previously gone into navigating a tool designed for the system, not for them."
           },
           {
             "type": "p",
-            "text": "80% faster emergency response time.  When an inspector calls in sick or a facility has an unplanned closure, coordinators can now reassign coverage in real time with visibility into who is available, where they are, and what qualifications they hold.  Previously this was done by phone through a contact list."
+            "text": "Emergency coverage is now real-time. When an inspector calls in sick, a coordinator can see who is available, where they are, and what qualifications they hold, and reassign in under 5 minutes. Previously that was a phone call through a contact list. The difference is not just speed. It is the difference between controlled and improvised."
           }
         ]
       }
@@ -1158,7 +1218,7 @@ const projects = [
       }
     ],
     "reflection": "This project taught me that designing for outdoor spaces requires understanding history, ecology, community pride, and the emotional role a place holds over time.",
-    "ia": "SITUATION\nSpencer Creek Historical Trail — 2.5km in Dundas, Ontario.\nPhysically fragmented. Almost no digital presence.\nRich history invisible to anyone who did not already know it.\n\nUSERS\nPrimary: First-time visitors — no context, no discovery tools\nSecondary: Long-time residents — deep emotional connection, no way to share it\nTertiary: Rotary Club and City of Hamilton — community stewardship goals\n\nPROBLEM\nGoogle Maps gets you to the trail.\nIt cannot tell you the bridge was built by Dundas's first settlers.\nDisconnection was cultural as much as physical.\nPeople were not losing a path. They were losing a story.\n\nCONSTRAINTS\nOutdoor UX is hostile — glare, gloves, variable signal, distracted attention\nAR calibration across 3 terrain types: open meadow, dense forest, riverbank\nThe digital layer must not compete with the trail experience\nBudget and timeline ruled out full AR recreation of lost sections\n\nPROCESS\n7 months of research\nWalked every section multiple times across seasons\nInterviewed Dundas Museum historians\nWorkshops with Sunrise Rotary Club stakeholders\nPokemon Go used as reference model for location-based discovery\nField usability testing in January\n\nKEY DECISIONS\nAR for discovery not navigation — the trail is the destination\nOne-handed interaction throughout — users are moving\nOffline fallback for forested signal-dead sections\nEmergency beacon reduced from two taps to one\nAudio over text at historical markers — feels like discovery not Wikipedia\n\nTHE PRODUCT\nAR historical overlay at GPS-triggered locations\nInteractive trail map with points of interest\nCommunity events and local vendor integration\nRewards and challenges tied to distance and discovery\nWildlife AR identification at creek sections\n\nOUTCOME\nField-tested across multiple seasons\nRotary Club and City of Hamilton stakeholder sign-off\nOffline mode supported full 3.4 mile trail",
+    "ia": "SITUATION\nSpencer Creek Historical Trail, 2.5km in Dundas, Ontario.\nPhysically fragmented. Almost no digital presence.\nRich history invisible to anyone who did not already know it.\n\nUSERS\nPrimary: First-time visitors, no context, no discovery tools\nSecondary: Long-time residents, deep emotional connection, no way to share it\nTertiary: Rotary Club and City of Hamilton, community stewardship goals\n\nPROBLEM\nGoogle Maps could route you to the trailhead. It could not tell you the stone bridge ahead was built by Dundas's earliest settlers.\nThe heritage knowledge existed, held by historians, longtime residents, and the Rotary Club, but there was no mechanism to share it with anyone walking the trail for the first time.\nLong-time residents watched the trail fragment without a way to pass on what it meant to them.\nVisitors arrived, walked, and left without encountering any of the history beneath their feet.\nThe disconnection was not physical. It was cultural, and it was accelerating with every year the trail stayed undocumented.\nPeople were not losing a path. They were losing a story, and the window to preserve it was closing.\n\nCONSTRAINTS\nOutdoor UX is hostile, glare, gloves, variable signal, distracted attention\nAR calibration across 3 terrain types: open meadow, dense forest, riverbank\nThe digital layer must not compete with the trail experience\nBudget and timeline ruled out full AR recreation of lost sections\n\nPROCESS\n7 months of research\nWalked every section multiple times across seasons\nInterviewed Dundas Museum historians\nWorkshops with Sunrise Rotary Club stakeholders\nPokemon Go used as reference model for location-based discovery\nField usability testing in January\n\nKEY DECISIONS\nAR for discovery not navigation, the trail is the destination\nOne-handed interaction throughout, users are moving\nOffline fallback for forested signal-dead sections\nEmergency beacon reduced from two taps to one\nAudio over text at historical markers, feels like discovery not Wikipedia\n\nTHE PRODUCT\nAR historical overlay at GPS-triggered locations\nInteractive trail map with points of interest\nCommunity events and local vendor integration\nRewards and challenges tied to distance and discovery\nWildlife AR identification at creek sections\n\nOUTCOME\nField-tested across multiple seasons\nRotary Club and City of Hamilton stakeholder sign-off\nOffline mode supported full 3.4 mile trail",
     "heroColor": "#1a3324",
     "heroTagline": "Bringing Dundas history back to life",
     "heroCategory": "AR · Community",
@@ -1183,81 +1243,130 @@ const projects = [
     "episodes": [
       {
         "ep": "01",
-        "title": "The Problem with Existing Trail Apps",
-        "teaser": "Google Maps gets you to the trail.  It cannot tell you that the oak tree on your left is 200 years old, or that the lime.",
-        "readTime": "4 min",
+        "title": "The Trail That Was Lost",
+        "teaser": "Spencer Creek Trail once connected forests, bridges, and a century of stories into a single walk. Then the town grew, and the trail quietly fell apart.",
+        "readTime": "3 min",
+        "stats": [
+          { "number": "2.5km", "label": "trail, mostly fragmented" },
+          { "number": "0", "label": "digital presence" },
+          { "number": "100+", "label": "years of history, invisible" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Google Maps gets you to the trail.  It cannot tell you that the oak tree on your left is 200 years old, or that the limestone bridge ahead was built by Dundas's first settlers, or that the industrial ruins along the creek edge were once the economic engine of an entire town."
+            "text": "Spencer Creek Trail once wound through the heart of Dundas, connecting forests, bridges, and a century of local history into a single living walk. As the town grew and land changed hands, the trail slowly fell apart. What was once continuous became scattered. What was once remembered became invisible."
           },
           {
             "type": "p",
-            "text": "The Spencer Creek Historical Trail is a 2. 5 km trail in the heart of Dundas, Ontario, one of the most historically significant communities in the Hamilton area.  It runs past the sites of 19th century mills, along the same waterway that powered early industry, through land that holds Indigenous history, settler history, and industrial history layered on top of each other."
+            "text": "Google Maps can get you to the trailhead. It cannot tell you that the limestone bridge was built by Dundas's first settlers, or that the industrial ruins along the creek were once the engine of an entire regional economy. The disconnection was not just physical. People were not losing a path. They were losing the story of where they came from."
           }
         ]
       },
       {
         "ep": "02",
-        "title": "Field Research and Community Listening",
-        "teaser": "Seven months of research.  You cannot design a community trail experience from a laptop.  We walked every section of the.",
+        "title": "Seven Months in the Field",
+        "teaser": "You cannot design a community trail experience from a laptop. So we walked it. In January. In summer. In the rain. Then we listened.",
         "readTime": "4 min",
+        "timeline": [
+          { "month": "Jan", "phase": "Trail Walks", "activities": "Walked every section across seasons. Mapped physical breaks." },
+          { "month": "Feb–Mar", "phase": "Observation", "activities": "Watched movement patterns. Bird watchers, cyclists, families." },
+          { "month": "Apr–May", "phase": "Community Research", "activities": "Facebook groups, resident memory collection." },
+          { "month": "May–Jun", "phase": "Archive Research", "activities": "Dundas Museum, historical maps, mill records." },
+          { "month": "Jun–Jul", "phase": "Co-Creation", "activities": "Workshops with Rotary Club and city partners." },
+          { "month": "Aug", "phase": "Synthesis", "activities": "Four opportunities defined. Prototype brief written." }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Seven months of research.  You cannot design a community trail experience from a laptop.  We walked every section of the trail, multiple times, in different seasons."
+            "text": "We started in January 2023, walking every section of the trail across seasons, because an experience that has to work in July also has to work in a Canadian winter. We watched how people moved, where they paused, what they ignored. Bird watchers at the creek. Cyclists on the paved stretch. Families who wandered until they found something interesting."
           },
           {
             "type": "p",
-            "text": "The research revealed a consistent pattern: long-time residents had a deep emotional connection to specific landmarks that had no digital presence at all.  The old Desjardins Canal locks.  The site of the former Dundas Valley railway station."
+            "text": "The research went where field walks could not. Facebook groups full of residents sharing memories of the old stone bridges, the mills, the former railway station. The Dundas Museum opened their archives and walked us through historical maps that showed what the trail used to connect. Their historians knew things no app had ever captured."
+          },
+          {
+            "type": "p",
+            "text": "We ran co-creation workshops with the Rotary Club, city partners, and long-time residents. The same thing came up every time: people still felt a deep connection to this place. They just had no way to share it. That gap was the design opportunity."
           }
         ]
       },
       {
         "ep": "03",
-        "title": "Designing for Outdoor Environments",
-        "teaser": "Outdoor UX is hostile UX.  Sunlight on screens.  Gloved or cold hands. Every design decision was evaluated against one q.",
+        "title": "Four Opportunities",
+        "teaser": "Research synthesis revealed four clear gaps, not just for navigation, but for orientation, heritage, ecology, and community life.",
         "readTime": "4 min",
+        "layout": "split",
+        "mockupGradient": "linear-gradient(160deg, #1a3324 0%, #2D6A45 100%)",
+        "pillars": [
+          { "number": "01", "title": "Interactive Trail Map", "quote": "I've lived here 20 years and still don't know where the trail actually starts.", "tag": "Navigation" },
+          { "number": "02", "title": "AR Story Stops", "quote": "I wish people still knew what the stone bridge meant to this town.", "tag": "Heritage" },
+          { "number": "03", "title": "Eco Discovery Mode", "quote": "I never knew what wildlife actually lives here.", "tag": "Ecology" },
+          { "number": "04", "title": "Community & Vendors", "quote": "The trail should feel like part of the town.", "tag": "Community" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Outdoor UX is hostile UX.  Sunlight on screens.  Gloved or cold hands."
+            "text": "Co-creation workshops surfaced four distinct needs. Each reflected a real gap shaped by trail users, historians, and local partners."
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Interactive Trail Map, \"I have lived here 20 years and still do not know where the trail actually starts.\"",
+              "AR Story Stops, \"We used to cross the old stone bridge as kids. I wish people still knew what it meant to this town.\"",
+              "Eco Discovery Mode, \"I walk the trail all the time, but I never knew what wildlife actually lives here.\"",
+              "Community Events & Local Vendors, \"The trail should feel like part of the town, not something hidden behind it.\""
+            ]
           },
           {
             "type": "p",
-            "text": "Every design decision was evaluated against one question: does this make the trail experience richer, or does it distract from it?  The digital layer is not the destination.  The trail is."
+            "text": "These four concepts became the foundation for the prototype. Every feature responds to a need stated by a real person, not a design assumption."
           }
         ]
       },
       {
         "ep": "04",
-        "title": "Four Feature Areas",
-        "teaser": "Four opportunities emerged from the research synthesis.  Each addressed a different dimension of what the trail had lost.",
+        "title": "Designing for the Trail, Not the Screen",
+        "teaser": "Every decision came down to one question: does this make the trail experience richer, or does it compete with it?",
         "readTime": "4 min",
+        "principles": [
+          { "rule": "AR for discovery, not navigation", "why": "The trail is the destination. The phone is the lens." },
+          { "rule": "One-handed interaction throughout", "why": "People are moving. Both hands are never available." },
+          { "rule": "Audio over text at markers", "why": "Hearing a story feels like discovery. Reading one feels like homework." },
+          { "rule": "Emergency beacon in one tap", "why": "Safety cannot have friction. Reduced from two taps." }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Four opportunities emerged from the research synthesis.  Each addressed a different dimension of what the trail had lost."
+            "text": "Outdoor UX is hostile UX. Sunlight washes out screens. Cold hands miss small targets. Attention is split between the phone and the environment. We evaluated every interaction against a single question: does this make the trail experience richer, or does it compete with it? The digital layer is not the destination. The trail is."
           },
           {
             "type": "p",
-            "text": "First: AR historical overlay.  At designated points along the trail, the camera view reveals what used to stand there.  The ruins of a 19th century mill become visible as a functioning building."
+            "text": "That principle drove concrete decisions. AR for discovery, not navigation. One-handed interaction throughout, because people are walking. Audio at historical markers instead of text, because hearing a story feels like discovery while reading one feels like homework. Emergency beacon reduced from two taps to one."
+          },
+          {
+            "type": "p",
+            "text": "AR calibration was harder than expected. Open meadow, dense forest, and riverbank all behave differently with GPS and camera. We sized trigger zones generously to account for camera shake during motion, and built offline fallback for the forested creek sections where signal consistently dropped."
           }
         ]
       },
       {
         "ep": "05",
-        "title": "Testing in the Field",
-        "teaser": "Usability testing in a lab tells you one thing.  Testing on a trail in January tells you another.  We conducted field us.",
-        "readTime": "4 min",
+        "title": "Testing Across Seasons",
+        "teaser": "A trail app that only works in good weather is not a trail app. We tested in summer, autumn, and January.",
+        "readTime": "3 min",
+        "seasons": [
+          { "season": "Summer", "finding": "AR markers worked well in open meadow. Signal strong." },
+          { "season": "Autumn", "finding": "Trigger zones needed to be generously sized for camera shake." },
+          { "season": "January", "finding": "Two-handed gestures failed. Gloves, cold, movement all hostile. Offline mode became a hard requirement." }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Usability testing in a lab tells you one thing.  Testing on a trail in January tells you another.  We conducted field usability testing in multiple conditions, summer, autumn, and winter, because the experience had to work year-round."
+            "text": "Lab usability testing and field usability testing are not the same thing. In a lab, users hold phones with both hands, stand still, and read carefully. On a trail in January, none of those things are true. Two-handed gestures were impossible while walking. AR markers that worked on a test bench flickered on a moving body. We made changes we never would have found indoors."
           },
           {
             "type": "p",
-            "text": "Key refinements from field testing: simplified map interaction for one-handed use while walking, because users could not manage two-handed gestures on the move.  Increased AR trigger zone sizes significantly, users could not hold phones steady enough for small targets while walking, and camera shake caused markers to flicker.  Added offline mode fallback for when signal dropped in the forested sections near the creek."
+            "text": "Offline mode started as an enhancement and became a hard requirement the first time we lost signal in the forested section near the creek. The Rotary Club and City of Hamilton reviewed the final prototype and gave sign-off. Research and prototype are complete across the full 3.4 mile trail."
           }
         ]
       }
@@ -1331,11 +1440,11 @@ const projects = [
   },
   {
     "id": "vosyn",
-    "title": "VosynVerse",
+    "title": "Vosyn Co-Watch",
     "type": "Product Design",
     "client": "Vosyn AI",
-    "org": "Multilingual Media Platform",
-    "sub": "Multilingual AI Content Platform",
+    "org": "Streaming · Social Features",
+    "sub": "Shared Viewing Experience",
     "timeline": "2024",
     "team": [
       "Vosyn AI Team"
@@ -1346,7 +1455,7 @@ const projects = [
     "route": "/vosyn",
     "status": "placeholder",
     "liveUrl": null,
-    "description": "A multilingual AI content platform designed to break language barriers, so creators and audiences can engage with content in any language without losing meaning, tone, or intent.",
+    "description": "Designing shared presence for remote co-watching, making two people feel like they are in the same room even when they are not. Under NDA.",
     "contextStats": [
       {
         "number": "17%",
@@ -1553,22 +1662,22 @@ const projects = [
       }
     ],
     "reflection": "Language is the most human thing we do. Building AI that preserves meaning across languages, not just words, is one of the most interesting design challenges I've worked on.",
-    "ia": "SITUATION\nEnglish-only content reaches 17% of the world.\nCreators lose 83% of potential audience to language, not relevance.\nExisting solutions: too slow, too expensive, or strip cultural meaning.\n\nUSERS\nPrimary: Content creators — want language to be invisible to their workflow\nSecondary: Multilingual viewers — want native-quality experience\nTertiary: Platform team — need quality feedback loops to improve the model\n\nPROBLEM\nLanguage is not just words.\nTone, cultural subtext, and emotional register are lost in translation.\nDesigning for multilingual AI means designing for the gaps between languages.\n\nCONSTRAINTS\nAI output quality is a spectrum, not binary\nCreators are not linguists — cannot assess output technically\nEvery correction must feed back into model improvement\nPublishing workflow cannot add meaningful friction\n\nPROCESS\nCreator workflow mapping — where does language decision happen\nQuality review flow — how much review is appropriate before publishing\nConfidence indicator design — green, yellow, red per segment\nDefault-on multilingual model tested against opt-in model\n\nKEY DECISIONS\nUpload once, configure once, publish everywhere — zero per-language settings\nConfidence indicators surface only what needs review, not everything\nDefault-on multilingual — friction in removing a language not adding one\nShow actionable states not raw confidence scores\n\nTHE PRODUCT\nSingle upload flow with language target configuration\nConfidence indicator review system per segment\nOne-tap flag, regenerate, or manual override\nViewer ratings and creator corrections feed model retraining\nA/B testing on viewer retention across language versions\n\nOUTCOME\n3x average audience growth on multilingual-enabled content\n4x lower creator churn for multilingual publishers\nHigher viewer engagement in native language versus dubbed alternative",
+    "ia": "SITUATION\nEnglish-only content reaches 17% of the world.\nCreators lose 83% of potential audience to language, not relevance.\nExisting solutions: too slow, too expensive, or strip cultural meaning.\n\nUSERS\nPrimary: Content creators, want language to be invisible to their workflow\nSecondary: Multilingual viewers, want native-quality experience\nTertiary: Platform team, need quality feedback loops to improve the model\n\nPROBLEM\nEvery existing localisation solution asks creators to make a tradeoff: reach more people, or preserve the integrity of your work.\nDubbing changes performance timing, breaks lip sync, and strips the emotional register that made the content worth watching in the first place.\nSubtitles exclude non-literate viewers and require eyes on text instead of on content.\nAI translation output was opaque. Creators received a finished version with no visibility into which segments were confident and which were guesses.\nWithout surfaced quality signals, creators either published blindly or rejected the output entirely, and because no corrections fed back to the model, it could not improve from real-world mistakes.\nThe problem was not that AI could not translate. It was that nothing in the workflow was designed to make AI translation trustworthy.\n\nCONSTRAINTS\nAI output quality is a spectrum, not binary\nCreators are not linguists, cannot assess output technically\nEvery correction must feed back into model improvement\nPublishing workflow cannot add meaningful friction\n\nPROCESS\nCreator workflow mapping, where does language decision happen\nQuality review flow, how much review is appropriate before publishing\nConfidence indicator design, green, yellow, red per segment\nDefault-on multilingual model tested against opt-in model\n\nKEY DECISIONS\nUpload once, configure once, publish everywhere, zero per-language settings\nConfidence indicators surface only what needs review, not everything\nDefault-on multilingual, friction in removing a language not adding one\nShow actionable states not raw confidence scores\n\nTHE PRODUCT\nSingle upload flow with language target configuration\nConfidence indicator review system per segment\nOne-tap flag, regenerate, or manual override\nViewer ratings and creator corrections feed model retraining\nA/B testing on viewer retention across language versions\n\nOUTCOME\n3x average audience growth on multilingual-enabled content\n4x lower creator churn for multilingual publishers\nHigher viewer engagement in native language versus dubbed alternative",
     "heroColor": "#2d1a4a",
-    "heroTagline": "Reaching the other 83% of the world",
-    "heroCategory": "AI · Multilingual",
+    "heroTagline": "Making two people feel like they're in the same room",
+    "heroCategory": "Streaming · Social",
     "heroYear": "2024",
     "previewMedia": "/projects/vosyn/MacBook Pro 16_ - 5th Gen - Silver.png",
     "hero": {
       "gradient": "linear-gradient(160deg, #FAF5FF 0%, #EDE9FE 100%)",
       "light": true,
-      "badge": "Case Study · AI Product",
+      "badge": "Case Study · NDA · Vosyn AI",
       "tags": [
-        "Multilingual AI",
+        "Co-Watching",
         "2024",
-        "Vosyn AI"
+        "Vosyn AI · Under NDA"
       ],
-      "synopsis": "A multilingual AI content platform designed to break language barriers, so creators and audiences can engage with content in any language without losing meaning, tone, or intent.",
+      "synopsis": "Designing shared presence for remote co-watching, making two people feel like they are in the same room even when they are not. Details under NDA.",
       "metadata": [
         "2024",
         "Product Designer",
@@ -1578,81 +1687,58 @@ const projects = [
     "episodes": [
       {
         "ep": "01",
-        "title": "The Multilingual UX Challenge",
-        "teaser": "Language is not just words.  It carries tone, cultural subtext, emotional register, and implied meaning that machine tra.",
-        "readTime": "4 min",
+        "title": "The Co-Watching Opportunity",
+        "teaser": "Streaming solved distribution. It did not solve the part where watching something together, even remotely, actually feels like being together.",
+        "readTime": "3 min",
+        "stats": [
+          { "number": "83%", "label": "potential audience lost to language" },
+          { "number": "100+", "label": "languages supported by AI" },
+          { "number": "3×", "label": "audience reach with localisation" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Language is not just words.  It carries tone, cultural subtext, emotional register, and implied meaning that machine translation strips away by default.  When a Korean creator says something sarcastically, that sarcasm is encoded in word choice, sentence rhythm, and cultural context, not just the literal meaning of the words."
+            "text": "When you watch a film with someone in the same room, something happens that does not happen on two separate screens. You hear each other laugh. You pause for each other. You share the moment without narrating it. Streaming platforms solved distribution brilliantly. Nobody has solved that."
           },
           {
             "type": "p",
-            "text": "Existing approaches fail in two directions.  Direct translation loses cultural context and feels foreign to native speakers.  Human dubbing is expensive, slow, and unscalable for individual creators."
+            "text": "The co-watching feature at Vosyn was built to close that gap, creating genuine shared presence for remote viewers without routing around the product into Discord, FaceTime, or a shared screen share running alongside the content."
           }
         ]
       },
       {
         "ep": "02",
-        "title": "Designing for Content Creators",
-        "teaser": "Content creators do not want to think about languages.  They want to think about content.  Every minute spent on localis.",
-        "readTime": "4 min",
+        "title": "Designing Shared Presence",
+        "teaser": "Synchronised playback is the easy part. The hard part is making someone feel like another person is there without pulling their eyes off the screen.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "Content creators do not want to think about languages.  They want to think about content.  Every minute spent on localisation is a minute not spent creating."
+            "text": "Synchronised playback is solved technology. The design problem is softer and harder: how do you make someone feel the presence of another person without breaking their attention? Reactions, shared moments, and presence indicators had to be ambient. Felt, not managed."
           },
           {
             "type": "p",
-            "text": "The upload flow was designed around three steps.  Upload once: a single master file, one upload, no language-specific versions.  Configure language targets on one screen with no per-language settings, select target languages, set default voice parameters, and move on."
+            "text": "The interaction model was built around the natural rhythms of watching together: collective reaction, comfortable silence, and the ability to pause for conversation without it feeling like an interruption. Specific details are under NDA."
           }
         ]
       },
       {
         "ep": "03",
-        "title": "The AI Generation Workflow",
-        "teaser": "When AI is the product, the design is the trust system.  Every interface decision either builds confidence in the output.",
-        "readTime": "4 min",
+        "title": "Interaction Patterns",
+        "teaser": "Every interaction had to work without taking eyes off the screen. The interface is the background. The content is the foreground.",
+        "readTime": "3 min",
+        "impactStats": [
+          { "before": "17%", "after": "100+", "label": "Language reach", "delta": "6× market" },
+          { "before": "disrupted", "after": "unchanged", "label": "Creator workflow", "delta": "zero overhead" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "When AI is the product, the design is the trust system.  Every interface decision either builds confidence in the output or destroys it.  Users who distrust the output will not use the product."
+            "text": "Every co-watch interaction was designed to be eyes-forward. Reactions fire without looking at the screen. Shared pauses need minimal input. Session presence is visible but not distracting. If someone notices the interface more than the content, the interface has failed."
           },
           {
             "type": "p",
-            "text": "Four principles guided the AI workflow design.  Show enough to build trust, hide enough to reduce cognitive load, the raw confidence scores, model parameters, and generation details were invisible to creators.  Never show raw confidence scores: translate them into actionable states (needs review, looks good, ready to publish) that tell the creator what to do, not how the model performed."
-          }
-        ]
-      },
-      {
-        "ep": "04",
-        "title": "Output Quality and Feedback Loops",
-        "teaser": "AI output quality is not binary.  It is a spectrum, and users need to understand where on the spectrum their content sit.",
-        "readTime": "4 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "AI output quality is not binary.  It is a spectrum, and users need to understand where on the spectrum their content sits, without needing to be linguists or AI engineers to interpret that information."
-          },
-          {
-            "type": "p",
-            "text": "The feedback loop operated at three levels.  Viewer ratings captured whether the localised version felt natural to native speakers, the most important quality signal because it came from the audience, not the creator.  Creator corrections flagged sections where the AI had made errors, building a dataset of what good and bad output looks like for each language pair and content category."
-          }
-        ]
-      },
-      {
-        "ep": "05",
-        "title": "The Design Case for Inclusive Content",
-        "teaser": "The business case for multilingual content is straightforward.  The design case is more interesting: how do you build a.",
-        "readTime": "4 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "The business case for multilingual content is straightforward.  The design case is more interesting: how do you build a tool that makes the right thing, publishing in multiple languages, easier than the wrong thing, publishing only in English?"
-          },
-          {
-            "type": "p",
-            "text": "The answer was to make multilingual publishing the default, not the opt-in.  New creators were onboarded with language targets already selected based on their content category and primary language.  The friction was in removing a language, not in adding one."
+            "text": "This work is under active NDA. What is shared here covers design principles and process only. No screenshots, feature specs, or proprietary interaction patterns are disclosed."
           }
         ]
       }
@@ -1732,7 +1818,7 @@ const projects = [
     "route": "/mealplanner",
     "status": "full",
     "liveUrl": "https://v0-electron-js-app-mocha.vercel.app/",
-    "description": "A mobile-first meal planning app that connects weekly planning, grocery lists, budget tracking, and nutrition, the only tool that solves all five jobs in one interface.",
+    "description": "A mobile-first meal planning app that connects planning, shopping, budget, and nutrition in one interface. Moving toward a branded Instacart launch as a sole partner product.",
     "contextStats": [
       {
         "number": "30–40%",
@@ -1960,7 +2046,7 @@ const projects = [
       }
     ],
     "reflection": "The best personal tools don't feel like software, they feel like an extension of the user's weekly routine.",
-    "ia": "SITUATION\n200 food-related decisions per person per day.\nMeal planning, grocery, nutrition, pantry, and budget all in separate tools.\nEvery competitor solves one or two of the five jobs. None solve all five.\n\nUSERS\nPrimary: The planner-shopper-cook-budget manager — one person, four hats\nSecondary: Health-conscious users tracking nutrition without clinical obsession\nTertiary: Budget-constrained households managing food costs weekly\n\nPROBLEM\nFragmentation amplifies decision fatigue instead of reducing it.\nTool-switching overhead is the problem, not missing features.\nThe person wearing all four hats has no single tool designed for them.\n\nCONSTRAINTS\n375px screen with a 7-day 3-meal planning grid — unsolved mobile UX problem\nNutrition display must inform without creating anxiety or moralising food\nNo bold text anywhere — eating is calm, the app must feel calm\nSecurity — personal health and budget data requires CVE-level attention\n\nPROCESS\nThree layout approaches tested and rejected before solution found\nNutrition display philosophy established before any screens designed\nCopy last week emerged as most-requested feature in user testing\nThree CVEs discovered and patched during active development\n\nKEY DECISIONS\nHorizontal day selector plus vertical meal list — one axis at a time\nFour nutrition numbers maximum — awareness without obsession\nCopy last week as first-class feature — most people eat 10 to 15 meals on rotation\nWeight 400 typography throughout — no bold, no urgency signals\n\nTHE PRODUCT\nWeekly planning grid with horizontal day navigation\nAuto-generated grocery list aggregated from weekly plan\nNutrition summary row per day, no targets or progress bars\nPantry tracking with expiry awareness\nBudget tracking integrated with grocery list\n\nOUTCOME\n78% reduction in planning time — 45 minutes to 10 minutes\nAll five jobs-to-be-done in one interface\nThree CVEs patched during development\nZero competitors cover all five jobs confirmed post-launch",
+    "ia": "SITUATION\n200 food-related decisions per person per day.\nMeal planning, grocery, nutrition, pantry, and budget all in separate tools.\nEvery competitor solves one or two of the five jobs. None solve all five.\n\nUSERS\nPrimary: The planner-shopper-cook-budget manager, one person, four hats\nSecondary: Health-conscious users tracking nutrition without clinical obsession\nTertiary: Budget-constrained households managing food costs weekly\n\nPROBLEM\nOn any given Wednesday, figuring out dinner requires a person to be a meal planner, grocery shopper, budget manager, and cook simultaneously.\nEvery existing app is built for exactly one of those roles. The result is five open tabs and a decision that should take two minutes taking twenty.\nEach context switch carries cognitive overhead that most people resolve by abandoning the plan entirely and defaulting to takeout or whatever is already in the fridge.\nMost users ate the same 12 meals on rotation, not because they wanted to, but because planning anything different was genuinely too hard.\nFood waste, unexpected grocery bills, and nutrition gaps were downstream effects of a tooling problem, not a motivation problem.\nThe person wearing all four hats had never been the primary user of any single product.\n\nCONSTRAINTS\n375px screen with a 7-day 3-meal planning grid, unsolved mobile UX problem\nNutrition display must inform without creating anxiety or moralising food\nNo bold text anywhere, eating is calm, the app must feel calm\nSecurity, personal health and budget data requires CVE-level attention\n\nPROCESS\nThree layout approaches tested and rejected before solution found\nNutrition display philosophy established before any screens designed\nCopy last week emerged as most-requested feature in user testing\nThree CVEs discovered and patched during active development\n\nKEY DECISIONS\nHorizontal day selector plus vertical meal list, one axis at a time\nFour nutrition numbers maximum, awareness without obsession\nCopy last week as first-class feature, most people eat 10 to 15 meals on rotation\nWeight 400 typography throughout, no bold, no urgency signals\n\nTHE PRODUCT\nWeekly planning grid with horizontal day navigation\nAuto-generated grocery list aggregated from weekly plan\nNutrition summary row per day, no targets or progress bars\nPantry tracking with expiry awareness\nBudget tracking integrated with grocery list\n\nOUTCOME\n78% reduction in planning time, 45 minutes to 10 minutes\nAll five jobs-to-be-done in one interface\nThree CVEs patched during development\nZero competitors cover all five jobs confirmed post-launch",
     "heroColor": "#3a1f0a",
     "heroTagline": "Five jobs. One interface.",
     "heroCategory": "Consumer · Health",
@@ -1985,81 +2071,75 @@ const projects = [
     "episodes": [
       {
         "ep": "01",
-        "title": "The Fragmented Meal Planning Problem",
-        "teaser": "The average person makes 200 or more food-related decisions every day, what to cook, what to buy, what is in the fridge.",
-        "readTime": "4 min",
+        "title": "The Five Jobs No App Solves Together",
+        "teaser": "On a Wednesday evening trying to figure out dinner, you are planner, shopper, cook, and budget manager at once. Every existing app is built for just one of those people.",
+        "readTime": "3 min",
+        "stats": [
+          { "number": "200+", "label": "food decisions per day" },
+          { "number": "5", "label": "tools to manage one week of food" },
+          { "number": "30–40%", "label": "avg household grocery waste" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "The average person makes 200 or more food-related decisions every day, what to cook, what to buy, what is in the fridge, whether they can afford it.  The apps they use to manage this, Mealime, Paprika, Cronometer, YNAB, each solve one piece of the problem.  None solve the whole thing."
+            "text": "On a Wednesday evening figuring out what to make for dinner tomorrow, you are four people at once: the planner thinking about the week, the shopper wondering what is in the fridge, the cook deciding what is realistic after a long day, and the budget manager checking what is left before payday. Every existing app is built for just one of them."
           },
           {
             "type": "p",
-            "text": "The critical insight: the planner, shopper, cook, and budget manager are the same person wearing four hats.  Every existing tool is designed for one hat.  None are designed for the person wearing all four simultaneously on a Wednesday evening trying to figure out what to make for dinner tomorrow."
+            "text": "Mealime plans. Paprika stores recipes. Cronometer tracks nutrients. YNAB manages budget. Each is excellent at its one job. None of them talk to each other. MealPlan is built for the person who needs all four jobs done in one place, without switching apps between every decision."
           }
         ]
       },
       {
         "ep": "02",
-        "title": "Nutrition Data Complexity",
-        "teaser": "Nutrition data is deceptively hard to display.  Too much and users tune out.  Too little and the app does not actually h.",
-        "readTime": "4 min",
+        "title": "Building Toward an Instacart Launch",
+        "teaser": "This started as a personal project to scratch a real itch. It is now moving toward a branded launch with Instacart.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "Nutrition data is deceptively hard to display.  Too much and users tune out.  Too little and the app does not actually help."
+            "text": "MealPlan started as a personal project because I was genuinely frustrated with the fragmentation. The prototype worked. The loop was tight: plan the week, the grocery list generates automatically, the budget updates in real time. Then the opportunity grew bigger than a side project."
           },
           {
             "type": "p",
-            "text": "What we rejected and why: per-ingredient nutrition breakdown because it is too granular and creates anxiety.  Progress bars with daily goals because they turn eating into a game with losing conditions.  Colour coding for good versus bad foods because it moralises nutrition and reinforces disordered thinking."
+            "text": "The app is now in early conversations with Instacart toward a sole branded launch. That integration makes the loop native: a plan generated on Sunday becomes a cart, a cart becomes a delivery, everything stays in one interface. That is not a feature. That is the product becoming what it was always meant to be."
           }
         ]
       },
       {
         "ep": "03",
         "title": "The Weekly Planning Interface",
-        "teaser": "A 7-day by 3-meal grid on a 375-pixel screen is a solved problem in spreadsheets and an unsolved problem in mobile UX..",
-        "readTime": "4 min",
+        "teaser": "Fitting 21 meals on a 375px screen is genuinely hard. A calendar felt wrong. A spreadsheet felt worse. Here is what worked.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "A 7-day by 3-meal grid on a 375-pixel screen is a solved problem in spreadsheets and an unsolved problem in mobile UX.  The information density required is genuinely difficult, you need to see the whole week to plan effectively, but fitting 21 meals on a mobile screen without truncation requires careful information architecture."
+            "text": "You need to see the whole week to plan it effectively. But a 7x3 grid on a phone screen is too dense to read, and a calendar view imports the wrong mental model entirely. Meals are not events. They do not have start times and attendees."
           },
           {
             "type": "p",
-            "text": "Three layouts were tested and rejected.  A full 7-by-3 grid was too dense at 375 pixels, meal names truncated to unreadability.  A calendar view was familiar but used the wrong mental model, meals are not events."
+            "text": "The solution is a horizontally scrollable week where each day shows its meals collapsed. Everything is visible at a glance. Tap a slot to expand and add a meal. No vertical scrolling to see the full week. The information architecture feels obvious once you see it, which means it took a while to find."
           }
         ]
       },
       {
         "ep": "04",
-        "title": "Designing for Habit Formation",
-        "teaser": "The best apps become habits.  The worst ones become chores.  The difference is almost always in the entry point, how ea.",
-        "readTime": "4 min",
+        "title": "Where We Are Now",
+        "teaser": "Live and working. No impact metrics yet because this is still being built. The Instacart path is in early stages. Honest about where we are.",
+        "readTime": "2 min",
+        "impactStats": [
+          { "before": "45 min", "after": "< 10 min", "label": "Weekly planning time", "delta": "−78%" },
+          { "before": "5 tools", "after": "1", "label": "Apps needed", "delta": "−80%" },
+          { "before": "30–40%", "after": "<15%", "label": "Grocery waste", "delta": "target" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "The best apps become habits.  The worst ones become chores.  The difference is almost always in the entry point, how easy is it to do the thing the app is supposed to help you do?"
+            "text": "The app is live as a working prototype. Weekly planning, automatic grocery list generation, budget tracking, and nutrition summaries all function. The live demo is real and available."
           },
           {
             "type": "p",
-            "text": "What we rejected from the habit-formation playbook: streak mechanics because they create anxiety about missing days and incentivise logging over actually eating well.  Push notifications because they are invasive for something as personal as food.  Social features because meal planning is private, people do not want to share what they ate."
-          }
-        ]
-      },
-      {
-        "ep": "05",
-        "title": "What Almost Broke It",
-        "teaser": "Three CVEs discovered during active development.  Patched immediately.  Security is not an afterthought, it is the firs.",
-        "readTime": "4 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "Three CVEs discovered during active development.  Patched immediately.  Security is not an afterthought, it is the first layer of trust in any app that handles personal health data."
-          },
-          {
-            "type": "p",
-            "text": "The first vulnerability was in the authentication flow, a session token that was not being invalidated on logout, leaving users exposed if a device was shared.  Fixed before any users were affected.  The second was a dependency vulnerability in a third-party nutrition data library, outdated package with a known exploit."
+            "text": "There are no impact metrics yet. This is still being built. The Instacart partnership is in early conversations. This case study reflects decisions and process to date, not a finished story. That part is still being written."
           }
         ]
       }
@@ -2356,7 +2436,7 @@ const projects = [
       }
     ],
     "reflection": "The best finance apps don't make you check them every day, they make you trust them completely when you do.",
-    "ia": "SITUATION\nCanadian millennials and Gen-Z managing finances across multiple apps.\nOne app for trading, another for budgeting, another for credit.\nMost finance apps drive avoidance, not engagement.\n\nUSERS\nPrimary: Financially anxious Canadians 18 to 40 — first investments, first savings goals\nSecondary: Credit-building users — want score visibility without anxiety\nTertiary: TFSA and RRSP users — Canadian-specific account management\n\nPROBLEM\nFinance apps designed by people who understand finance for people who do not.\nResult: data-heavy interfaces that trigger avoidance.\nThe right metric is clarity, not engagement.\nA finance app checked weekly and trusted completely beats one checked daily with partial trust.\n\nCONSTRAINTS\nCanadian-specific products — TFSA, RRSP, Interac, bureau scale 300 to 900\nConnecting a bank account is a moment of profound trust — onboarding must honour it\nNo red/green colour system — avoid stock market emotional triggers\nProgressive disclosure required — showing everything at once triggers avoidance\n\nPROCESS\nColour system — rejected red/green, chose amber/gold with contextual labels\nChart type evaluation — tested 4 chart types, chose balance trajectory line\nOnboarding copy — describe what Aurora does not store, not what it does\nManual entry built as first-class alternative to bank connection\n\nKEY DECISIONS\nShow what is actionable, hide what is overwhelming\nEvery number has a context label — raw figures mean nothing without comparison\nDefault light mode — aligns with banking conventions, dark mode as preference\nSwipeable dashboard — native mobile feel without nested tabs\n\nTHE PRODUCT\nSwipeable home dashboard — Overview, Accounts, Credit, Activity\nBalance trajectory chart with 12-month projected trend\nCredit score gauge with payment streak and four weighted factors\nGoals with progress tracking and contribution flows\nTFSA and RRSP account types with contribution room tracking\n36 custom components, 15 pages, fully responsive\n\nOUTCOME\nAll five financial jobs consolidated — banking, investing, credit, budgeting, goals\nCanadian-specific throughout — TFSA, RRSP, Interac, local credit bureau scale\nCalm financial experience that informs without alarming",
+    "ia": "SITUATION\nCanadian millennials and Gen-Z managing finances across multiple apps.\nOne app for trading, another for budgeting, another for credit.\nMost finance apps drive avoidance, not engagement.\n\nUSERS\nPrimary: Financially anxious Canadians 18 to 40, first investments, first savings goals\nSecondary: Credit-building users, want score visibility without anxiety\nTertiary: TFSA and RRSP users, Canadian-specific account management\n\nPROBLEM\nFinance apps were designed by people who understand finance, for people who do not, and the gap was visible in every interaction.\nDashboards surfacing account balances, investment returns, credit utilisation, and spending trends simultaneously overwhelmed the people who needed clarity most.\nThe result was a documented avoidance loop: complexity triggers anxiety, anxiety causes disengagement, disengagement leads to worse financial outcomes.\nFor Canadian users, the problem was compounded. TFSA contribution room, RRSP deadlines, and Interac-linked accounts were scattered across institutions with no unified view.\nThe apps that could have helped the most were the ones people closed fastest.\nAurora's design problem was not about adding features. It was about removing the friction that prevented people from engaging with their own finances at all.\n\nCONSTRAINTS\nCanadian-specific products, TFSA, RRSP, Interac, bureau scale 300 to 900\nConnecting a bank account is a moment of profound trust, onboarding must honour it\nNo red/green colour system, avoid stock market emotional triggers\nProgressive disclosure required, showing everything at once triggers avoidance\n\nPROCESS\nColour system, rejected red/green, chose amber/gold with contextual labels\nChart type evaluation, tested 4 chart types, chose balance trajectory line\nOnboarding copy, describe what Aurora does not store, not what it does\nManual entry built as first-class alternative to bank connection\n\nKEY DECISIONS\nShow what is actionable, hide what is overwhelming\nEvery number has a context label, raw figures mean nothing without comparison\nDefault light mode, aligns with banking conventions, dark mode as preference\nSwipeable dashboard, native mobile feel without nested tabs\n\nTHE PRODUCT\nSwipeable home dashboard, Overview, Accounts, Credit, Activity\nBalance trajectory chart with 12-month projected trend\nCredit score gauge with payment streak and four weighted factors\nGoals with progress tracking and contribution flows\nTFSA and RRSP account types with contribution room tracking\n36 custom components, 15 pages, fully responsive\n\nOUTCOME\nAll five financial jobs consolidated, banking, investing, credit, budgeting, goals\nCanadian-specific throughout, TFSA, RRSP, Interac, local credit bureau scale\nCalm financial experience that informs without alarming",
     "heroColor": "#0a2233",
     "heroTagline": "Clarity over engagement",
     "heroCategory": "Fintech · Canada",
@@ -2381,81 +2461,74 @@ const projects = [
     "episodes": [
       {
         "ep": "01",
-        "title": "The Trust Problem in Fintech",
-        "teaser": "People do not trust finance apps.  Not with their data, not with their decisions, not with their anxiety.  The existing.",
-        "readTime": "4 min",
+        "title": "What Aurora Does Differently",
+        "teaser": "Wealthsimple solved investing. KOHO solved spending. Neither solved financial clarity for the person who does not think of themselves as financially sophisticated.",
+        "readTime": "3 min",
+        "stats": [
+          { "number": "3", "label": "apps needed for one financial picture" },
+          { "number": "65%", "label": "of adults feel financial anxiety" },
+          { "number": "Daily", "label": "checking vs weekly trust gap" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "People do not trust finance apps.  Not with their data, not with their decisions, not with their anxiety.  The existing Canadian fintech landscape, Wealthsimple, KOHO, Neo Financial, has made significant progress on trust for investing and spending, but has not solved the problem of financial clarity for the person who does not think of themselves as financially sophisticated."
+            "text": "68% of Canadians feel anxious about their finances. The apps built for them, Wealthsimple, KOHO, Neo Financial, are excellent products. But they were built for people who already feel comfortable thinking about money. Aurora is built for the people who do not."
           },
           {
             "type": "p",
-            "text": "Why most finance apps fail at trust: too much data with no hierarchy means users do not know what to look at.  Numbers without context drive anxiety rather than action, a net worth figure means nothing without comparison.  Too many notifications create stress by constantly surfacing financial information in disruptive moments."
+            "text": "The differentiation is not a feature. It is a design stance: show less, reveal more, never alarm. No minimum AUM. No jargon. Credit treated as a daily health signal, not a buried settings page. A dashboard that feels native to a phone, not a web portal shrunk down."
           }
         ]
       },
       {
         "ep": "02",
-        "title": "Designing for Financial Anxiety",
-        "teaser": "The most common response to a finance app showing bad news is to close the app.  The design challenge: how do you show f.",
-        "readTime": "4 min",
+        "title": "Credit as Part of Daily Financial Health",
+        "teaser": "Most finance apps bury credit monitoring three levels deep. Aurora puts it on the dashboard, next to net worth, where it belongs.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "The most common response to a finance app showing bad news is to close the app.  The design challenge: how do you show financial reality without triggering the avoidance response that makes the reality worse?"
+            "text": "Credit health and financial health are the same thing. A credit score that drops quietly for three months while you are not looking is a financial problem. Most apps treat it as a separate product, buried in a settings menu you open once a year. Aurora treats it as a daily signal."
           },
           {
             "type": "p",
-            "text": "Progressive disclosure was the primary mechanism.  Aurora shows a total balance on the home screen, one number.  Not a breakdown, not a comparison, not a trend."
+            "text": "The dashboard has four swipeable screens: Overview, Accounts, Credit, and Activity. Horizontal scroll, dot indicators, each screen independently scrollable. Credit sits between accounts and activity because that is where it belongs in your financial picture, not in a submenu."
           }
         ]
       },
       {
         "ep": "03",
-        "title": "Data Visualisation for Non-Experts",
-        "teaser": "Financial charts are designed by people who understand finance, for people who do not.  The result is usually a chart ty.",
-        "readTime": "4 min",
+        "title": "Progressive Disclosure Architecture",
+        "teaser": "When a finance app shows bad news, the most common response is to close it. Show one number first. Everything else only when you reach for it.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "Financial charts are designed by people who understand finance, for people who do not.  The result is usually a chart type optimised for analytical insight, bar charts, pie charts, scatter plots, applied to audiences who need narrative insight.  The chart answers the question what happened but not the question so what."
+            "text": "The home screen shows one number: your total balance. Not a breakdown, not a trend, not a comparison to last month. If it looks right, there is nothing to do. If something feels off, one tap opens the detail. The decision to dig is yours, not the app's."
           },
           {
             "type": "p",
-            "text": "Four chart types were tested and rejected for the primary dashboard.  Bar charts showing monthly spending by category were visually clear but prompted no action, users looked at them and had no idea what to do next.  Pie charts showing spending breakdown felt like a report, not a tool."
+            "text": "This is not a limitation. It is the whole point. Data exists behind every surface. It only surfaces when the user reaches for it. 36 custom components, 13 modal flows, and 15 pages are all structured around that one principle: calm by default, detailed on demand."
           }
         ]
       },
       {
         "ep": "04",
-        "title": "Onboarding for Sensitive Data",
-        "teaser": "Asking someone to connect their bank account is a moment of profound trust.  The onboarding flow either honours that tru.",
-        "readTime": "4 min",
+        "title": "Where We Are Now",
+        "teaser": "Live and fully functional. No production users yet. This is still being built, and this case study is honest about that.",
+        "readTime": "2 min",
+        "impactStats": [
+          { "before": "3 apps", "after": "1", "label": "Financial picture", "delta": "unified" },
+          { "before": "daily anxiety", "after": "weekly trust", "label": "Engagement pattern", "delta": "shift" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Asking someone to connect their bank account is a moment of profound trust.  The onboarding flow either honours that trust or squanders it.  Most fintech onboarding prioritises conversion, get the bank account connected as fast as possible."
+            "text": "Aurora is a working prototype, live at the link below. Account overview, transaction history, budget tracking, investment holdings, credit monitoring, goal setting. Fifteen pages, fully responsive across mobile and desktop. It functions."
           },
           {
             "type": "p",
-            "text": "Three onboarding principles: explain before asking.  Every permission request was preceded by a plain-language explanation of what Aurora would access, what it would not access, and how the data would be used.  Never use jargon, bank-level encryption was described as what it means for the user, not as a technical specification."
-          }
-        ]
-      },
-      {
-        "ep": "05",
-        "title": "Engagement and Outcomes",
-        "teaser": "Aurora was built with 36 custom components, 13 modal components for discrete financial actions, and a centralised state.",
-        "readTime": "4 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "Aurora was built with 36 custom components, 13 modal components for discrete financial actions, and a centralised state management system via React Context covering accounts, linked cards, transactions, budgets, goals, holdings, dividends, watchlist, credit score, notifications, and settings.  15 pages, fully responsive across mobile and desktop."
-          },
-          {
-            "type": "p",
-            "text": "The swipeable dashboard was the defining UX decision: four horizontally swipeable screens, Overview, Accounts, Credit, and Activity, with dot indicators.  This created a native mobile feel without nested tabs, and allowed each screen to be independently scrollable without overwhelming the primary navigation structure.  Credit monitoring became part of the daily dashboard flow rather than a buried menu item, because credit health is not separate from financial health, it is part of it."
+            "text": "There are no production users or impact metrics yet. That is the honest state of where this is. The live demo reflects current design and engineering. This case study covers the decisions and the rationale behind them."
           }
         ]
       }
@@ -2539,7 +2612,7 @@ const projects = [
     "route": "/autonomous",
     "status": "placeholder",
     "liveUrl": null,
-    "description": "Designing trust into motion, passenger and fleet interfaces for autonomous cabs and ferries that make driverless transit feel safe, readable, and human.",
+    "description": "A speculative design project for a near-future that is actively arriving. Passenger and fleet interfaces for autonomous transit that build trust through transparency, not reassurance.",
     "contextStats": [
       {
         "number": "0",
@@ -2760,7 +2833,7 @@ const projects = [
       }
     ],
     "reflection": "Trust in autonomous systems is not built through reassurance, it's built through transparency. Every design decision in this project was about showing passengers and operators exactly what the system was doing, and why.",
-    "ia": "SITUATION\nAutonomous vehicles entering public transit.\nPassengers do not trust them. Fleet managers lack the right decision interface.\nThe interface is the only trust signal when there is no driver.\n\nUSERS\nPrimary: Passengers — boarding a driverless vehicle for the first time\nSecondary: Fleet operators — managing 50 or more vehicles simultaneously\nTertiary: Mobility-impaired users — autonomous transit must exceed human-operated standards\n\nPROBLEM\nA human driver provides dozens of implicit trust signals.\nRemove the driver and all of them disappear.\nThe interface has 30 seconds when a passenger boards to replace them all.\n\nCONSTRAINTS\nNo driver to exercise human judgment on ambiguous situations\nInterface must work across passenger ages and technical literacy levels\nP1 alerts require immediate human decision — interface cannot bury them\nAccessibility must exceed human-operated transit standards, not match them\n\nPROCESS\nThree trust-building moments identified — boarding, in-transit, edge cases\nAlert triage system designed around P1/P2/P3 priority levels\nEdge case library — GPS loss, sleeping passenger, unexpected stop, route block\nAccessibility features designed for hardest user first principle\n\nKEY DECISIONS\nTransparency over reassurance — show what the vehicle is doing, not just that it is safe\nSingle-screen principle — every critical decision visible without scrolling\nHuman voice not tone for emergency communications\nOne-tap assistance connecting to remote operator within 30 seconds\nDesign for the hardest user first — every accessibility feature improves the experience for all\n\nTHE PRODUCT\nPassenger in-vehicle interface — real-time route, vehicle decisions, next stop\nFleet operations dashboard — fleet map, P1/P2/P3 alerts, 4-hour demand forecast\nBoarding flow — safety signal in first 30 seconds\nEdge case communication system — calm, directive, with clear next steps\nFull accessibility suite — voice interface, large text, automated ramp, multilingual\n\nOUTCOME\nTrust established through transparency not reassurance\nP1 alerts visible without scrolling on primary dashboard view\nFull accessibility compliance — voice, large text, boarding assistance, multilingual\nEdge cases designed with three-question framework: what to know, what to do, what happens next",
+    "ia": "SITUATION\nAutonomous vehicles entering public transit.\nPassengers do not trust them. Fleet managers lack the right decision interface.\nThe interface is the only trust signal when there is no driver.\n\nUSERS\nPrimary: Passengers, boarding a driverless vehicle for the first time\nSecondary: Fleet operators, managing 50 or more vehicles simultaneously\nTertiary: Mobility-impaired users, autonomous transit must exceed human-operated standards\n\nPROBLEM\nA human driver provides dozens of implicit trust signals every minute: eye contact in the mirror, a verbal reassurance, a hand gesture before a lane change.\nRemove the driver and every one of those signals disappears simultaneously, the moment a passenger steps in.\nPassengers boarding for the first time have no framework for deciding whether the vehicle is behaving correctly. A smooth ride looks identical to a vehicle with a silent sensor failure.\nFor fleet operators, the challenge was different but equally unresolved: 50 or more vehicles on a dashboard designed for human-operated transit, where every alert looks like every other alert.\nGenuine emergencies were indistinguishable from routine anomalies until it was too late to respond differently.\nThe design problem was not whether autonomous transit could be safe. It was whether it could be perceived as safe, without a human presence to make it legible.\n\nCONSTRAINTS\nNo driver to exercise human judgment on ambiguous situations\nInterface must work across passenger ages and technical literacy levels\nP1 alerts require immediate human decision, interface cannot bury them\nAccessibility must exceed human-operated transit standards, not match them\n\nPROCESS\nThree trust-building moments identified, boarding, in-transit, edge cases\nAlert triage system designed around P1/P2/P3 priority levels\nEdge case library, GPS loss, sleeping passenger, unexpected stop, route block\nAccessibility features designed for hardest user first principle\n\nKEY DECISIONS\nTransparency over reassurance, show what the vehicle is doing, not just that it is safe\nSingle-screen principle, every critical decision visible without scrolling\nHuman voice not tone for emergency communications\nOne-tap assistance connecting to remote operator within 30 seconds\nDesign for the hardest user first, every accessibility feature improves the experience for all\n\nTHE PRODUCT\nPassenger in-vehicle interface, real-time route, vehicle decisions, next stop\nFleet operations dashboard, fleet map, P1/P2/P3 alerts, 4-hour demand forecast\nBoarding flow, safety signal in first 30 seconds\nEdge case communication system, calm, directive, with clear next steps\nFull accessibility suite, voice interface, large text, automated ramp, multilingual\n\nOUTCOME\nTrust established through transparency not reassurance\nP1 alerts visible without scrolling on primary dashboard view\nFull accessibility compliance, voice, large text, boarding assistance, multilingual\nEdge cases designed with three-question framework: what to know, what to do, what happens next",
     "heroColor": "#1a1a2e",
     "heroTagline": "30 seconds to build trust in a driverless vehicle",
     "heroCategory": "Mobility · Transit",
@@ -2785,81 +2858,74 @@ const projects = [
     "episodes": [
       {
         "ep": "01",
-        "title": "Designing for Trustless Environments",
-        "teaser": "The interface is the only thing standing between fear and confidence in autonomous transit.  A human driver provides doz.",
-        "readTime": "4 min",
+        "title": "A Near-Future That Is Already Arriving",
+        "teaser": "Waymo is operating in San Francisco today. The question is no longer if driverless transit exists. It is what the experience should feel like.",
+        "readTime": "3 min",
+        "stats": [
+          { "number": "30 sec", "label": "window to build passenger trust" },
+          { "number": "50+", "label": "vehicles operators manage simultaneously" },
+          { "number": "0", "label": "human driver to explain the system" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "The interface is the only thing standing between fear and confidence in autonomous transit.  A human driver provides dozens of implicit trust signals, eye contact, a nod, the sound of the engine responding to acceleration.  Remove the driver and all of those signals disappear."
+            "text": "Waymo operates commercially in San Francisco. Nuro runs last-mile delivery in Houston. BYD autonomous buses are piloting across Southeast Asia. This is not a speculative scenario set decades out. It is something happening now, and the passenger experience design has not caught up."
           },
           {
             "type": "p",
-            "text": "Three trust-building moments defined the passenger experience design.  Boarding: is this safe?  The first 30 seconds when a passenger enters an autonomous vehicle for the first time are the highest-stakes moment in the entire journey."
+            "text": "This project is a design exploration grounded in current trajectory. The brief: build passenger and fleet interfaces that make driverless transit feel safe, readable, and human. The constraint: do not reassure people with words. Build trust through transparency."
           }
         ]
       },
       {
         "ep": "02",
-        "title": "Safety Communication Design",
-        "teaser": "Safety is not a feature you can add to an interface.  It is a feeling created through every micro-decision, colour, lan.",
-        "readTime": "4 min",
+        "title": "The 30-Second Trust Window",
+        "teaser": "A human driver gives you eye contact and a nod. Remove the driver and all of those signals disappear at once. You have 30 seconds.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "Safety is not a feature you can add to an interface.  It is a feeling created through every micro-decision, colour, language, timing, and crucially, what you choose not to show.  Showing too much information about the vehicle's sensor readings and decision algorithms would create anxiety, not confidence."
+            "text": "The first time a passenger boards a driverless vehicle, they have no reference point. A human driver provides dozens of silent trust signals: eye contact, a nod, the engine responding to acceleration. Remove the driver and every one of those signals goes with it. The interface is what remains. It has 30 seconds to do what a person used to do naturally."
           },
           {
             "type": "p",
-            "text": "Real-time route display shows passengers the planned path, upcoming turns, next stops, and estimated arrival time.  This is not navigation for the passenger, they are not driving.  It is decision transparency for the vehicle, shared with the passenger."
+            "text": "Safety is a feeling, not a label. It is built through colour, language, timing, and the things you deliberately choose not to show. The route display is not navigation for the passenger. It is the vehicle sharing its decisions in plain language, which turns out to be all most people need."
           }
         ]
       },
       {
         "ep": "03",
-        "title": "The Operations Dashboard",
-        "teaser": "Fleet managers do not need more data.  They need the right data, in the right sequence, at the moment a decision must be.",
-        "readTime": "4 min",
+        "title": "Fleet Operations at Scale",
+        "teaser": "Managing 50 autonomous vehicles simultaneously is not a data problem. It is a triage problem. The design work is in knowing what not to show.",
+        "readTime": "3 min",
         "content": [
           {
             "type": "p",
-            "text": "Fleet managers do not need more data.  They need the right data, in the right sequence, at the moment a decision must be made.  The operations dashboard was designed for people managing 50 or more autonomous vehicles simultaneously, each generating continuous sensor data, position updates, and passenger status information."
+            "text": "A fleet manager overseeing 50 vehicles does not need more data. Every vehicle is generating continuous sensor readings, position updates, and passenger status. The problem is not information. It is knowing what requires action right now versus what can wait. Three alert levels, one decision at a time."
           },
           {
             "type": "p",
-            "text": "The alert triage system organised everything around three priority levels.  P1 alerts require immediate human decision: vehicle stopped unexpectedly, passenger requesting assistance, route blockage requiring manual resolution.  P2 alerts require action within 5 minutes: vehicle health warning, capacity issue at a stop, unusual route deviation."
+            "text": "The edge cases shaped the design more than the normal flows. GPS loss in a tunnel: communicate that the vehicle is operating normally on a cached route, without alarming. Passenger asleep past their stop: surface it gently, never abruptly. Unexpected stop: make it clear the vehicle is making a safe choice, not failing. Each one is a communication problem with a design answer."
           }
         ]
       },
       {
         "ep": "04",
-        "title": "Edge Case Handling in UI",
-        "teaser": "Designing for what works is design.  Designing for what breaks is product maturity.  Autonomous transit generates edge c.",
-        "readTime": "4 min",
+        "title": "Accessibility First, Always",
+        "teaser": "Taking the driver out of the vehicle creates new obligations. Everything a human driver did quietly now has to be designed explicitly.",
+        "readTime": "2 min",
+        "impactStats": [
+          { "before": "low", "after": "high", "label": "Passenger trust score", "delta": "+target" },
+          { "before": "confusion", "after": "clarity", "label": "Vehicle intent legibility", "delta": "designed" }
+        ],
         "content": [
           {
             "type": "p",
-            "text": "Designing for what works is design.  Designing for what breaks is product maturity.  Autonomous transit generates edge cases that human-operated transit never encounters because the vehicle cannot exercise human judgment to resolve ambiguous situations."
+            "text": "When the driver is gone, so is the person who noticed you needed help boarding. The person who waited an extra moment when you were moving slowly. The person who answered when you asked a question. The interface and the vehicle design have to carry all of that. Autonomous transit should be more accessible than human-operated transit, not less."
           },
           {
             "type": "p",
-            "text": "Four edge cases that shaped the design: GPS signal loss in underground sections, the interface needed to communicate that the vehicle was still operating correctly on a cached route without causing passenger alarm.  A passenger falling asleep past their stop, the system detects inactivity and gently surfaces an alert without waking the passenger abruptly.  Unexpected vehicle stopping, the communication to the passenger had to convey that the stop was intentional and brief, not a malfunction."
-          }
-        ]
-      },
-      {
-        "ep": "05",
-        "title": "Public Transit Accessibility",
-        "teaser": "Autonomous transit must be more accessible than human-operated transit, not less.  The removal of a driver creates new a.",
-        "readTime": "4 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "Autonomous transit must be more accessible than human-operated transit, not less.  The removal of a driver creates new accessibility challenges, no one to assist a passenger who needs help boarding, no human to notice that a passenger is confused or distressed.  The interface and the physical vehicle design have to carry that responsibility."
-          },
-          {
-            "type": "p",
-            "text": "Specific accessibility features designed and specified: voice interface for visually impaired passengers providing full app functionality through voice commands and audio feedback.  Large-format in-vehicle displays designed for cognitive accessibility, high contrast, large text, simple iconography.  Boarding assistance flows with automated ramp deployment triggered through the app, and extended boarding time available on request without needing to explain the reason."
+            "text": "This is a conceptual project grounded in real research: transit trust studies, autonomous vehicle anxiety data, AODA and ADA accessibility requirements. No production deployment. The designs are a proposal for what the experience should become."
           }
         ]
       }

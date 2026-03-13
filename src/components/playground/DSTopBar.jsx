@@ -41,6 +41,10 @@ export default function DSTopBar({
   onConfigToggle,
   onExport,
   auditErrorCount,
+  namedThemes,
+  activeThemeId,
+  onThemeChange,
+  onSaveTheme,
 }) {
   const activeSection = getActiveSection(selectedPage);
   const [hoveredTab, setHoveredTab] = useState(null);
@@ -158,6 +162,48 @@ export default function DSTopBar({
 
       {/* Right: controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+
+        {/* Theme switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <div style={{ position: 'relative' }}>
+            <select
+              value={activeThemeId ?? ''}
+              onChange={e => onThemeChange?.(e.target.value || null)}
+              title="Switch theme"
+              style={{
+                fontSize: 11, fontFamily: FONT, color: activeThemeId ? '#c8602a' : '#1a1814',
+                background: activeThemeId ? 'rgba(200,96,42,0.07)' : 'rgba(0,0,0,0.04)',
+                border: `1px solid ${activeThemeId ? 'rgba(200,96,42,0.3)' : 'rgba(0,0,0,0.08)'}`,
+                borderRadius: 6, padding: '4px 22px 4px 8px',
+                appearance: 'none', cursor: 'pointer',
+                minWidth: 72, fontWeight: activeThemeId ? 600 : 400,
+                transition: 'all 0.15s',
+              }}>
+              <option value="">Working</option>
+              {(namedThemes ?? []).map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', fontSize: 8, color: 'rgba(0,0,0,0.4)', pointerEvents: 'none' }}>▾</span>
+          </div>
+          <button
+            onClick={() => {
+              const name = window.prompt('Save current tokens as a named theme:', `Theme ${((namedThemes ?? []).length) + 1}`);
+              if (name?.trim()) onSaveTheme?.(name.trim());
+            }}
+            title="Save current as named theme"
+            style={{
+              width: 24, height: 24, borderRadius: 5,
+              border: '1px solid rgba(0,0,0,0.08)',
+              background: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)',
+              fontSize: 13, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1, transition: 'all 0.12s', flexShrink: 0,
+            }}>+</button>
+        </div>
+
+        {/* Divider */}
+        <div style={{ width: 1, height: 16, background: 'rgba(0,0,0,0.08)' }} />
 
         {/* Mode toggle — pill style */}
         <button onClick={onModeToggle}
