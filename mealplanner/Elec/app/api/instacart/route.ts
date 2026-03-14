@@ -28,16 +28,19 @@ export async function POST(request: Request) {
   const apiKey = rawKey.trim().replace(/^["']|["']$/g, "")
 
   if (!apiKey) {
-    // No API key — fall back to an Instacart search URL so the button still works
+    // No API key — build a regional Instacart search URL based on the user's timezone
     try {
-      const { items } = await request.json()
+      const { items, timezone } = await request.json()
       const q = Array.isArray(items)
         ? items.slice(0, 6).map((i: { name: string }) => i.name).join(" ")
         : ""
-      // Instacart's working search URL — takes user to their store with search pre-filled
-      const url = q
-        ? `https://www.instacart.com/store/s?k=${encodeURIComponent(q)}`
-        : "https://www.instacart.com"
+
+      // Detect country from browser timezone sent by the client
+      const tz = typeof timezone === "string" ? timezone : ""
+      const isCanada = /^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Regina|Halifax|St_Johns|Whitehorse|Yellowknife|Iqaluit|Moncton|Glace_Bay|Goose_Bay|Blanc-Sablon|Creston|Dawson|Dawson_Creek|Fort_Nelson|Cambridge_Bay|Rankin_Inlet|Resolute|Pangnirtung)$/i.test(tz)
+
+      const base = isCanada ? "https://www.instacart.com/canada" : "https://www.instacart.com"
+      const url = q ? `${base}/store/s?k=${encodeURIComponent(q)}` : base
       return NextResponse.json({ url })
     } catch {
       return NextResponse.json({ url: "https://www.instacart.com" })

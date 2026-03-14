@@ -130,10 +130,11 @@ export function GroceryList({ mealPlan, pantryItems = [], weeklyBudget = 0 }: Gr
       const items = groceryList.flatMap((g) =>
         g.items.filter((i) => !checkedSet.has(i.id)).map((i) => ({ name: i.name, amount: i.amount, unit: i.unit }))
       )
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
       const res = await fetch("/api/instacart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, timezone }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to create list")
