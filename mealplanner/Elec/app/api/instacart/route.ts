@@ -39,8 +39,9 @@ export async function POST(request: Request) {
       const tz = typeof timezone === "string" ? timezone : ""
       const isCanada = /^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Regina|Halifax|St_Johns|Whitehorse|Yellowknife|Iqaluit|Moncton|Glace_Bay|Goose_Bay|Blanc-Sablon|Creston|Dawson|Dawson_Creek|Fort_Nelson|Cambridge_Bay|Rankin_Inlet|Resolute|Pangnirtung)$/i.test(tz)
 
-      const base = isCanada ? "https://www.instacart.com/canada" : "https://www.instacart.com"
-      const url = q ? `${base}/store/s?k=${encodeURIComponent(q)}` : base
+      // Use regional homepage — the /store/s search path only works in the US
+      // With a real API key this is bypassed and a proper cart link is returned instead
+      const url = isCanada ? "https://www.instacart.com/canada" : "https://www.instacart.com"
       return NextResponse.json({ url })
     } catch {
       return NextResponse.json({ url: "https://www.instacart.com" })
