@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { items } = await request.json()
+    const { items, retailerId } = await request.json()
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 })
@@ -61,11 +61,12 @@ export async function POST(request: Request) {
       unit: normalizeUnit(item.unit),
     }))
 
-    const body = {
+    const body: Record<string, unknown> = {
       title: "My Meal Plan Grocery List",
       link_type: "shopping_list",
       line_items: lineItems,
     }
+    if (retailerId) body.retailer_key = String(retailerId)
 
     const response = await fetch("https://connect.instacart.com/idp/v1/products/products_link", {
       method: "POST",

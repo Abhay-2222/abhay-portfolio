@@ -25,8 +25,8 @@ export function InitialSplash({ onComplete }: InitialSplashProps) {
         transition: "opacity 500ms ease-in-out",
       }}
     >
-      {/* Background image grid — subtle, darkened */}
-      <div className="absolute inset-0 grid grid-cols-3 grid-rows-4 gap-0 opacity-20">
+      {/* Background image grid */}
+      <div className="absolute inset-0 grid grid-cols-3 grid-rows-4 gap-0 opacity-25">
         {[
           "/grilled-chicken-salad.png",
           "/avocado-toast.png",
@@ -56,35 +56,55 @@ export function InitialSplash({ onComplete }: InitialSplashProps) {
         ))}
       </div>
 
-      {/* Gradient overlay — heavy at center so wordmark pops */}
+      {/* Dark radial overlay — heavy at center */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(44,37,30,0.92) 0%, rgba(44,37,30,0.75) 50%, rgba(44,37,30,0.5) 100%)",
+            "radial-gradient(ellipse 80% 65% at 50% 50%, rgba(22,18,14,0.96) 0%, rgba(22,18,14,0.82) 45%, rgba(22,18,14,0.55) 100%)",
         }}
       />
 
       {/* Wordmark */}
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center gap-4"
+        className="absolute inset-0 flex flex-col items-center justify-center gap-3"
         style={{
           opacity: phase === "in" ? 0 : 1,
-          transform: phase === "in" ? "translateY(10px)" : "translateY(0)",
-          transition: "opacity 600ms ease-out, transform 600ms ease-out",
+          transform: phase === "in" ? "translateY(12px)" : "translateY(0)",
+          transition: "opacity 700ms ease-out, transform 700ms ease-out",
         }}
       >
+        {/* Leaf icon */}
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"
+          style={{
+            opacity: phase === "in" ? 0 : 0.7,
+            transition: "opacity 700ms ease-out 200ms",
+          }}
+        >
+          <path d="M14 4C14 4 6 8 6 16C6 20.4 9.6 24 14 24C18.4 24 22 20.4 22 16C22 8 14 4 14 4Z"
+            fill="#7aaa7f" opacity="0.9"/>
+          <path d="M14 24V12" stroke="#fdfaf6" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+        </svg>
+
         <h1
           className="font-serif italic"
-          style={{ color: "var(--cream-50)" }}
-          style={{ fontSize: "clamp(40px, 10vw, 56px)", letterSpacing: "-0.02em", lineHeight: 1 }}
+          style={{
+            fontSize: "clamp(40px, 10vw, 56px)",
+            letterSpacing: "-0.02em",
+            lineHeight: 1,
+            color: "#fdfaf6",
+            textShadow: "0 2px 24px rgba(0,0,0,0.4)",
+          }}
         >
           MealPlan
         </h1>
         <p
           className="font-mono uppercase"
-          style={{ color: "var(--cream-50)", opacity: 0.35 }}
-          style={{ fontSize: "9px", letterSpacing: "0.22em" }}
+          style={{
+            fontSize: 9,
+            letterSpacing: "0.24em",
+            color: "rgba(253,250,246,0.55)",
+          }}
         >
           Plan smart · eat well
         </p>

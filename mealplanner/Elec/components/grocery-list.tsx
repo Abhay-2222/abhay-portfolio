@@ -1,12 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import type { MealPlan, Ingredient, PantryItem } from "@/lib/types"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ShoppingCart, Download, Share2, MessageCircle, Mail, ExternalLink, Loader2 } from "lucide-react"
+import { ShoppingCart, Download, Share2, MessageCircle, Mail, ExternalLink, Loader2, Store } from "lucide-react"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { calculateIngredientCost } from "@/lib/ingredient-prices"
+
+interface Retailer { id: string; name: string; logo: string | null }
 
 interface GroceryListProps {
   mealPlan: MealPlan
@@ -36,6 +38,28 @@ export function GroceryList({ mealPlan, pantryItems = [], weeklyBudget = 0 }: Gr
   const checkedSet = useMemo(() => new Set(checkedItems), [checkedItems])
   const [instacartLoading, setInstacartLoading] = useState(false)
   const [instacartError, setInstacartError] = useState<string | null>(null)
+  const [retailers, setRetailers] = useState<Retailer[]>([])
+  const [selectedRetailer, setSelectedRetailer] = useState<string>("")
+  const [postalCode, setPostalCode] = useLocalStorage("postal-code", "")
+  const [editingPostal, setEditingPostal] = useState(false)
+  const [postalDraft, setPostalDraft] = useState("")
+
+  // Load nearby retailers when postal code is available
+  useEffect(() => {
+    if (!postalCode) return
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const isCanada = /^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Regina|Halifax|St_Johns|Whitehorse|Yellowknife|Iqaluit|Moncton|Glace_Bay|Goose_Bay|Blanc-Sablon|Creston|Dawson|Dawson_Creek|Fort_Nelson|Cambridge_Bay|Rankin_Inlet|Resolute|Pangnirtung)$/i.test(tz)
+    const countryCode = isCanada ? "CA" : "US"
+    fetch(`/api/instacart/retailers?postal_code=${encodeURIComponent(postalCode)}&country_code=${countryCode}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.retailers?.length) {
+          setRetailers(d.retailers)
+          if (!selectedRetailer) setSelectedRetailer(d.retailers[0].id)
+        }
+      })
+      .catch(() => {})
+  }, [postalCode])
 
   const groceryList = useMemo(() => {
     const ingredientMap = new Map<string, ConsolidatedIngredient>()
@@ -134,7 +158,7 @@ export function GroceryList({ mealPlan, pantryItems = [], weeklyBudget = 0 }: Gr
       const res = await fetch("/api/instacart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, timezone }),
+        body: JSON.stringify({ items, timezone, retailerId: selectedRetailer || undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to create list")
@@ -265,6 +289,84 @@ export function GroceryList({ mealPlan, pantryItems = [], weeklyBudget = 0 }: Gr
             {Math.round(completionPct)}%
           </span>
         </div>
+      </div>
+
+      {/* Store picker — postal code + retailer select */}
+      <div className="space-y-2">
+        {/* Postal code row */}
+        <div className="flex items-center gap-2">
+          {editingPostal ? (
+            <form
+              className="flex-1 flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (postalDraft.trim()) {
+                  setPostalCode(postalDraft.trim().toUpperCase())
+                }
+                setEditingPostal(false)
+              }}
+            >
+              <input
+                autoFocus
+                value={postalDraft}
+                onChange={(e) => setPostalDraft(e.target.value)}
+                placeholder="Postal / ZIP code"
+                className="flex-1 rounded-xl transition-colors"
+                style={{
+                  height: 36, fontSize: 13, padding: "0 12px",
+                  background: "var(--card)", border: "1.5px solid var(--sage)",
+                  color: "var(--foreground)", outline: "none",
+                  fontFamily: "var(--font-mono)",
+                }}
+              />
+              <button type="submit"
+                className="rounded-xl px-3"
+                style={{ height: 36, fontSize: 12, background: "var(--sage-d)", color: "#fff", border: "none" }}
+              >Save</button>
+              <button type="button" onClick={() => setEditingPostal(false)}
+                style={{ fontSize: 12, color: "var(--stone-500)", padding: "0 4px" }}
+              >✕</button>
+            </form>
+          ) : (
+            <button
+              onClick={() => { setPostalDraft(postalCode); setEditingPostal(true) }}
+              className="flex items-center gap-2 rounded-xl px-3 transition-all"
+              style={{
+                height: 36, fontSize: 12,
+                background: "var(--cream-100)", color: "var(--stone-600)",
+                border: "1px solid var(--cream-300)",
+              }}
+            >
+              <Store className="h-3.5 w-3.5" />
+              {postalCode ? postalCode : "Set postal code for nearby stores"}
+            </button>
+          )}
+        </div>
+
+        {/* Retailer selector */}
+        {retailers.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {retailers.slice(0, 6).map((r) => (
+              <button
+                key={r.id}
+                onClick={() => setSelectedRetailer(r.id)}
+                className="flex-shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-2 transition-all"
+                style={{
+                  fontSize: 12,
+                  border: `1.5px solid ${selectedRetailer === r.id ? "var(--sage)" : "var(--cream-300)"}`,
+                  background: selectedRetailer === r.id ? "var(--sage-l)" : "var(--card)",
+                  color: selectedRetailer === r.id ? "var(--sage-d)" : "var(--foreground)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {r.logo && (
+                  <img src={r.logo} alt="" className="h-4 w-4 object-contain rounded" aria-hidden="true" />
+                )}
+                {r.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Instacart */}

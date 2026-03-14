@@ -13,6 +13,7 @@ import { InitialSplash } from "@/components/initial-splash"
 import { AuthScreen } from "@/components/auth-screen"
 import { OnboardingSplash, type OnboardingPrefs } from "@/components/onboarding-splash"
 import { WeekHistoryView } from "@/components/week-history"
+import { InstallPrompt } from "@/components/install-prompt"
 import {
   Calendar,
   ShoppingCart,
@@ -207,6 +208,7 @@ export default function MealPlannerPage() {
 
   return (
     <div className={`min-h-screen bg-background ${highContrast ? "high-contrast" : ""}`}>
+      <InstallPrompt />
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-[var(--cream-200)]">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
