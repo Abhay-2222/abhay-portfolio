@@ -121,6 +121,11 @@ export function GroceryList({ mealPlan, pantryItems = [], weeklyBudget = 0 }: Gr
   const handleInstacart = async () => {
     setInstacartLoading(true)
     setInstacartError(null)
+
+    // Open the window synchronously (tied to the click event) so mobile browsers
+    // don't block it as a popup. We'll set its location once the URL is ready.
+    const newTab = window.open("", "_blank")
+
     try {
       const items = groceryList.flatMap((g) =>
         g.items.filter((i) => !checkedSet.has(i.id)).map((i) => ({ name: i.name, amount: i.amount, unit: i.unit }))
@@ -132,8 +137,16 @@ export function GroceryList({ mealPlan, pantryItems = [], weeklyBudget = 0 }: Gr
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to create list")
-      if (data.url) window.open(data.url, "_blank")
+      if (data.url) {
+        if (newTab) {
+          newTab.location.href = data.url
+        } else {
+          // Fallback if the tab was blocked anyway
+          window.location.href = data.url
+        }
+      }
     } catch (err) {
+      if (newTab) newTab.close()
       setInstacartError(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setInstacartLoading(false)
