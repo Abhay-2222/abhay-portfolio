@@ -10,484 +10,6 @@
 
 const projects = [
   {
-    "id": "healthcare",
-    "title": "CareSummarizer + CareLens",
-    "type": "Product Design & AI",
-    "client": "Clinical Decision Intelligence",
-    "org": "Healthcare AI · Utilization Review",
-    "sub": "Clinical Decision-Readiness Platform",
-    "timeline": "Sep 2024 – Feb 2025",
-    "team": [
-      "Solo"
-    ],
-    "platform": "React · Claude 4 Sonnet · Vercel",
-    "icon": "🏥",
-    "accentColor": "#2D6A9F",
-    "route": "/healthcare",
-    "status": "full",
-    "liveUrl": null,
-    "description": "A clinical decision intelligence platform that transforms raw EHR data into decision-ready cases, surfacing documentation gaps before denial, not after.",
-    "contextStats": [
-      {
-        "number": "75%",
-        "label": "Prep Time Saved",
-        "context": "40 min → 8–12 min"
-      },
-      {
-        "number": "40%",
-        "label": "Denial Reduction",
-        "context": "targeted below 5%"
-      },
-      {
-        "number": "$2.5M",
-        "label": "Revenue Protected",
-        "context": "per hospital annually"
-      }
-    ],
-    "users": [
-      {
-        "icon": "👩‍⚕️",
-        "title": "UR Nurses",
-        "description": "Prepare defensible prior auth cases. 70% of time spent on data archaeology across 8+ tools.",
-        "tag": "Primary, 80% of volume"
-      },
-      {
-        "icon": "👨‍⚕️",
-        "title": "Physicians",
-        "description": "Final approval on escalations. Currently re-read entire charts because prep is incomplete.",
-        "tag": "Secondary, Escalations"
-      },
-      {
-        "icon": "📊",
-        "title": "Medical Directors",
-        "description": "Ensure team consistency. Zero visibility into performance or audit trail.",
-        "tag": "Tertiary, Oversight"
-      }
-    ],
-    "problem": "UR nurses cross-reference 8 disconnected tools to prepare a single case.  Denial rates sit at 30 to 40%.",
-    "objective": "Surface documentation gaps before PA submission. Replace manual cross-referencing with AI-synthesized narratives. Give nurses explainable AI they can trust and defend.",
-    "insight": "The person who prepares the decision matters more than the person who approves it. UR nurses carry the accountability risk, yet they spend 70% of their time on data archaeology.",
-    "reflectionQuote": "Compliance is differentiation, not overhead. Every HIPAA mandate and FDA explainability requirement is a competitive barrier that protects against fast-follower competitors.",
-    "oldSystem": {
-      "name": "Current State (Manual)",
-      "traits": [
-        "8+ disconnected tools per case",
-        "Gaps discovered after submission",
-        "Black box AI, no explainability",
-        "No policy validation before submission",
-        "No audit trail for payer disputes"
-      ]
-    },
-    "newSystem": {
-      "name": "CareSummarizer + CareLens",
-      "traits": [
-        "AI-synthesized clinical narrative from EHR",
-        "Policy validation before submission",
-        "CareLens: confidence scores + reasoning traces",
-        "Hard blocks prevent submission when gaps exist",
-        "Append-only audit trail (HIPAA + ONC compliant)"
-      ]
-    },
-    "pillars": [
-      {
-        "number": "01",
-        "title": "Decision Readiness First",
-        "description": "Every feature exists to prepare a defensible case, not to optimize speed."
-      },
-      {
-        "number": "02",
-        "title": "Explainability as Governance",
-        "description": "CareLens is persistent, non-optional compliance infrastructure."
-      },
-      {
-        "number": "03",
-        "title": "Copilot, Not Autopilot",
-        "description": "AI suggests and explains. Humans review and decide. Always."
-      },
-      {
-        "number": "04",
-        "title": "Structural Prevention",
-        "description": "Hard blocks, not soft nudges. Red items prevent submission until resolved."
-      }
-    ],
-    "process": [
-      {
-        "step": "01",
-        "phase": "Discover",
-        "title": "Product Category Research",
-        "description": "Interrogated 4 structural ambiguities to define the product wedge: prior authorization preparation only."
-      },
-      {
-        "step": "02",
-        "phase": "Define",
-        "title": "User + Accountability Mapping",
-        "description": "Identified UR nurses (not physicians) as primary users via accountability risk analysis."
-      },
-      {
-        "step": "03",
-        "phase": "Design",
-        "title": "4 Iterative Versions",
-        "description": "Three rejected versions taught what the product needed to be before V04 reached current architecture."
-      },
-      {
-        "step": "04",
-        "phase": "Validate",
-        "title": "Design System Audit",
-        "description": "Structured audit: 2 P0 issues, 39 non-compliant files, 20% token adoption, remediated with CLAUDE.md enforcement."
-      }
-    ],
-    "challenges": [
-      {
-        "category": "Regulatory",
-        "items": [
-          "FDA explainability mandates",
-          "HIPAA append-only audit trail",
-          "WCAG 2.2 accessibility in clinical context"
-        ]
-      },
-      {
-        "category": "AI Trust",
-        "items": [
-          "Copilot vs autopilot model",
-          "Confidence scoring that nurses can defend",
-          "Reasoning traces at every AI output"
-        ]
-      },
-      {
-        "category": "Design System",
-        "items": [
-          "3 competing color systems",
-          "39 files bypassing tokens",
-          "AI generating styling errors silently"
-        ]
-      }
-    ],
-    "results": [
-      {
-        "label": "Case Prep Time",
-        "before": "40 min",
-        "after": "8–12 min",
-        "improvement": "75% faster",
-        "icon": "⏱️"
-      },
-      {
-        "label": "Denial Rate",
-        "before": "30–40%",
-        "after": "<5%",
-        "improvement": "40% reduction",
-        "icon": "📉"
-      },
-      {
-        "label": "Nurse Throughput",
-        "before": "8–12 cases",
-        "after": "20–25 cases",
-        "improvement": "2× increase",
-        "icon": "📈"
-      }
-    ],
-    "problemBullets": [
-      {
-        "keyword": "Fragmented",
-        "text": "8+ tools to prepare a single case"
-      },
-      {
-        "keyword": "Too late",
-        "text": "Gaps discovered after denial, not before submission"
-      }
-    ],
-    "objectiveBullets": [
-      {
-        "keyword": "Surface gaps",
-        "text": "Before PA submission, when they can still be fixed"
-      },
-      {
-        "keyword": "Explainable AI",
-        "text": "Confidence scores + reasoning traces nurses can defend"
-      }
-    ],
-    "processSteps": [
-      {
-        "icon": "🔍",
-        "phase": "Discover",
-        "label": "Product Ambiguity Resolution",
-        "hint": "4 structural ambiguities · product wedge definition",
-        "pills": null
-      },
-      {
-        "icon": "📐",
-        "phase": "Define",
-        "label": "User Accountability Mapping",
-        "hint": "UR nurse as primary · accountability risk signal",
-        "pills": null
-      },
-      {
-        "icon": "✏️",
-        "phase": "Design",
-        "label": "4 Iterative Versions",
-        "hint": "V01–V03 rejected · V04 current architecture",
-        "pills": null
-      },
-      {
-        "icon": "✅",
-        "phase": "Validate",
-        "label": "Design System Audit",
-        "hint": "CLAUDE.md enforcement · token remediation",
-        "pills": null
-      }
-    ],
-    "challengePairs": [
-      {
-        "challenge": "FDA mandates explainability for clinical AI",
-        "response": "CareLens: reasoning traces + citations at every output"
-      },
-      {
-        "challenge": "3 competing color systems in codebase",
-        "response": "Unified token file + CLAUDE.md AI enforcement"
-      },
-      {
-        "challenge": "Physicians assumed to be primary user",
-        "response": "Reoriented to UR nurses via accountability risk analysis"
-      },
-      {
-        "challenge": "Black box AI creates legal liability",
-        "response": "Copilot model: AI suggests, humans always decide"
-      },
-      {
-        "challenge": "Soft warnings get ignored by busy nurses",
-        "response": "Hard blocks prevent submission until gaps resolved"
-      }
-    ],
-    "reflection": "This project taught me that ambiguity is not a problem to avoid, it is a signal to refine product definition.",
-    "ia": "SITUATION\nHealthcare utilization review runs on 8 disconnected tools.\nUR nurses spend 40 minutes per case on data archaeology.\nDenial rates sit at 30 to 40%. Gaps found after submission, not before.\n\nUSERS\nPrimary: UR Nurse, 80% of volume, full accountability risk\nSecondary: Physician, escalations only, under 20% of cases\nTertiary: Medical Director, audit and oversight, under 5%\n\nPROBLEM\nThe toolchain was built around physicians, the least frequent user in the workflow.\nUR nurses handle 80% of cases and carry the full accountability risk, but had the worst tools in the system.\nEvery morning started the same way: 8 browser tabs, patient charts scattered across disconnected portals, 40 minutes of data archaeology per case.\nDenials were discovered after submission, at the point where appeals were expensive and time-consuming to fight.\nThe information needed to prevent every denial already existed somewhere in the system.\nNobody had designed a way to surface it before it was too late.\n\nCONSTRAINTS\nRegulated clinical environment, AI cannot make autonomous decisions\nEvery recommendation must be traceable and citable\nHIPAA compliance non-negotiable\nStakeholder trust in AI was low from day one\n\nPROCESS\n4 structural ambiguities resolved before wireframing\nPrimary user redefined from physician to UR nurse in week 4\n6 design mistakes documented across V1 and V2\n4 full iterations before V4 was accepted\n\nKEY DECISIONS\nWork Queue over Home screen, action-first product stance\nCareLens as mandatory sidebar, explainability is infrastructure\nAudit trail on every AI output, defensibility over convenience\nProactive gap resolution, surface problems before submission not after\n\nTHE PRODUCT\n7-stage workflow: Work Queue, Case Summary, Policy Validation,\nCareLens Sidebar, Gap Resolution, Physician Approval, Submission\nRole-based routing for nurse, physician, and director\nEvery AI output citable, every decision logged\n\nOUTCOME\n75% reduction in case prep time\n40% target denial rate reduction\n108% throughput increase per nurse\n$2.5M annual revenue protection per hospital",
-    "heroColor": "#1a3a5c",
-    "heroTagline": "Reducing denial rates from 40% to under 5%",
-    "heroCategory": "AI · Healthcare",
-    "heroYear": "2024",
-    "previewMedia": "/projects/healthcare/Healthcare Dashboard_1.png",
-    "previewImageTop": 230,
-    "heroImage": "/projects/healthcare/Dashboard-1.png",
-    "hero": {
-      "gradient": "linear-gradient(160deg, #EFF6FF 0%, #DBEAFE 100%)",
-      "light": true,
-      "badge": "Case Study · Healthcare AI",
-      "tags": [
-        "Healthcare AI",
-        "2024",
-        "Claude Code + Figma + Vercel"
-      ],
-      "synopsis": "A clinical decision intelligence platform that transforms raw EHR data into decision-ready cases, surfacing documentation gaps before denial, not after.",
-      "metadata": [
-        "Sep 2024 – Feb 2025",
-        "Product Designer & Engineer",
-        "Solo"
-      ],
-      "videoUrl": "/projects/healthcare/Caresummariser%20Overview.mp4"
-    },
-    "episodes": [
-      {
-        "ep": "01",
-        "title": "The Problem",
-        "teaser": "UR nurses spend 40 or more minutes per case doing data archaeology across 8 or more tools.  The data exists.  The decisi.",
-        "readTime": "4 min",
-        "diagramKey": "problem",
-        "stats": [
-          { "number": "40 min", "label": "per case, data archaeology" },
-          { "number": "8+", "label": "tools open simultaneously" },
-          { "number": "30–40%", "label": "industry denial rate" }
-        ],
-        "content": [
-          {
-            "type": "p",
-            "text": "UR nurses spend 40 or more minutes per case doing data archaeology across 8 or more tools.  The data exists.  The decisions do not."
-          },
-          {
-            "type": "p",
-            "text": "Three user roles exist in the utilization review workflow.  UR Nurses are the primary user, handling 80% of volume and carrying full accountability risk.  Physicians handle escalations only, under 20% of cases."
-          }
-        ]
-      },
-      {
-        "ep": "02",
-        "title": "The Ambiguity",
-        "teaser": "Four structural ambiguities had to be resolved before a single wireframe was drawn.  Each one required a different kind.",
-        "readTime": "4 min",
-        "diagramKey": "ambiguity",
-        "content": [
-          {
-            "type": "p",
-            "text": "Four structural ambiguities had to be resolved before a single wireframe was drawn.  Each one required a different kind of thinking."
-          },
-          {
-            "type": "p",
-            "text": "First: who is the primary user?  The initial assumption was physician-led.  Research revealed UR nurses do 80% of the work and carry full accountability."
-          }
-        ]
-      },
-      {
-        "ep": "03",
-        "title": "Design System Audit",
-        "teaser": "We built fast. Then we looked at what we actually built. Three competing color systems, 39 files off-token, and an AI quietly making it worse.",
-        "readTime": "4 min",
-        "auditData": {
-          "stats": [
-            { "number": "3", "label": "Competing color systems" },
-            { "number": "39", "label": "Files bypassing token system" },
-            { "number": "20%", "label": "Token adoption at audit" }
-          ],
-          "codeSnippet": "# CLAUDE.md — Token Enforcement\nALWAYS use CSS variables from tokens.css\nNEVER hardcode hex colors — use --color-[semantic-name]\nComponents: background → var(--surface-primary), text → var(--text-primary)"
-        },
-        "content": [
-          {
-            "type": "p",
-            "text": "When you move fast, the codebase tells the story of every shortcut taken. We audited what we had built and found three competing color systems that had drifted in independently. 39 files were bypassing the token system entirely. Total token adoption: 20%."
-          },
-          {
-            "type": "p",
-            "text": "The more interesting problem was invisible. AI-assisted development was generating new components that looked fine visually but quietly broke the token contract every time. There was no enforcement layer, so every new feature was a coin flip. We needed guardrails, not just cleanup."
-          },
-          {
-            "type": "p",
-            "text": "We built a custom component library with Claude Code and wrote a CLAUDE.md that enforces token usage at the generation layer. Now the AI produces compliant code by default. The design system is still evolving as the product grows, but the floor is solid."
-          }
-        ]
-      },
-      {
-        "ep": "04",
-        "title": "Design Evolution",
-        "teaser": "Four iterations.  Three rejections.  Here is why each version failed and what unlocked the final direction. V1 was physi.",
-        "readTime": "4 min",
-        "diagramKey": "evolution",
-        "content": [
-          {
-            "type": "p",
-            "text": "Four iterations.  Three rejections.  Here is why each version failed and what unlocked the final direction."
-          },
-          {
-            "type": "p",
-            "text": "V1 was physician-centric, organized around approval stages.  Rejected because it was designed for the wrong user.  UR nurses could not find their work queue."
-          }
-        ]
-      },
-      {
-        "ep": "06",
-        "title": "The Product",
-        "teaser": "A nurse should never have to wonder what to do next. Seven stages, each with one job, each handing off to the next.",
-        "readTime": "4 min",
-        "productSteps": [
-          { "step": "01", "name": "Work Queue", "description": "Cases ranked by denial risk and time sensitivity" },
-          { "step": "02", "name": "CareSummarizer", "description": "Clinical narrative generated from raw EHR data" },
-          { "step": "03", "name": "CareLens", "description": "Confidence scores and reasoning at every AI output" },
-          { "step": "04", "name": "Policy Validation", "description": "Documentation gaps flagged before submission" },
-          { "step": "05", "name": "Gap Resolution", "description": "Nurse resolves gaps inline, not after denial" },
-          { "step": "06", "name": "Physician Approval", "description": "Escalation routing for under 20% of cases" },
-          { "step": "07", "name": "Submission", "description": "Clean, compliant, complete — first time" }
-        ],
-        "content": [
-          {
-            "type": "p",
-            "text": "The product is built around one principle: a nurse should never have to wonder what to do next. The work queue tells her which cases need attention and why, ranked by denial risk and time sensitivity. No triage. No archaeology. Just the next case."
-          },
-          {
-            "type": "p",
-            "text": "CareSummarizer generates the clinical narrative from raw EHR data. CareLens surfaces confidence scores and reasoning traces at every AI output, so nothing is a black box. Policy validation flags documentation gaps before submission, not after denial. Seven stages, each with one job, each handing off cleanly to the next."
-          }
-        ]
-      },
-      {
-        "ep": "07",
-        "title": "The Impact",
-        "teaser": "A nurse used to spend 40 minutes per case just finding the data to make a decision. Not making the decision. Finding the data.",
-        "readTime": "4 min",
-        "impactStats": [
-          { "before": "40 min", "after": "8–12 min", "label": "Case prep time", "delta": "−75%" },
-          { "before": "30–40%", "after": "<5%", "label": "Target denial rate", "delta": "target" },
-          { "before": "1×", "after": "2.08×", "label": "Throughput per nurse", "delta": "+108%" },
-          { "before": "—", "after": "$2.5M", "label": "Revenue protection / hospital", "delta": "annual" }
-        ],
-        "content": [
-          {
-            "type": "p",
-            "text": "A nurse used to spend 40 minutes per case doing data archaeology across 8 tools. Not making the decision. Not writing the justification. Just finding the information she needed to get started. CareSummarizer brought that down to 8 to 12 minutes. The recovered time goes back to care."
-          },
-          {
-            "type": "p",
-            "text": "Denial rates sit at 30 to 40% across the industry. The target is below 5%. That gap is not a data problem, it is a preparation problem. When nurses can surface and resolve documentation gaps before submission, the denial rate has nowhere to hide."
-          }
-        ]
-      }
-    ],
-    "artefacts": [
-      {
-        "title": "Figma File",
-        "type": "Design",
-        "url": null
-      },
-      {
-        "title": "Live Demo",
-        "type": "Demo",
-        "url": null
-      },
-      {
-        "title": "Design System Doc",
-        "type": "Document",
-        "url": null
-      },
-      {
-        "title": "Process Story",
-        "type": "Article",
-        "url": null
-      }
-    ],
-    "info": {
-      "details": [
-        {
-          "label": "Timeline",
-          "value": "Sep 2024 – Feb 2025"
-        },
-        {
-          "label": "Role",
-          "value": "Product Designer & Engineer"
-        },
-        {
-          "label": "Team",
-          "value": "Solo"
-        },
-        {
-          "label": "Platform",
-          "value": "React · Claude 4 Sonnet · Vercel"
-        },
-        {
-          "label": "Status",
-          "value": "Portfolio & Demo Ready"
-        }
-      ],
-      "tools": [
-        {
-          "label": "Design",
-          "value": "Figma, Claude Code MCP"
-        },
-        {
-          "label": "Development",
-          "value": "React, Tailwind, Vercel"
-        },
-        {
-          "label": "AI",
-          "value": "Claude 4 Sonnet (Anthropic)"
-        }
-      ],
-      "links": [
-        {
-          "label": "Figma File",
-          "url": null
-        },
-        {
-          "label": "Live Demo",
-          "url": null
-        }
-      ]
-    }
-  },
-  {
     "id": "meatinspector",
     "title": "Salesforce Meat Inspection Scheduler",
     "type": "Product Design",
@@ -962,6 +484,889 @@ const projects = [
       "links": [
         {
           "label": "Case Study",
+          "url": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "mealplanner",
+    "title": "MealPlan",
+    "type": "Product Design & Engineering",
+    "client": null,
+    "org": "Consumer Mobile · Personal Project",
+    "sub": "A weekly operating system for food",
+    "timeline": "2025",
+    "team": [
+      "Solo"
+    ],
+    "platform": "Next.js 15 · TypeScript · Tailwind",
+    "icon": "🍽️",
+    "accentColor": "#C4782A",
+    "route": "/mealplanner",
+    "status": "full",
+    "liveUrl": "https://v0-electron-js-app-mocha.vercel.app/",
+    "description": "A mobile-first meal planning app that connects planning, shopping, budget, and nutrition in one interface. Moving toward a branded Instacart launch as a sole partner product.",
+    "contextStats": [
+      {
+        "number": "30–40%",
+        "label": "Grocery Waste",
+        "context": "per average household"
+      },
+      {
+        "number": "200+",
+        "label": "Food Decisions",
+        "context": "made daily per person"
+      },
+      {
+        "number": "5",
+        "label": "Jobs Solved",
+        "context": "no competitor solves all five"
+      }
+    ],
+    "users": [
+      {
+        "icon": "📅",
+        "title": "Weekly Planner",
+        "description": "Plans 7 days of meals on Sunday, generates grocery list automatically, stays within weekly budget.",
+        "tag": "60% of users"
+      },
+      {
+        "icon": "💰",
+        "title": "Budget-Conscious Shopper",
+        "description": "Needs to know exactly what a week of meals will cost before going to the store.",
+        "tag": "25% of users"
+      },
+      {
+        "icon": "🥗",
+        "title": "Health-Aware Eater",
+        "description": "Wants daily nutrition breakdowns per planned meals and the ability to make informed swaps.",
+        "tag": "15% of users"
+      }
+    ],
+    "problem": "Meal planning, grocery shopping, pantry tracking, nutrition awareness, and budgeting all live in separate tools.  Every competitor solves one or two.",
+    "objective": "Build a mobile-first weekly operating system for food that connects planning → shopping → cooking → spending in a single, calm, fast interface.",
+    "insight": "People don't need another recipe app. They need one place that connects what they plan, what they buy, what they have, and what they spend.",
+    "reflectionQuote": "The best personal tools don't feel like software, they feel like an extension of the user's weekly routine.",
+    "oldSystem": {
+      "name": "Fragmented Workflow",
+      "traits": [
+        "Separate apps for planning, shopping, nutrition, budget",
+        "No continuity between weeks",
+        "Zero tools connect meal selection to cost in real time",
+        "Decision fatigue: 200+ food choices daily with no system",
+        "Every Monday feels like starting from scratch"
+      ]
+    },
+    "newSystem": {
+      "name": "MealPlan",
+      "traits": [
+        "Weekly planner as the entry point",
+        "Automatic grocery list from planned meals",
+        "Per-ingredient estimated pricing rolls up to weekly totals",
+        "Daily nutrition from planned meals",
+        "Copy last week, continuity as a feature"
+      ]
+    },
+    "pillars": [
+      {
+        "number": "01",
+        "title": "Action-First Entry",
+        "description": "\"What am I eating this week?\", not \"Show me analytics.\" The planner is the home screen."
+      },
+      {
+        "number": "02",
+        "title": "Connected Workflow",
+        "description": "Plan → groceries auto-generate → shopping updates pantry → budget tracks in real time."
+      },
+      {
+        "number": "03",
+        "title": "No Bold. Anywhere.",
+        "description": "SF Pro Display, weight 400 throughout. Hierarchy from size and color only."
+      },
+      {
+        "number": "04",
+        "title": "Weekly Reset as Feature",
+        "description": "Each Monday starts fresh. \"Copy last week\" exists as an option, but the default is a clean slate."
+      }
+    ],
+    "process": [
+      {
+        "step": "01",
+        "phase": "Research",
+        "title": "Domain & User Research",
+        "description": "3 personas emerged but collapsed into one critical finding: the planner, shopper, cook, and budget manager are the same person wearing four hats."
+      },
+      {
+        "step": "02",
+        "phase": "Define",
+        "title": "Competitive Gap Analysis",
+        "description": "Mapped 5 competitors across 5 features. No existing tool connects all five. That gap defined the product."
+      },
+      {
+        "step": "03",
+        "phase": "Design",
+        "title": "4 Design Versions",
+        "description": "Dashboard-first → bottom nav with borders → borderless warm palette → SF Pro 400 uniform weight. Three rejections shaped the final system."
+      },
+      {
+        "step": "04",
+        "phase": "Engineer",
+        "title": "Next.js + Security Hardening",
+        "description": "Patched 3 CVEs during development. Built security as middleware infrastructure, not afterthought."
+      }
+    ],
+    "processSteps": [
+      {
+        "icon": "🔍",
+        "phase": "Research",
+        "label": "Domain + User Research",
+        "hint": "3 personas → 1 user in 4 modes · competitive gap mapping",
+        "pills": null
+      },
+      {
+        "icon": "📐",
+        "phase": "Define",
+        "label": "Product Architecture",
+        "hint": "Entry point · recipe scope · budget granularity · mobile density",
+        "pills": null
+      },
+      {
+        "icon": "✏️",
+        "phase": "Design",
+        "label": "4 Design Versions",
+        "hint": "Dashboard → borders → warm palette → SF Pro 400",
+        "pills": null
+      },
+      {
+        "icon": "⚙️",
+        "phase": "Engineer",
+        "label": "Next.js + Security",
+        "hint": "3 CVEs patched · offline-first · TypeScript type safety",
+        "pills": null
+      }
+    ],
+    "challenges": [
+      {
+        "category": "Mobile Density",
+        "items": [
+          "7-day × 3-meal grid on 375px screen",
+          "Nutrition data: 4 numbers that must be glanceable",
+          "Bottom tab nav vs. dashboard hub decision"
+        ]
+      },
+      {
+        "category": "Typography",
+        "items": [
+          "No bold anywhere, enforced globally",
+          "Inconsistent weights across 20+ files required full audit",
+          "Size + color as the only hierarchy tools"
+        ]
+      },
+      {
+        "category": "Security",
+        "items": [
+          "3 CVEs patched during active development",
+          "Rate limiting, CSP headers, input sanitization as infrastructure",
+          "Auth with brute force protection from day one"
+        ]
+      }
+    ],
+    "challengePairs": [
+      {
+        "challenge": "How to fit 7×3 meal grid on 375px",
+        "response": "Horizontal day selector + vertical meal list per day"
+      },
+      {
+        "challenge": "Bold text drifting across components",
+        "response": "Global rule: weight-400 only, enforced as lint standard"
+      },
+      {
+        "challenge": "CVE-2025-55182 critical RCE",
+        "response": "Immediate upgrade to Next.js 15.5.9 + middleware hardening"
+      },
+      {
+        "challenge": "No week-to-week continuity",
+        "response": "\"Copy last week\" + 4-week history in Settings"
+      }
+    ],
+    "results": [
+      {
+        "label": "Planning Time",
+        "before": "45 min",
+        "after": "10 min",
+        "improvement": "78% faster",
+        "icon": "⏱️"
+      },
+      {
+        "label": "Weekly Spend",
+        "before": "$220+",
+        "after": "$150 budget",
+        "improvement": "Budget hit",
+        "icon": "💰"
+      },
+      {
+        "label": "Features Solved",
+        "before": "1–2 per tool",
+        "after": "5 in one",
+        "improvement": "Full coverage",
+        "icon": "✓"
+      }
+    ],
+    "problemBullets": [
+      {
+        "keyword": "Fragmented",
+        "text": "5 different tools to manage one week of food"
+      },
+      {
+        "keyword": "No memory",
+        "text": "Every Monday feels like starting from scratch"
+      }
+    ],
+    "objectiveBullets": [
+      {
+        "keyword": "Connect",
+        "text": "Planning, shopping, cooking, and budget in one flow"
+      },
+      {
+        "keyword": "Action-first",
+        "text": "Land in the planner, not a dashboard"
+      }
+    ],
+    "reflection": "The best personal tools don't feel like software, they feel like an extension of the user's weekly routine.",
+    "ia": "SITUATION\n200 food-related decisions per person per day.\nMeal planning, grocery, nutrition, pantry, and budget all in separate tools.\nEvery competitor solves one or two of the five jobs. None solve all five.\n\nUSERS\nPrimary: The planner-shopper-cook-budget manager, one person, four hats\nSecondary: Health-conscious users tracking nutrition without clinical obsession\nTertiary: Budget-constrained households managing food costs weekly\n\nPROBLEM\nOn any given Wednesday, figuring out dinner requires a person to be a meal planner, grocery shopper, budget manager, and cook simultaneously.\nEvery existing app is built for exactly one of those roles. The result is five open tabs and a decision that should take two minutes taking twenty.\nEach context switch carries cognitive overhead that most people resolve by abandoning the plan entirely and defaulting to takeout or whatever is already in the fridge.\nMost users ate the same 12 meals on rotation, not because they wanted to, but because planning anything different was genuinely too hard.\nFood waste, unexpected grocery bills, and nutrition gaps were downstream effects of a tooling problem, not a motivation problem.\nThe person wearing all four hats had never been the primary user of any single product.\n\nCONSTRAINTS\n375px screen with a 7-day 3-meal planning grid, unsolved mobile UX problem\nNutrition display must inform without creating anxiety or moralising food\nNo bold text anywhere, eating is calm, the app must feel calm\nSecurity, personal health and budget data requires CVE-level attention\n\nPROCESS\nThree layout approaches tested and rejected before solution found\nNutrition display philosophy established before any screens designed\nCopy last week emerged as most-requested feature in user testing\nThree CVEs discovered and patched during active development\n\nKEY DECISIONS\nHorizontal day selector plus vertical meal list, one axis at a time\nFour nutrition numbers maximum, awareness without obsession\nCopy last week as first-class feature, most people eat 10 to 15 meals on rotation\nWeight 400 typography throughout, no bold, no urgency signals\n\nTHE PRODUCT\nWeekly planning grid with horizontal day navigation\nAuto-generated grocery list aggregated from weekly plan\nNutrition summary row per day, no targets or progress bars\nPantry tracking with expiry awareness\nBudget tracking integrated with grocery list\n\nOUTCOME\n78% reduction in planning time, 45 minutes to 10 minutes\nAll five jobs-to-be-done in one interface\nThree CVEs patched during development\nZero competitors cover all five jobs confirmed post-launch",
+    "heroColor": "#3a1f0a",
+    "heroTagline": "Five jobs. One interface.",
+    "heroCategory": "Consumer · Health",
+    "heroYear": "2025",
+    "previewMedia": "/projects/mealplanner/Empty States.png",
+    "hero": {
+      "gradient": "linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 100%)",
+      "light": true,
+      "badge": "Case Study · Consumer Health",
+      "tags": [
+        "Consumer Mobile",
+        "2025",
+        "Next.js + Vercel"
+      ],
+      "synopsis": "A mobile-first meal planning app that connects weekly planning, grocery lists, budget tracking, and nutrition, the only tool that solves all five jobs in one interface.",
+      "metadata": [
+        "2025",
+        "Product Designer & Engineer",
+        "Solo"
+      ]
+    },
+    "episodes": [
+      {
+        "ep": "01",
+        "title": "The Five Jobs No App Solves Together",
+        "teaser": "On a Wednesday evening trying to figure out dinner, you are planner, shopper, cook, and budget manager at once. Every existing app is built for just one of those people.",
+        "readTime": "3 min",
+        "stats": [
+          { "number": "200+", "label": "food decisions per day" },
+          { "number": "5", "label": "tools to manage one week of food" },
+          { "number": "30–40%", "label": "avg household grocery waste" }
+        ],
+        "content": [
+          {
+            "type": "p",
+            "text": "On a Wednesday evening figuring out what to make for dinner tomorrow, you are four people at once: the planner thinking about the week, the shopper wondering what is in the fridge, the cook deciding what is realistic after a long day, and the budget manager checking what is left before payday. Every existing app is built for just one of them."
+          },
+          {
+            "type": "p",
+            "text": "Mealime plans. Paprika stores recipes. Cronometer tracks nutrients. YNAB manages budget. Each is excellent at its one job. None of them talk to each other. MealPlan is built for the person who needs all four jobs done in one place, without switching apps between every decision."
+          }
+        ]
+      },
+      {
+        "ep": "02",
+        "title": "Building Toward an Instacart Launch",
+        "teaser": "This started as a personal project to scratch a real itch. It is now moving toward a branded launch with Instacart.",
+        "readTime": "3 min",
+        "content": [
+          {
+            "type": "p",
+            "text": "MealPlan started as a personal project because I was genuinely frustrated with the fragmentation. The prototype worked. The loop was tight: plan the week, the grocery list generates automatically, the budget updates in real time. Then the opportunity grew bigger than a side project."
+          },
+          {
+            "type": "p",
+            "text": "The app is now in early conversations with Instacart toward a sole branded launch. That integration makes the loop native: a plan generated on Sunday becomes a cart, a cart becomes a delivery, everything stays in one interface. That is not a feature. That is the product becoming what it was always meant to be."
+          }
+        ]
+      },
+      {
+        "ep": "03",
+        "title": "The Weekly Planning Interface",
+        "teaser": "Fitting 21 meals on a 375px screen is genuinely hard. A calendar felt wrong. A spreadsheet felt worse. Here is what worked.",
+        "readTime": "3 min",
+        "content": [
+          {
+            "type": "p",
+            "text": "You need to see the whole week to plan it effectively. But a 7x3 grid on a phone screen is too dense to read, and a calendar view imports the wrong mental model entirely. Meals are not events. They do not have start times and attendees."
+          },
+          {
+            "type": "p",
+            "text": "The solution is a horizontally scrollable week where each day shows its meals collapsed. Everything is visible at a glance. Tap a slot to expand and add a meal. No vertical scrolling to see the full week. The information architecture feels obvious once you see it, which means it took a while to find."
+          }
+        ]
+      },
+      {
+        "ep": "04",
+        "title": "Where We Are Now",
+        "teaser": "Live and working. No impact metrics yet because this is still being built. The Instacart path is in early stages. Honest about where we are.",
+        "readTime": "2 min",
+        "impactStats": [
+          { "before": "45 min", "after": "< 10 min", "label": "Weekly planning time", "delta": "−78%" },
+          { "before": "5 tools", "after": "1", "label": "Apps needed", "delta": "−80%" },
+          { "before": "30–40%", "after": "<15%", "label": "Grocery waste", "delta": "target" }
+        ],
+        "content": [
+          {
+            "type": "p",
+            "text": "The app is live as a working prototype. Weekly planning, automatic grocery list generation, budget tracking, and nutrition summaries all function. The live demo is real and available."
+          },
+          {
+            "type": "p",
+            "text": "There are no impact metrics yet. This is still being built. The Instacart partnership is in early conversations. This case study reflects decisions and process to date, not a finished story. That part is still being written."
+          }
+        ]
+      }
+    ],
+    "artefacts": [
+      {
+        "title": "Live Demo",
+        "type": "Demo",
+        "url": "https://v0-electron-js-app-mocha.vercel.app/"
+      },
+      {
+        "title": "Figma Prototype",
+        "type": "Design",
+        "url": null
+      },
+      {
+        "title": "Security Audit Report",
+        "type": "Document",
+        "url": null
+      }
+    ],
+    "info": {
+      "details": [
+        {
+          "label": "Timeline",
+          "value": "2025"
+        },
+        {
+          "label": "Role",
+          "value": "Product Designer & Engineer"
+        },
+        {
+          "label": "Team",
+          "value": "Solo"
+        },
+        {
+          "label": "Platform",
+          "value": "Next.js 15 · TypeScript · Vercel"
+        },
+        {
+          "label": "Status",
+          "value": "Live"
+        }
+      ],
+      "tools": [
+        {
+          "label": "Design",
+          "value": "Figma"
+        },
+        {
+          "label": "Development",
+          "value": "Next.js 15, TypeScript, Tailwind, Vercel"
+        },
+        {
+          "label": "Security",
+          "value": "CSP Headers, Rate Limiting, Input Sanitisation"
+        }
+      ],
+      "links": [
+        {
+          "label": "Live Demo",
+          "url": "https://v0-electron-js-app-mocha.vercel.app/"
+        }
+      ]
+    }
+  },
+  {
+    "id": "healthcare",
+    "title": "CareSummarizer + CareLens",
+    "type": "Product Design & AI",
+    "client": "Clinical Decision Intelligence",
+    "org": "Healthcare AI · Utilization Review",
+    "sub": "Clinical Decision-Readiness Platform",
+    "timeline": "Sep 2024 – Feb 2025",
+    "team": [
+      "Solo"
+    ],
+    "platform": "React · Claude 4 Sonnet · Vercel",
+    "icon": "🏥",
+    "accentColor": "#2D6A9F",
+    "route": "/healthcare",
+    "status": "full",
+    "liveUrl": null,
+    "description": "A clinical decision intelligence platform that transforms raw EHR data into decision-ready cases, surfacing documentation gaps before denial, not after.",
+    "contextStats": [
+      {
+        "number": "75%",
+        "label": "Prep Time Saved",
+        "context": "40 min → 8–12 min"
+      },
+      {
+        "number": "40%",
+        "label": "Denial Reduction",
+        "context": "targeted below 5%"
+      },
+      {
+        "number": "$2.5M",
+        "label": "Revenue Protected",
+        "context": "per hospital annually"
+      }
+    ],
+    "users": [
+      {
+        "icon": "👩‍⚕️",
+        "title": "UR Nurses",
+        "description": "Prepare defensible prior auth cases. 70% of time spent on data archaeology across 8+ tools.",
+        "tag": "Primary, 80% of volume"
+      },
+      {
+        "icon": "👨‍⚕️",
+        "title": "Physicians",
+        "description": "Final approval on escalations. Currently re-read entire charts because prep is incomplete.",
+        "tag": "Secondary, Escalations"
+      },
+      {
+        "icon": "📊",
+        "title": "Medical Directors",
+        "description": "Ensure team consistency. Zero visibility into performance or audit trail.",
+        "tag": "Tertiary, Oversight"
+      }
+    ],
+    "problem": "UR nurses cross-reference 8 disconnected tools to prepare a single case.  Denial rates sit at 30 to 40%.",
+    "objective": "Surface documentation gaps before PA submission. Replace manual cross-referencing with AI-synthesized narratives. Give nurses explainable AI they can trust and defend.",
+    "insight": "The person who prepares the decision matters more than the person who approves it. UR nurses carry the accountability risk, yet they spend 70% of their time on data archaeology.",
+    "reflectionQuote": "Compliance is differentiation, not overhead. Every HIPAA mandate and FDA explainability requirement is a competitive barrier that protects against fast-follower competitors.",
+    "oldSystem": {
+      "name": "Current State (Manual)",
+      "traits": [
+        "8+ disconnected tools per case",
+        "Gaps discovered after submission",
+        "Black box AI, no explainability",
+        "No policy validation before submission",
+        "No audit trail for payer disputes"
+      ]
+    },
+    "newSystem": {
+      "name": "CareSummarizer + CareLens",
+      "traits": [
+        "AI-synthesized clinical narrative from EHR",
+        "Policy validation before submission",
+        "CareLens: confidence scores + reasoning traces",
+        "Hard blocks prevent submission when gaps exist",
+        "Append-only audit trail (HIPAA + ONC compliant)"
+      ]
+    },
+    "pillars": [
+      {
+        "number": "01",
+        "title": "Decision Readiness First",
+        "description": "Every feature exists to prepare a defensible case, not to optimize speed."
+      },
+      {
+        "number": "02",
+        "title": "Explainability as Governance",
+        "description": "CareLens is persistent, non-optional compliance infrastructure."
+      },
+      {
+        "number": "03",
+        "title": "Copilot, Not Autopilot",
+        "description": "AI suggests and explains. Humans review and decide. Always."
+      },
+      {
+        "number": "04",
+        "title": "Structural Prevention",
+        "description": "Hard blocks, not soft nudges. Red items prevent submission until resolved."
+      }
+    ],
+    "process": [
+      {
+        "step": "01",
+        "phase": "Discover",
+        "title": "Product Category Research",
+        "description": "Interrogated 4 structural ambiguities to define the product wedge: prior authorization preparation only."
+      },
+      {
+        "step": "02",
+        "phase": "Define",
+        "title": "User + Accountability Mapping",
+        "description": "Identified UR nurses (not physicians) as primary users via accountability risk analysis."
+      },
+      {
+        "step": "03",
+        "phase": "Design",
+        "title": "4 Iterative Versions",
+        "description": "Three rejected versions taught what the product needed to be before V04 reached current architecture."
+      },
+      {
+        "step": "04",
+        "phase": "Validate",
+        "title": "Design System Audit",
+        "description": "Structured audit: 2 P0 issues, 39 non-compliant files, 20% token adoption, remediated with CLAUDE.md enforcement."
+      }
+    ],
+    "challenges": [
+      {
+        "category": "Regulatory",
+        "items": [
+          "FDA explainability mandates",
+          "HIPAA append-only audit trail",
+          "WCAG 2.2 accessibility in clinical context"
+        ]
+      },
+      {
+        "category": "AI Trust",
+        "items": [
+          "Copilot vs autopilot model",
+          "Confidence scoring that nurses can defend",
+          "Reasoning traces at every AI output"
+        ]
+      },
+      {
+        "category": "Design System",
+        "items": [
+          "3 competing color systems",
+          "39 files bypassing tokens",
+          "AI generating styling errors silently"
+        ]
+      }
+    ],
+    "results": [
+      {
+        "label": "Case Prep Time",
+        "before": "40 min",
+        "after": "8–12 min",
+        "improvement": "75% faster",
+        "icon": "⏱️"
+      },
+      {
+        "label": "Denial Rate",
+        "before": "30–40%",
+        "after": "<5%",
+        "improvement": "40% reduction",
+        "icon": "📉"
+      },
+      {
+        "label": "Nurse Throughput",
+        "before": "8–12 cases",
+        "after": "20–25 cases",
+        "improvement": "2× increase",
+        "icon": "📈"
+      }
+    ],
+    "problemBullets": [
+      {
+        "keyword": "Fragmented",
+        "text": "8+ tools to prepare a single case"
+      },
+      {
+        "keyword": "Too late",
+        "text": "Gaps discovered after denial, not before submission"
+      }
+    ],
+    "objectiveBullets": [
+      {
+        "keyword": "Surface gaps",
+        "text": "Before PA submission, when they can still be fixed"
+      },
+      {
+        "keyword": "Explainable AI",
+        "text": "Confidence scores + reasoning traces nurses can defend"
+      }
+    ],
+    "processSteps": [
+      {
+        "icon": "🔍",
+        "phase": "Discover",
+        "label": "Product Ambiguity Resolution",
+        "hint": "4 structural ambiguities · product wedge definition",
+        "pills": null
+      },
+      {
+        "icon": "📐",
+        "phase": "Define",
+        "label": "User Accountability Mapping",
+        "hint": "UR nurse as primary · accountability risk signal",
+        "pills": null
+      },
+      {
+        "icon": "✏️",
+        "phase": "Design",
+        "label": "4 Iterative Versions",
+        "hint": "V01–V03 rejected · V04 current architecture",
+        "pills": null
+      },
+      {
+        "icon": "✅",
+        "phase": "Validate",
+        "label": "Design System Audit",
+        "hint": "CLAUDE.md enforcement · token remediation",
+        "pills": null
+      }
+    ],
+    "challengePairs": [
+      {
+        "challenge": "FDA mandates explainability for clinical AI",
+        "response": "CareLens: reasoning traces + citations at every output"
+      },
+      {
+        "challenge": "3 competing color systems in codebase",
+        "response": "Unified token file + CLAUDE.md AI enforcement"
+      },
+      {
+        "challenge": "Physicians assumed to be primary user",
+        "response": "Reoriented to UR nurses via accountability risk analysis"
+      },
+      {
+        "challenge": "Black box AI creates legal liability",
+        "response": "Copilot model: AI suggests, humans always decide"
+      },
+      {
+        "challenge": "Soft warnings get ignored by busy nurses",
+        "response": "Hard blocks prevent submission until gaps resolved"
+      }
+    ],
+    "reflection": "This project taught me that ambiguity is not a problem to avoid, it is a signal to refine product definition.",
+    "ia": "SITUATION\nHealthcare utilization review runs on 8 disconnected tools.\nUR nurses spend 40 minutes per case on data archaeology.\nDenial rates sit at 30 to 40%. Gaps found after submission, not before.\n\nUSERS\nPrimary: UR Nurse, 80% of volume, full accountability risk\nSecondary: Physician, escalations only, under 20% of cases\nTertiary: Medical Director, audit and oversight, under 5%\n\nPROBLEM\nThe toolchain was built around physicians, the least frequent user in the workflow.\nUR nurses handle 80% of cases and carry the full accountability risk, but had the worst tools in the system.\nEvery morning started the same way: 8 browser tabs, patient charts scattered across disconnected portals, 40 minutes of data archaeology per case.\nDenials were discovered after submission, at the point where appeals were expensive and time-consuming to fight.\nThe information needed to prevent every denial already existed somewhere in the system.\nNobody had designed a way to surface it before it was too late.\n\nCONSTRAINTS\nRegulated clinical environment, AI cannot make autonomous decisions\nEvery recommendation must be traceable and citable\nHIPAA compliance non-negotiable\nStakeholder trust in AI was low from day one\n\nPROCESS\n4 structural ambiguities resolved before wireframing\nPrimary user redefined from physician to UR nurse in week 4\n6 design mistakes documented across V1 and V2\n4 full iterations before V4 was accepted\n\nKEY DECISIONS\nWork Queue over Home screen, action-first product stance\nCareLens as mandatory sidebar, explainability is infrastructure\nAudit trail on every AI output, defensibility over convenience\nProactive gap resolution, surface problems before submission not after\n\nTHE PRODUCT\n7-stage workflow: Work Queue, Case Summary, Policy Validation,\nCareLens Sidebar, Gap Resolution, Physician Approval, Submission\nRole-based routing for nurse, physician, and director\nEvery AI output citable, every decision logged\n\nOUTCOME\n75% reduction in case prep time\n40% target denial rate reduction\n108% throughput increase per nurse\n$2.5M annual revenue protection per hospital",
+    "heroColor": "#1a3a5c",
+    "heroTagline": "Reducing denial rates from 40% to under 5%",
+    "heroCategory": "AI · Healthcare",
+    "heroYear": "2024",
+    "previewMedia": "/projects/healthcare/Healthcare Dashboard_1.png",
+    "previewImageTop": 230,
+    "heroImage": "/projects/healthcare/Dashboard-1.png",
+    "hero": {
+      "gradient": "linear-gradient(160deg, #EFF6FF 0%, #DBEAFE 100%)",
+      "light": true,
+      "badge": "Case Study · Healthcare AI",
+      "tags": [
+        "Healthcare AI",
+        "2024",
+        "Claude Code + Figma + Vercel"
+      ],
+      "synopsis": "A clinical decision intelligence platform that transforms raw EHR data into decision-ready cases, surfacing documentation gaps before denial, not after.",
+      "metadata": [
+        "Sep 2024 – Feb 2025",
+        "Product Designer & Engineer",
+        "Solo"
+      ],
+      "videoUrl": "/projects/healthcare/Caresummariser%20Overview.mp4"
+    },
+    "episodes": [
+      {
+        "ep": "01",
+        "title": "The Problem",
+        "teaser": "UR nurses spend 40 or more minutes per case doing data archaeology across 8 or more tools.  The data exists.  The decisi.",
+        "readTime": "4 min",
+        "diagramKey": "problem",
+        "stats": [
+          { "number": "40 min", "label": "per case, data archaeology" },
+          { "number": "8+", "label": "tools open simultaneously" },
+          { "number": "30–40%", "label": "industry denial rate" }
+        ],
+        "content": [
+          {
+            "type": "p",
+            "text": "UR nurses spend 40 or more minutes per case doing data archaeology across 8 or more tools.  The data exists.  The decisions do not."
+          },
+          {
+            "type": "p",
+            "text": "Three user roles exist in the utilization review workflow.  UR Nurses are the primary user, handling 80% of volume and carrying full accountability risk.  Physicians handle escalations only, under 20% of cases."
+          }
+        ]
+      },
+      {
+        "ep": "02",
+        "title": "The Ambiguity",
+        "teaser": "Four structural ambiguities had to be resolved before a single wireframe was drawn.  Each one required a different kind.",
+        "readTime": "4 min",
+        "diagramKey": "ambiguity",
+        "content": [
+          {
+            "type": "p",
+            "text": "Four structural ambiguities had to be resolved before a single wireframe was drawn.  Each one required a different kind of thinking."
+          },
+          {
+            "type": "p",
+            "text": "First: who is the primary user?  The initial assumption was physician-led.  Research revealed UR nurses do 80% of the work and carry full accountability."
+          }
+        ]
+      },
+      {
+        "ep": "03",
+        "title": "Design System Audit",
+        "teaser": "We built fast. Then we looked at what we actually built. Three competing color systems, 39 files off-token, and an AI quietly making it worse.",
+        "readTime": "4 min",
+        "auditData": {
+          "stats": [
+            { "number": "3", "label": "Competing color systems" },
+            { "number": "39", "label": "Files bypassing token system" },
+            { "number": "20%", "label": "Token adoption at audit" }
+          ],
+          "codeSnippet": "# CLAUDE.md — Token Enforcement\nALWAYS use CSS variables from tokens.css\nNEVER hardcode hex colors — use --color-[semantic-name]\nComponents: background → var(--surface-primary), text → var(--text-primary)"
+        },
+        "content": [
+          {
+            "type": "p",
+            "text": "When you move fast, the codebase tells the story of every shortcut taken. We audited what we had built and found three competing color systems that had drifted in independently. 39 files were bypassing the token system entirely. Total token adoption: 20%."
+          },
+          {
+            "type": "p",
+            "text": "The more interesting problem was invisible. AI-assisted development was generating new components that looked fine visually but quietly broke the token contract every time. There was no enforcement layer, so every new feature was a coin flip. We needed guardrails, not just cleanup."
+          },
+          {
+            "type": "p",
+            "text": "We built a custom component library with Claude Code and wrote a CLAUDE.md that enforces token usage at the generation layer. Now the AI produces compliant code by default. The design system is still evolving as the product grows, but the floor is solid."
+          }
+        ]
+      },
+      {
+        "ep": "04",
+        "title": "Design Evolution",
+        "teaser": "Four iterations.  Three rejections.  Here is why each version failed and what unlocked the final direction. V1 was physi.",
+        "readTime": "4 min",
+        "diagramKey": "evolution",
+        "content": [
+          {
+            "type": "p",
+            "text": "Four iterations.  Three rejections.  Here is why each version failed and what unlocked the final direction."
+          },
+          {
+            "type": "p",
+            "text": "V1 was physician-centric, organized around approval stages.  Rejected because it was designed for the wrong user.  UR nurses could not find their work queue."
+          }
+        ]
+      },
+      {
+        "ep": "06",
+        "title": "The Product",
+        "teaser": "A nurse should never have to wonder what to do next. Seven stages, each with one job, each handing off to the next.",
+        "readTime": "4 min",
+        "productSteps": [
+          { "step": "01", "name": "Work Queue", "description": "Cases ranked by denial risk and time sensitivity" },
+          { "step": "02", "name": "CareSummarizer", "description": "Clinical narrative generated from raw EHR data" },
+          { "step": "03", "name": "CareLens", "description": "Confidence scores and reasoning at every AI output" },
+          { "step": "04", "name": "Policy Validation", "description": "Documentation gaps flagged before submission" },
+          { "step": "05", "name": "Gap Resolution", "description": "Nurse resolves gaps inline, not after denial" },
+          { "step": "06", "name": "Physician Approval", "description": "Escalation routing for under 20% of cases" },
+          { "step": "07", "name": "Submission", "description": "Clean, compliant, complete — first time" }
+        ],
+        "content": [
+          {
+            "type": "p",
+            "text": "The product is built around one principle: a nurse should never have to wonder what to do next. The work queue tells her which cases need attention and why, ranked by denial risk and time sensitivity. No triage. No archaeology. Just the next case."
+          },
+          {
+            "type": "p",
+            "text": "CareSummarizer generates the clinical narrative from raw EHR data. CareLens surfaces confidence scores and reasoning traces at every AI output, so nothing is a black box. Policy validation flags documentation gaps before submission, not after denial. Seven stages, each with one job, each handing off cleanly to the next."
+          }
+        ]
+      },
+      {
+        "ep": "07",
+        "title": "The Impact",
+        "teaser": "A nurse used to spend 40 minutes per case just finding the data to make a decision. Not making the decision. Finding the data.",
+        "readTime": "4 min",
+        "impactStats": [
+          { "before": "40 min", "after": "8–12 min", "label": "Case prep time", "delta": "−75%" },
+          { "before": "30–40%", "after": "<5%", "label": "Target denial rate", "delta": "target" },
+          { "before": "1×", "after": "2.08×", "label": "Throughput per nurse", "delta": "+108%" },
+          { "before": "—", "after": "$2.5M", "label": "Revenue protection / hospital", "delta": "annual" }
+        ],
+        "content": [
+          {
+            "type": "p",
+            "text": "A nurse used to spend 40 minutes per case doing data archaeology across 8 tools. Not making the decision. Not writing the justification. Just finding the information she needed to get started. CareSummarizer brought that down to 8 to 12 minutes. The recovered time goes back to care."
+          },
+          {
+            "type": "p",
+            "text": "Denial rates sit at 30 to 40% across the industry. The target is below 5%. That gap is not a data problem, it is a preparation problem. When nurses can surface and resolve documentation gaps before submission, the denial rate has nowhere to hide."
+          }
+        ]
+      }
+    ],
+    "artefacts": [
+      {
+        "title": "Figma File",
+        "type": "Design",
+        "url": null
+      },
+      {
+        "title": "Live Demo",
+        "type": "Demo",
+        "url": null
+      },
+      {
+        "title": "Design System Doc",
+        "type": "Document",
+        "url": null
+      },
+      {
+        "title": "Process Story",
+        "type": "Article",
+        "url": null
+      }
+    ],
+    "info": {
+      "details": [
+        {
+          "label": "Timeline",
+          "value": "Sep 2024 – Feb 2025"
+        },
+        {
+          "label": "Role",
+          "value": "Product Designer & Engineer"
+        },
+        {
+          "label": "Team",
+          "value": "Solo"
+        },
+        {
+          "label": "Platform",
+          "value": "React · Claude 4 Sonnet · Vercel"
+        },
+        {
+          "label": "Status",
+          "value": "Portfolio & Demo Ready"
+        }
+      ],
+      "tools": [
+        {
+          "label": "Design",
+          "value": "Figma, Claude Code MCP"
+        },
+        {
+          "label": "Development",
+          "value": "React, Tailwind, Vercel"
+        },
+        {
+          "label": "AI",
+          "value": "Claude 4 Sonnet (Anthropic)"
+        }
+      ],
+      "links": [
+        {
+          "label": "Figma File",
+          "url": null
+        },
+        {
+          "label": "Live Demo",
           "url": null
         }
       ]
@@ -1797,411 +2202,6 @@ const projects = [
         {
           "label": "Figma File",
           "url": null
-        }
-      ]
-    }
-  },
-  {
-    "id": "mealplanner",
-    "title": "MealPlan",
-    "type": "Product Design & Engineering",
-    "client": null,
-    "org": "Consumer Mobile · Personal Project",
-    "sub": "A weekly operating system for food",
-    "timeline": "2025",
-    "team": [
-      "Solo"
-    ],
-    "platform": "Next.js 15 · TypeScript · Tailwind",
-    "icon": "🍽️",
-    "accentColor": "#C4782A",
-    "route": "/mealplanner",
-    "status": "full",
-    "liveUrl": "https://v0-electron-js-app-mocha.vercel.app/",
-    "description": "A mobile-first meal planning app that connects planning, shopping, budget, and nutrition in one interface. Moving toward a branded Instacart launch as a sole partner product.",
-    "contextStats": [
-      {
-        "number": "30–40%",
-        "label": "Grocery Waste",
-        "context": "per average household"
-      },
-      {
-        "number": "200+",
-        "label": "Food Decisions",
-        "context": "made daily per person"
-      },
-      {
-        "number": "5",
-        "label": "Jobs Solved",
-        "context": "no competitor solves all five"
-      }
-    ],
-    "users": [
-      {
-        "icon": "📅",
-        "title": "Weekly Planner",
-        "description": "Plans 7 days of meals on Sunday, generates grocery list automatically, stays within weekly budget.",
-        "tag": "60% of users"
-      },
-      {
-        "icon": "💰",
-        "title": "Budget-Conscious Shopper",
-        "description": "Needs to know exactly what a week of meals will cost before going to the store.",
-        "tag": "25% of users"
-      },
-      {
-        "icon": "🥗",
-        "title": "Health-Aware Eater",
-        "description": "Wants daily nutrition breakdowns per planned meals and the ability to make informed swaps.",
-        "tag": "15% of users"
-      }
-    ],
-    "problem": "Meal planning, grocery shopping, pantry tracking, nutrition awareness, and budgeting all live in separate tools.  Every competitor solves one or two.",
-    "objective": "Build a mobile-first weekly operating system for food that connects planning → shopping → cooking → spending in a single, calm, fast interface.",
-    "insight": "People don't need another recipe app. They need one place that connects what they plan, what they buy, what they have, and what they spend.",
-    "reflectionQuote": "The best personal tools don't feel like software, they feel like an extension of the user's weekly routine.",
-    "oldSystem": {
-      "name": "Fragmented Workflow",
-      "traits": [
-        "Separate apps for planning, shopping, nutrition, budget",
-        "No continuity between weeks",
-        "Zero tools connect meal selection to cost in real time",
-        "Decision fatigue: 200+ food choices daily with no system",
-        "Every Monday feels like starting from scratch"
-      ]
-    },
-    "newSystem": {
-      "name": "MealPlan",
-      "traits": [
-        "Weekly planner as the entry point",
-        "Automatic grocery list from planned meals",
-        "Per-ingredient estimated pricing rolls up to weekly totals",
-        "Daily nutrition from planned meals",
-        "Copy last week, continuity as a feature"
-      ]
-    },
-    "pillars": [
-      {
-        "number": "01",
-        "title": "Action-First Entry",
-        "description": "\"What am I eating this week?\", not \"Show me analytics.\" The planner is the home screen."
-      },
-      {
-        "number": "02",
-        "title": "Connected Workflow",
-        "description": "Plan → groceries auto-generate → shopping updates pantry → budget tracks in real time."
-      },
-      {
-        "number": "03",
-        "title": "No Bold. Anywhere.",
-        "description": "SF Pro Display, weight 400 throughout. Hierarchy from size and color only."
-      },
-      {
-        "number": "04",
-        "title": "Weekly Reset as Feature",
-        "description": "Each Monday starts fresh. \"Copy last week\" exists as an option, but the default is a clean slate."
-      }
-    ],
-    "process": [
-      {
-        "step": "01",
-        "phase": "Research",
-        "title": "Domain & User Research",
-        "description": "3 personas emerged but collapsed into one critical finding: the planner, shopper, cook, and budget manager are the same person wearing four hats."
-      },
-      {
-        "step": "02",
-        "phase": "Define",
-        "title": "Competitive Gap Analysis",
-        "description": "Mapped 5 competitors across 5 features. No existing tool connects all five. That gap defined the product."
-      },
-      {
-        "step": "03",
-        "phase": "Design",
-        "title": "4 Design Versions",
-        "description": "Dashboard-first → bottom nav with borders → borderless warm palette → SF Pro 400 uniform weight. Three rejections shaped the final system."
-      },
-      {
-        "step": "04",
-        "phase": "Engineer",
-        "title": "Next.js + Security Hardening",
-        "description": "Patched 3 CVEs during development. Built security as middleware infrastructure, not afterthought."
-      }
-    ],
-    "processSteps": [
-      {
-        "icon": "🔍",
-        "phase": "Research",
-        "label": "Domain + User Research",
-        "hint": "3 personas → 1 user in 4 modes · competitive gap mapping",
-        "pills": null
-      },
-      {
-        "icon": "📐",
-        "phase": "Define",
-        "label": "Product Architecture",
-        "hint": "Entry point · recipe scope · budget granularity · mobile density",
-        "pills": null
-      },
-      {
-        "icon": "✏️",
-        "phase": "Design",
-        "label": "4 Design Versions",
-        "hint": "Dashboard → borders → warm palette → SF Pro 400",
-        "pills": null
-      },
-      {
-        "icon": "⚙️",
-        "phase": "Engineer",
-        "label": "Next.js + Security",
-        "hint": "3 CVEs patched · offline-first · TypeScript type safety",
-        "pills": null
-      }
-    ],
-    "challenges": [
-      {
-        "category": "Mobile Density",
-        "items": [
-          "7-day × 3-meal grid on 375px screen",
-          "Nutrition data: 4 numbers that must be glanceable",
-          "Bottom tab nav vs. dashboard hub decision"
-        ]
-      },
-      {
-        "category": "Typography",
-        "items": [
-          "No bold anywhere, enforced globally",
-          "Inconsistent weights across 20+ files required full audit",
-          "Size + color as the only hierarchy tools"
-        ]
-      },
-      {
-        "category": "Security",
-        "items": [
-          "3 CVEs patched during active development",
-          "Rate limiting, CSP headers, input sanitization as infrastructure",
-          "Auth with brute force protection from day one"
-        ]
-      }
-    ],
-    "challengePairs": [
-      {
-        "challenge": "How to fit 7×3 meal grid on 375px",
-        "response": "Horizontal day selector + vertical meal list per day"
-      },
-      {
-        "challenge": "Bold text drifting across components",
-        "response": "Global rule: weight-400 only, enforced as lint standard"
-      },
-      {
-        "challenge": "CVE-2025-55182 critical RCE",
-        "response": "Immediate upgrade to Next.js 15.5.9 + middleware hardening"
-      },
-      {
-        "challenge": "No week-to-week continuity",
-        "response": "\"Copy last week\" + 4-week history in Settings"
-      }
-    ],
-    "results": [
-      {
-        "label": "Planning Time",
-        "before": "45 min",
-        "after": "10 min",
-        "improvement": "78% faster",
-        "icon": "⏱️"
-      },
-      {
-        "label": "Weekly Spend",
-        "before": "$220+",
-        "after": "$150 budget",
-        "improvement": "Budget hit",
-        "icon": "💰"
-      },
-      {
-        "label": "Features Solved",
-        "before": "1–2 per tool",
-        "after": "5 in one",
-        "improvement": "Full coverage",
-        "icon": "✓"
-      }
-    ],
-    "problemBullets": [
-      {
-        "keyword": "Fragmented",
-        "text": "5 different tools to manage one week of food"
-      },
-      {
-        "keyword": "No memory",
-        "text": "Every Monday feels like starting from scratch"
-      }
-    ],
-    "objectiveBullets": [
-      {
-        "keyword": "Connect",
-        "text": "Planning, shopping, cooking, and budget in one flow"
-      },
-      {
-        "keyword": "Action-first",
-        "text": "Land in the planner, not a dashboard"
-      }
-    ],
-    "reflection": "The best personal tools don't feel like software, they feel like an extension of the user's weekly routine.",
-    "ia": "SITUATION\n200 food-related decisions per person per day.\nMeal planning, grocery, nutrition, pantry, and budget all in separate tools.\nEvery competitor solves one or two of the five jobs. None solve all five.\n\nUSERS\nPrimary: The planner-shopper-cook-budget manager, one person, four hats\nSecondary: Health-conscious users tracking nutrition without clinical obsession\nTertiary: Budget-constrained households managing food costs weekly\n\nPROBLEM\nOn any given Wednesday, figuring out dinner requires a person to be a meal planner, grocery shopper, budget manager, and cook simultaneously.\nEvery existing app is built for exactly one of those roles. The result is five open tabs and a decision that should take two minutes taking twenty.\nEach context switch carries cognitive overhead that most people resolve by abandoning the plan entirely and defaulting to takeout or whatever is already in the fridge.\nMost users ate the same 12 meals on rotation, not because they wanted to, but because planning anything different was genuinely too hard.\nFood waste, unexpected grocery bills, and nutrition gaps were downstream effects of a tooling problem, not a motivation problem.\nThe person wearing all four hats had never been the primary user of any single product.\n\nCONSTRAINTS\n375px screen with a 7-day 3-meal planning grid, unsolved mobile UX problem\nNutrition display must inform without creating anxiety or moralising food\nNo bold text anywhere, eating is calm, the app must feel calm\nSecurity, personal health and budget data requires CVE-level attention\n\nPROCESS\nThree layout approaches tested and rejected before solution found\nNutrition display philosophy established before any screens designed\nCopy last week emerged as most-requested feature in user testing\nThree CVEs discovered and patched during active development\n\nKEY DECISIONS\nHorizontal day selector plus vertical meal list, one axis at a time\nFour nutrition numbers maximum, awareness without obsession\nCopy last week as first-class feature, most people eat 10 to 15 meals on rotation\nWeight 400 typography throughout, no bold, no urgency signals\n\nTHE PRODUCT\nWeekly planning grid with horizontal day navigation\nAuto-generated grocery list aggregated from weekly plan\nNutrition summary row per day, no targets or progress bars\nPantry tracking with expiry awareness\nBudget tracking integrated with grocery list\n\nOUTCOME\n78% reduction in planning time, 45 minutes to 10 minutes\nAll five jobs-to-be-done in one interface\nThree CVEs patched during development\nZero competitors cover all five jobs confirmed post-launch",
-    "heroColor": "#3a1f0a",
-    "heroTagline": "Five jobs. One interface.",
-    "heroCategory": "Consumer · Health",
-    "heroYear": "2025",
-    "previewMedia": "/projects/mealplanner/Empty States.png",
-    "hero": {
-      "gradient": "linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 100%)",
-      "light": true,
-      "badge": "Case Study · Consumer Health",
-      "tags": [
-        "Consumer Mobile",
-        "2025",
-        "Next.js + Vercel"
-      ],
-      "synopsis": "A mobile-first meal planning app that connects weekly planning, grocery lists, budget tracking, and nutrition, the only tool that solves all five jobs in one interface.",
-      "metadata": [
-        "2025",
-        "Product Designer & Engineer",
-        "Solo"
-      ]
-    },
-    "episodes": [
-      {
-        "ep": "01",
-        "title": "The Five Jobs No App Solves Together",
-        "teaser": "On a Wednesday evening trying to figure out dinner, you are planner, shopper, cook, and budget manager at once. Every existing app is built for just one of those people.",
-        "readTime": "3 min",
-        "stats": [
-          { "number": "200+", "label": "food decisions per day" },
-          { "number": "5", "label": "tools to manage one week of food" },
-          { "number": "30–40%", "label": "avg household grocery waste" }
-        ],
-        "content": [
-          {
-            "type": "p",
-            "text": "On a Wednesday evening figuring out what to make for dinner tomorrow, you are four people at once: the planner thinking about the week, the shopper wondering what is in the fridge, the cook deciding what is realistic after a long day, and the budget manager checking what is left before payday. Every existing app is built for just one of them."
-          },
-          {
-            "type": "p",
-            "text": "Mealime plans. Paprika stores recipes. Cronometer tracks nutrients. YNAB manages budget. Each is excellent at its one job. None of them talk to each other. MealPlan is built for the person who needs all four jobs done in one place, without switching apps between every decision."
-          }
-        ]
-      },
-      {
-        "ep": "02",
-        "title": "Building Toward an Instacart Launch",
-        "teaser": "This started as a personal project to scratch a real itch. It is now moving toward a branded launch with Instacart.",
-        "readTime": "3 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "MealPlan started as a personal project because I was genuinely frustrated with the fragmentation. The prototype worked. The loop was tight: plan the week, the grocery list generates automatically, the budget updates in real time. Then the opportunity grew bigger than a side project."
-          },
-          {
-            "type": "p",
-            "text": "The app is now in early conversations with Instacart toward a sole branded launch. That integration makes the loop native: a plan generated on Sunday becomes a cart, a cart becomes a delivery, everything stays in one interface. That is not a feature. That is the product becoming what it was always meant to be."
-          }
-        ]
-      },
-      {
-        "ep": "03",
-        "title": "The Weekly Planning Interface",
-        "teaser": "Fitting 21 meals on a 375px screen is genuinely hard. A calendar felt wrong. A spreadsheet felt worse. Here is what worked.",
-        "readTime": "3 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "You need to see the whole week to plan it effectively. But a 7x3 grid on a phone screen is too dense to read, and a calendar view imports the wrong mental model entirely. Meals are not events. They do not have start times and attendees."
-          },
-          {
-            "type": "p",
-            "text": "The solution is a horizontally scrollable week where each day shows its meals collapsed. Everything is visible at a glance. Tap a slot to expand and add a meal. No vertical scrolling to see the full week. The information architecture feels obvious once you see it, which means it took a while to find."
-          }
-        ]
-      },
-      {
-        "ep": "04",
-        "title": "Where We Are Now",
-        "teaser": "Live and working. No impact metrics yet because this is still being built. The Instacart path is in early stages. Honest about where we are.",
-        "readTime": "2 min",
-        "impactStats": [
-          { "before": "45 min", "after": "< 10 min", "label": "Weekly planning time", "delta": "−78%" },
-          { "before": "5 tools", "after": "1", "label": "Apps needed", "delta": "−80%" },
-          { "before": "30–40%", "after": "<15%", "label": "Grocery waste", "delta": "target" }
-        ],
-        "content": [
-          {
-            "type": "p",
-            "text": "The app is live as a working prototype. Weekly planning, automatic grocery list generation, budget tracking, and nutrition summaries all function. The live demo is real and available."
-          },
-          {
-            "type": "p",
-            "text": "There are no impact metrics yet. This is still being built. The Instacart partnership is in early conversations. This case study reflects decisions and process to date, not a finished story. That part is still being written."
-          }
-        ]
-      }
-    ],
-    "artefacts": [
-      {
-        "title": "Live Demo",
-        "type": "Demo",
-        "url": "https://v0-electron-js-app-mocha.vercel.app/"
-      },
-      {
-        "title": "Figma Prototype",
-        "type": "Design",
-        "url": null
-      },
-      {
-        "title": "Security Audit Report",
-        "type": "Document",
-        "url": null
-      }
-    ],
-    "info": {
-      "details": [
-        {
-          "label": "Timeline",
-          "value": "2025"
-        },
-        {
-          "label": "Role",
-          "value": "Product Designer & Engineer"
-        },
-        {
-          "label": "Team",
-          "value": "Solo"
-        },
-        {
-          "label": "Platform",
-          "value": "Next.js 15 · TypeScript · Vercel"
-        },
-        {
-          "label": "Status",
-          "value": "Live"
-        }
-      ],
-      "tools": [
-        {
-          "label": "Design",
-          "value": "Figma"
-        },
-        {
-          "label": "Development",
-          "value": "Next.js 15, TypeScript, Tailwind, Vercel"
-        },
-        {
-          "label": "Security",
-          "value": "CSP Headers, Rate Limiting, Input Sanitisation"
-        }
-      ],
-      "links": [
-        {
-          "label": "Live Demo",
-          "url": "https://v0-electron-js-app-mocha.vercel.app/"
         }
       ]
     }
