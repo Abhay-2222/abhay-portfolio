@@ -34,7 +34,10 @@ export async function POST(request: Request) {
       const q = Array.isArray(items)
         ? items.slice(0, 6).map((i: { name: string }) => i.name).join(" ")
         : ""
-      const url = `https://www.instacart.com/store/items/search?q=${encodeURIComponent(q)}`
+      // Instacart's working search URL — takes user to their store with search pre-filled
+      const url = q
+        ? `https://www.instacart.com/store/s?k=${encodeURIComponent(q)}`
+        : "https://www.instacart.com"
       return NextResponse.json({ url })
     } catch {
       return NextResponse.json({ url: "https://www.instacart.com" })
