@@ -27,14 +27,18 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "MealPlan - Plan Smart, Eat Well",
+  title: "MealPlan — Plan Smart, Eat Well",
   description: "Weekly meal planning with grocery lists, pantry management, budget tracking, and nutrition awareness",
-  generator: "v0.app",
   robots: {
     index: true,
     follow: true,
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MealPlan",
+  },
 }
 
 export const viewport: Viewport = {
@@ -55,6 +59,11 @@ export default function RootLayout({
       <body className="font-sans antialiased overflow-y-auto">
         {children}
         <Analytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}`,
+          }}
+        />
       </body>
     </html>
   )
