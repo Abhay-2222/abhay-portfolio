@@ -200,6 +200,8 @@ export default function BallGame({ active, containerRef }) {
       spawnBall(e.clientX);
     };
     const onTouch = (e) => {
+      // Let button taps propagate naturally — don't intercept them
+      if (e.target.closest('button')) return;
       e.preventDefault();
       for (const t of e.changedTouches) spawnBall(t.clientX);
     };

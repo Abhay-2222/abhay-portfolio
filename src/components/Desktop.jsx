@@ -108,7 +108,7 @@ export default function Desktop() {
         style={{
           position: 'absolute', bottom: 104, right: 24,
           display: 'flex', alignItems: 'center', gap: 6,
-          padding: '0 12px 0 10px', height: 30, zIndex: 10,
+          padding: '0 12px 0 10px', height: 30, zIndex: 20,
           background: gameMode ? 'rgba(249,168,212,0.12)' : 'rgba(0,0,0,0.04)',
           border: `1px solid ${gameMode ? 'rgba(249,168,212,0.40)' : 'rgba(0,0,0,0.09)'}`,
           borderRadius: 20, cursor: 'pointer',
