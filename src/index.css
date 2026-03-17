@@ -22,12 +22,6 @@
   font-display: swap;
 }
 
-/* ─── Marquee spin ─── */
-@keyframes marquee-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
 /* ─── Reset ─── */
 *,
 *::before,
@@ -232,9 +226,8 @@ button {
   overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: center;
-  /* pad-bottom for dock */
-  padding: 0 0 88px;
+  justify-content: flex-start;
+  padding: 0 0 88px 8vw;
 }
 
 /* ─── Gradient layers (managed by GSAP in GradientCycle) ─── */
@@ -248,8 +241,8 @@ button {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   gap: 0;
   pointer-events: none;
   user-select: none;
@@ -262,36 +255,36 @@ button {
   will-change: transform, opacity;
 }
 
-/* "My name is" — small label above the name */
-.hero-line--pre {
-  font-family: var(--sans);
-  font-size: clamp(13px, 1.4vw, 17px);
-  font-weight: 300;
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-  margin-bottom: 6px;
-}
-
 /* "Abhay." — large display name */
 .hero-line--name {
-  font-family: var(--sans);
+  font-family: new-spirit, serif;
   font-size: clamp(60px, 9.5vw, 108px);
-  font-weight: 200;
-  font-variation-settings: 'wght' 200;
+  font-weight: 500;
   color: var(--text-primary);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
   line-height: 0.95;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-/* Role lines */
-.hero-line--sub {
-  font-family: var(--sans);
-  font-size: clamp(15px, 1.9vw, 22px);
+/* "Product designer & educator." — consolidated role */
+.hero-line--role {
+  font-family: new-spirit, serif;
+  font-size: clamp(16px, 2vw, 22px);
   font-weight: 400;
   color: var(--text-secondary);
-  line-height: 1.55;
-  letter-spacing: -0.005em;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+/* "Based in Toronto…" — craft statement */
+.hero-line--craft {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
 }
 
 /* ─── Project hero preview ─── */
@@ -607,50 +600,58 @@ button {
   .mobile-nav-inner {
     display: flex;
     align-items: center;
-    justify-content: space-around;
-    /* Floating pill — inset from screen edges */
-    margin: 0 12px;
+    justify-content: center;
+    /* Compact floating pill — auto-width, centered */
+    width: fit-content;
+    margin: 0 auto;
     margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(28px) saturate(200%);
-    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
     border: 1px solid rgba(0, 0, 0, 0.07);
-    border-radius: 22px;
-    padding: 10px 4px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    border-radius: 99px;
+    padding: 6px 8px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    gap: 2px;
   }
 
   .mobile-nav-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 4px 22px;
+    justify-content: center;
+    padding: 7px 18px;
     background: none;
     border: none;
     cursor: pointer;
     color: rgba(0, 0, 0, 0.38);
     text-decoration: none;
-    font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 9.5px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    transition: color 0.15s, transform 0.15s;
+    border-radius: 99px;
+    transition: color 0.15s, background 0.15s, transform 0.15s;
     -webkit-tap-highlight-color: transparent;
-    border-radius: 14px;
   }
 
-  .mobile-nav-btn:active { transform: scale(0.93); }
-  .mobile-nav-btn--on    { color: #0A0A0A; }
+  .mobile-nav-label {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .mobile-nav-divider {
+    width: 1px;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+  }
+
+  .mobile-nav-btn:active { transform: scale(0.94); }
+  .mobile-nav-btn--on    { color: rgba(0, 0, 0, 0.82); background: rgba(0,0,0,0.05); }
 
   /* ── Hero layout on mobile ── */
   .homepage-hero {
     padding-bottom: 90px;   /* floating pill nav height + gap */
     align-items: center;
   }
-
-  /* ── Hide the spinning text ring (overlaps hero on narrow screens) ── */
-  .marquee-arc-wrap { display: none; }
 
   /* ── Tighten hero name spacing ── */
   .hero-line--name { margin-bottom: 16px; }

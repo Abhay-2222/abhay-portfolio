@@ -1,7 +1,7 @@
 /**
  * MobileNav.jsx
- * Sleek iOS-style mobile bottom nav + full-bleed image project sheet.
- * Shows on screens ≤ 768 px only (CSS class .mobile-nav controls display).
+ * Minimal bottom nav + clean list-style project sheet.
+ * Visible on screens ≤ 768 px only (.mobile-nav CSS class).
  */
 
 import { useState } from 'react';
@@ -19,128 +19,67 @@ const META = {
   autonomous:    { name: 'Transit',        color: '#0EA5E9' },
 };
 
-/* ── Nav icons ── */
-function IconGrid() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <rect x="1.5" y="1.5" width="7" height="7" rx="1.8"/>
-      <rect x="11.5" y="1.5" width="7" height="7" rx="1.8"/>
-      <rect x="1.5" y="11.5" width="7" height="7" rx="1.8"/>
-      <rect x="11.5" y="11.5" width="7" height="7" rx="1.8"/>
-    </svg>
-  );
-}
-function IconPlay() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path d="M5 3.5L17 10L5 16.5V3.5Z" />
-    </svg>
-  );
-}
-function IconPerson() {
-  return (
-    <svg width="18" height="20" viewBox="0 0 18 20" fill="none" aria-hidden="true">
-      <circle cx="9" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.6"/>
-      <path d="M1.5 19c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5"
-            stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-/* ── Project card with full-bleed image ── */
-function ProjectCard({ project, onOpen, soonId }) {
-  const m = META[project.id] ?? { name: project.title, color: project.accentColor };
+/* ── Project row (list style) ── */
+function ProjectRow({ project, onOpen, soonId }) {
+  const m    = META[project.id] ?? { name: project.title, color: project.accentColor };
   const soon = project.status === 'coming-soon';
-  const isPing = soonId === project.id;
-  const img = project.previewMedia;
+  const ping = soonId === project.id;
 
   return (
     <motion.button
       onClick={() => onOpen(project.id)}
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ opacity: 0.6 }}
       aria-label={`Open ${project.title}`}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 0,
-        borderRadius: 16,
-        border: `1px solid ${isPing ? m.color + '70' : 'rgba(0,0,0,0.07)'}`,
-        background: '#111',
-        cursor: soon ? 'default' : 'pointer',
-        textAlign: 'left',
-        overflow: 'hidden',
-        WebkitTapHighlightColor: 'transparent',
-        position: 'relative',
-        aspectRatio: '4/3',
-        flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 12,
+        width: '100%', padding: '13px 20px',
+        background: 'none', border: 'none', cursor: soon ? 'default' : 'pointer',
+        textAlign: 'left', WebkitTapHighlightColor: 'transparent',
       }}
     >
-      {/* Image */}
-      {img && (
-        <img
-          src={img}
-          alt=""
-          style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'top center',
-          }}
-        />
-      )}
-
-      {/* Gradient overlay */}
+      {/* Color dot */}
       <div style={{
-        position: 'absolute', inset: 0,
-        background: img
-          ? 'linear-gradient(to bottom, rgba(0,0,0,0) 35%, rgba(0,0,0,0.75) 100%)'
-          : `linear-gradient(135deg, ${m.color}44 0%, ${m.color}22 100%)`,
+        width: 8, height: 8, borderRadius: '50%',
+        background: m.color, flexShrink: 0,
+        opacity: soon ? 0.4 : 1,
       }} />
 
-      {/* Accent line at top */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0,
-        height: 3, background: m.color, zIndex: 2,
-      }} />
-
-      {/* Text at bottom */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        padding: '10px 12px 12px', zIndex: 2,
-      }}>
+      {/* Name + type */}
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontFamily: '"Geist Sans",system-ui',
-          fontSize: 13, fontWeight: 600,
-          color: img ? '#fff' : '#0A0A0A',
-          letterSpacing: '-0.015em',
-          lineHeight: 1.2, marginBottom: 3,
-          textShadow: img ? '0 1px 4px rgba(0,0,0,0.5)' : 'none',
+          fontFamily: '"Geist Sans", system-ui',
+          fontSize: 15, fontWeight: 500,
+          color: soon ? 'rgba(10,10,10,0.38)' : 'rgba(10,10,10,0.82)',
+          letterSpacing: '-0.02em', lineHeight: 1.25,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           {m.name}
         </div>
         <div style={{
-          fontFamily: '"Geist Mono",monospace',
-          fontSize: 9, color: img ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.40)',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          textShadow: img ? '0 1px 3px rgba(0,0,0,0.5)' : 'none',
+          fontFamily: '"Geist Mono", monospace',
+          fontSize: 10, color: 'rgba(10,10,10,0.30)',
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+          marginTop: 2,
         }}>
-          {project.type}
+          {project.type}{soon ? ' — Soon' : ''}
         </div>
-        {soon && (
-          <div style={{
-            marginTop: 5,
-            display: 'inline-block',
-            fontFamily: '"Geist Mono",monospace',
-            fontSize: 8, letterSpacing: '0.10em', textTransform: 'uppercase',
-            color: m.color,
-            background: `${m.color}22`,
-            border: `1px solid ${m.color}55`,
-            borderRadius: 4, padding: '2px 7px',
-          }}>
-            {isPing ? 'Coming Soon' : 'Soon'}
-          </div>
-        )}
       </div>
+
+      {/* Arrow or ping badge */}
+      {ping ? (
+        <span style={{
+          fontFamily: '"Geist Mono", monospace', fontSize: 9,
+          color: m.color, background: `${m.color}18`,
+          border: `1px solid ${m.color}40`,
+          borderRadius: 4, padding: '2px 7px', letterSpacing: '0.08em',
+          textTransform: 'uppercase', flexShrink: 0,
+        }}>Soon</span>
+      ) : !soon && (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, opacity: 0.28 }}>
+          <path d="M2 7h10M8 3l4 4-4 4" stroke="#0A0A0A" strokeWidth="1.4"
+            strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </motion.button>
   );
 }
@@ -171,12 +110,12 @@ export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
             <motion.div
               key="bd"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.20 }}
               onClick={() => setWorkOpen(false)}
               style={{
                 position: 'fixed', inset: 0, zIndex: 290,
-                background: 'rgba(0,0,0,0.50)',
-                backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+                background: 'rgba(0,0,0,0.38)',
+                backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
               }}
             />
 
@@ -185,62 +124,60 @@ export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 360, damping: 38, mass: 0.9 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 40, mass: 0.85 }}
               style={{
                 position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 295,
-                background: 'rgba(248,248,248,0.98)',
-                backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
-                borderRadius: '24px 24px 0 0',
-                borderTop: '1px solid rgba(0,0,0,0.07)',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)',
-                maxHeight: '88vh', overflowY: 'auto',
+                background: 'rgba(252,252,252,0.98)',
+                backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)',
+                borderRadius: '20px 20px 0 0',
+                borderTop: '1px solid rgba(0,0,0,0.06)',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+                maxHeight: '80vh', overflowY: 'auto',
               }}
             >
               {/* Drag handle */}
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
-                <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.12)' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+                <div style={{ width: 36, height: 3.5, borderRadius: 2, background: 'rgba(0,0,0,0.10)' }} />
               </div>
 
               {/* Header */}
-              <div style={{ padding: '14px 20px 16px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{
-                    fontFamily: '"Geist Mono",monospace',
-                    fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase',
-                    color: 'rgba(0,0,0,0.32)', marginBottom: 4,
-                  }}>
-                    Selected Work
-                  </div>
-                  <div style={{
-                    fontFamily: '"Geist Sans",system-ui',
-                    fontSize: 26, fontWeight: 700, color: '#0A0A0A',
-                    letterSpacing: '-0.03em', lineHeight: 1,
-                  }}>
-                    Projects
-                  </div>
-                </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 20px 10px',
+              }}>
+                <span style={{
+                  fontFamily: '"Geist Sans", system-ui',
+                  fontSize: 13, fontWeight: 600, color: 'rgba(10,10,10,0.82)',
+                  letterSpacing: '-0.01em',
+                }}>
+                  Work
+                </span>
                 <button
                   onClick={() => setWorkOpen(false)}
                   aria-label="Close"
                   style={{
-                    width: 30, height: 30, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.07)', border: 'none',
-                    cursor: 'pointer', fontSize: 16, color: 'rgba(0,0,0,0.45)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
+                    fontFamily: '"Geist Sans", system-ui',
+                    fontSize: 13, color: 'rgba(0,0,0,0.38)',
+                    background: 'none', border: 'none',
+                    cursor: 'pointer', padding: '2px 0',
                   }}
-                >×</button>
+                >
+                  Done
+                </button>
               </div>
 
-              {/* 2-column image card grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 14px 16px' }}>
-                {projects.map(p => (
-                  <ProjectCard
-                    key={p.id}
-                    project={p}
-                    onOpen={openProject}
-                    soonId={soonId}
-                  />
+              {/* Divider */}
+              <div style={{ height: 1, background: 'rgba(0,0,0,0.05)', margin: '0 20px' }} />
+
+              {/* Project list */}
+              <div style={{ paddingTop: 4, paddingBottom: 8 }}>
+                {projects.map((p, i) => (
+                  <div key={p.id}>
+                    <ProjectRow project={p} onOpen={openProject} soonId={soonId} />
+                    {i < projects.length - 1 && (
+                      <div style={{ height: 1, background: 'rgba(0,0,0,0.04)', margin: '0 20px' }} />
+                    )}
+                  </div>
                 ))}
               </div>
             </motion.div>
@@ -258,35 +195,33 @@ export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
       >
         <div className="mobile-nav-inner">
 
-          {/* Work */}
           <button
             onClick={() => setWorkOpen(w => !w)}
             className={'mobile-nav-btn' + (workOpen ? ' mobile-nav-btn--on' : '')}
             aria-label="Browse projects"
             aria-expanded={workOpen}
           >
-            <IconGrid />
-            <span>Work</span>
+            <span className="mobile-nav-label">Work</span>
           </button>
 
-          {/* Playground */}
+          <div className="mobile-nav-divider" />
+
           <button
             onClick={onPlaygroundClick}
             className="mobile-nav-btn"
             aria-label="Open Playground"
           >
-            <IconPlay />
-            <span>Playground</span>
+            <span className="mobile-nav-label">Play</span>
           </button>
 
-          {/* About */}
+          <div className="mobile-nav-divider" />
+
           <button
             onClick={() => navigate('/about')}
             className="mobile-nav-btn"
             aria-label="About Abhay"
           >
-            <IconPerson />
-            <span>About</span>
+            <span className="mobile-nav-label">About</span>
           </button>
 
         </div>

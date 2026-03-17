@@ -1422,25 +1422,37 @@ export default function PlaygroundOverlay({onClose}){
   return(
     <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} transition={{duration:.28,ease:[.22,1,.36,1]}}
       style={{position:'fixed',inset:0,zIndex:1000,background:'#fafafa',display:'flex',flexDirection:'column',fontFamily:'"Geist Sans",system-ui,sans-serif'}}>
-      {/* Header */}
-      <div className="playground-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',borderBottom:'1px solid rgba(0,0,0,0.06)',flexShrink:0,background:'rgba(255,255,255,0.80)',backdropFilter:'blur(12px)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <span style={{fontSize:12,fontWeight:600,color:'#1a1814',letterSpacing:'-0.01em'}}>Playground</span>
-          <div style={{width:1,height:14,background:'rgba(0,0,0,0.10)'}}/>
-          <div className="playground-tabs" style={{display:'flex',gap:2}}>
-            {TABS.map(t=>(
-              <button key={t.id} onClick={()=>setActiveTab(t.id)} data-cursor-hover
-                className={`playground-tab${activeTab===t.id?' playground-tab--active':''}`}
-                style={{padding:'4px 12px',borderRadius:6,border:'none',background:activeTab===t.id?'#1a1814':'transparent',color:activeTab===t.id?'#ffffff':'rgba(0,0,0,0.45)',fontSize:11,fontFamily:'"Geist Sans",system-ui',fontWeight:activeTab===t.id?500:400,cursor:'pointer',transition:'all .15s',letterSpacing:'-0.01em'}}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+      {/* Header — matches MenuBar exactly */}
+      <div style={{
+        height:44,display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'0 24px',borderBottom:'1px solid rgba(0,0,0,0.06)',flexShrink:0,
+        background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
+      }}>
+        {/* Left: "Playground" monogram */}
+        <span style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:600,letterSpacing:'0.06em',color:'rgba(0,0,0,0.70)'}}>
+          Playground
+        </span>
+        {/* Center: tab pills */}
+        <div style={{display:'flex',gap:2,position:'absolute',left:'50%',transform:'translateX(-50%)'}}>
+          {TABS.map(t=>(
+            <button key={t.id} onClick={()=>setActiveTab(t.id)} data-cursor-hover
+              style={{padding:'5px 13px',borderRadius:6,border:'none',
+                background:activeTab===t.id?'rgba(0,0,0,0.07)':'transparent',
+                color:activeTab===t.id?'rgba(0,0,0,0.82)':'rgba(0,0,0,0.40)',
+                fontSize:13,fontFamily:'"Geist Sans",system-ui',fontWeight:activeTab===t.id?500:400,
+                cursor:'pointer',transition:'all .15s',letterSpacing:'-0.01em'}}>
+              {t.label}
+            </button>
+          ))}
         </div>
+        {/* Right: close */}
         <button onClick={onClose} data-cursor-hover aria-label="Close playground"
-          className="playground-close"
-          style={{width:26,height:26,borderRadius:'50%',background:'rgba(0,0,0,0.06)',border:'none',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(0,0,0,0.45)'}}>
-          ×
+          style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:400,
+            color:'rgba(0,0,0,0.45)',background:'none',border:'none',cursor:'pointer',
+            transition:'color .15s',padding:'4px 0',lineHeight:1}}
+          onMouseEnter={e=>e.currentTarget.style.color='#0A0A0A'}
+          onMouseLeave={e=>e.currentTarget.style.color='rgba(0,0,0,0.45)'}>
+          Close
         </button>
       </div>
       {/* Content */}
