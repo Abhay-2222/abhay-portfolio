@@ -1422,38 +1422,50 @@ export default function PlaygroundOverlay({onClose}){
   return(
     <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} transition={{duration:.28,ease:[.22,1,.36,1]}}
       style={{position:'fixed',inset:0,zIndex:1000,background:'#fafafa',display:'flex',flexDirection:'column',fontFamily:'"Geist Sans",system-ui,sans-serif'}}>
-      {/* Header — matches MenuBar exactly */}
+      {/* Nav — two-row layout, never overlaps at any width */}
       <div style={{
-        height:44,display:'flex',alignItems:'center',justifyContent:'space-between',
-        padding:'0 24px',borderBottom:'1px solid rgba(0,0,0,0.06)',flexShrink:0,
-        background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
+        flexShrink:0,
+        background:'rgba(255,255,255,0.92)',
+        backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
+        borderBottom:'1px solid rgba(0,0,0,0.06)',
       }}>
-        {/* Left: "Playground" monogram */}
-        <span style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:600,letterSpacing:'0.06em',color:'rgba(0,0,0,0.70)'}}>
-          Playground
-        </span>
-        {/* Center: tab pills */}
-        <div style={{display:'flex',gap:2,position:'absolute',left:'50%',transform:'translateX(-50%)'}}>
+        {/* Row 1 — title + close (mirrors MenuBar exactly) */}
+        <div style={{
+          height:44,display:'flex',alignItems:'center',justifyContent:'space-between',
+          padding:'0 24px',
+        }}>
+          <span style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:600,letterSpacing:'0.06em',color:'rgba(0,0,0,0.70)'}}>
+            Playground
+          </span>
+          <button onClick={onClose} data-cursor-hover aria-label="Close playground"
+            style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:400,
+              color:'rgba(0,0,0,0.45)',background:'none',border:'none',cursor:'pointer',
+              transition:'color .15s',padding:'4px 0',lineHeight:1,minWidth:44,textAlign:'right'}}
+            onMouseEnter={e=>e.currentTarget.style.color='#0A0A0A'}
+            onMouseLeave={e=>e.currentTarget.style.color='rgba(0,0,0,0.45)'}>
+            Close
+          </button>
+        </div>
+        {/* Row 2 — tabs, full width, centered */}
+        <div style={{
+          display:'flex',justifyContent:'center',gap:4,
+          padding:'0 16px 8px',
+        }}>
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setActiveTab(t.id)} data-cursor-hover
-              style={{padding:'5px 13px',borderRadius:6,border:'none',
+              style={{
+                padding:'6px 16px',borderRadius:8,border:'none',
                 background:activeTab===t.id?'rgba(0,0,0,0.07)':'transparent',
-                color:activeTab===t.id?'rgba(0,0,0,0.82)':'rgba(0,0,0,0.40)',
-                fontSize:13,fontFamily:'"Geist Sans",system-ui',fontWeight:activeTab===t.id?500:400,
-                cursor:'pointer',transition:'all .15s',letterSpacing:'-0.01em'}}>
+                color:activeTab===t.id?'rgba(0,0,0,0.82)':'rgba(0,0,0,0.38)',
+                fontSize:13,fontFamily:'"Geist Sans",system-ui',
+                fontWeight:activeTab===t.id?500:400,
+                cursor:'pointer',transition:'all .15s',letterSpacing:'-0.01em',
+                flexShrink:0,
+              }}>
               {t.label}
             </button>
           ))}
         </div>
-        {/* Right: close */}
-        <button onClick={onClose} data-cursor-hover aria-label="Close playground"
-          style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:400,
-            color:'rgba(0,0,0,0.45)',background:'none',border:'none',cursor:'pointer',
-            transition:'color .15s',padding:'4px 0',lineHeight:1}}
-          onMouseEnter={e=>e.currentTarget.style.color='#0A0A0A'}
-          onMouseLeave={e=>e.currentTarget.style.color='rgba(0,0,0,0.45)'}>
-          Close
-        </button>
       </div>
       {/* Content */}
       <div style={{flex:1,overflow:'hidden',position:'relative'}}>
