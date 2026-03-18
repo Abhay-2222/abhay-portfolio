@@ -4,7 +4,7 @@
  * Constellation layout:
  *   RIGHT  — landmark identity objects (CN Tower, India Gate) — LARGE
  *   CENTER — professional tools (VR, Laptop, Phone) — MEDIUM
- *   LEFT   — personality items (chai, hat, batman) — SMALL/EDGE
+ *   LEFT   — personality items (chai, hat, unreal postcard) — SMALL/EDGE
  *
  * Nested group pattern (no transform conflicts):
  *   <g transform="translate(x,y) scale(s)">  ← SVG position + size
@@ -17,17 +17,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/* ─── Tooltip text ─── */
+/* ─── Tooltip content — title + personal insight ─── */
 const ITEMS = {
-  'cn-tower':   'Based in Toronto',
-  'india-gate': 'Roots in New Delhi',
-  'vr-headset': 'Teaching XR & immersive design',
-  'laptop':     'Figma, every day',
-  'phone':      'Product at its smallest form',
-  'chai-cup':   'Chai > coffee, always',
-  'football':   'Playing football to reset',
-  'luffy-hat':  'One Piece — nakama energy in everything',
-  'batman':     'Dark Knight loyalist',
+  'cn-tower':   { title: 'Based in Toronto', sub: 'Where every project teaches me something new about designing at scale' },
+  'india-gate': { title: 'Roots in New Delhi', sub: 'Grew up seeing design in architecture before I had words for it' },
+  'vr-headset': { title: 'XR Educator', sub: 'Teaching immersive design at Humber — spatial UI is the next frontier' },
+  'laptop':     { title: 'In Figma every day', sub: 'Design systems, component libraries, auto-layout at any scale' },
+  'phone':      { title: 'Mobile-first by default', sub: 'If it doesn\'t hold up at 375px, the design isn\'t ready' },
+  'chai-cup':   { title: 'Chai > coffee', sub: 'Two masala chais before any design critique. Non-negotiable.' },
+  'football':   { title: 'Football = reset', sub: 'My 90-min offline mode — clears the design head better than anything' },
+  'luffy-hat':  { title: 'One Piece devotee', sub: 'Nakama energy in every team. Great crews ship great things.' },
+  'unreal':     { title: 'Unreal Engine explorer', sub: 'Building fluency in real-time 3D for the next era of spatial design' },
 };
 
 /* ─── Tooltip anchor positions (% of container) ─── */
@@ -40,7 +40,7 @@ const ANCHORS = {
   'chai-cup':   { x: 26, y: 42 },
   'football':   { x: 80, y: 48 },
   'luffy-hat':  { x: 12, y: 44 },
-  'batman':     { x: 4,  y: 30 },
+  'unreal':     { x: 2,  y: 10 },
 };
 
 /* ─── Constellation layout config ─── */
@@ -56,7 +56,7 @@ const OBJECTS = [
   { id: 'chai-cup',   tx: 455,  ty: 580, scale: 0.65, opacity: 0.72, yAmp: -5, dur: 3.5, delay: 0.7  },
   { id: 'football',   tx: 1240, ty: 615, scale: 0.65, opacity: 0.70, yAmp: 5,  dur: 2.9, delay: 1.1  },
   { id: 'luffy-hat',  tx: 248,  ty: 565, scale: 0.60, opacity: 0.62, yAmp: -4, dur: 3.2, delay: 0.4  },
-  { id: 'batman',     tx: 118,  ty: 445, scale: 0.52, opacity: 0.55, yAmp: 3,  dur: 2.6, delay: 0.8  },
+  { id: 'unreal',     tx: 118,  ty: 445, scale: 0.52, opacity: 0.90, yAmp: 3,  dur: 2.6, delay: 0.8  },
 ];
 
 /* ─── Shared stroke style (visible, not ghost) ─── */
@@ -215,27 +215,34 @@ function ChaiCup() {
   );
 }
 
-function Batman() {
+function UnrealPostcard() {
+  // Postcard frame: image + thin white border + label strip
+  // clipPath is defined in the main SVG <defs> as "unreal-img-clip"
   return (
     <g>
-      <path
-        d="M 0,-42
-           C -6,-48 -17,-48 -17,-42
-           C -28,-39 -34,-28 -29,-22
-           C -42,-16 -58,-4 -58,8
-           C -46,13 -32,8 -23,2
-           C -17,-2 -8,-4 0,-2
-           C 8,-4 17,-2 23,2
-           C 32,8 46,13 58,8
-           C 58,-4 42,-16 29,-22
-           C 34,-28 28,-39 17,-42
-           C 17,-48 6,-48 0,-42 Z"
-        fill="rgba(26,24,20,0.06)"
-        stroke="rgba(26,24,20,0.55)"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      {/* Drop shadow */}
+      <rect x="-62" y="-90" width="124" height="105" rx="10" ry="10"
+        fill="rgba(0,0,0,0.18)" transform="translate(3,5)" />
+      {/* White card frame */}
+      <rect x="-62" y="-90" width="124" height="105" rx="10" ry="10"
+        fill="white" stroke="rgba(26,24,20,0.12)" strokeWidth="1" />
+      {/* Game screenshot image, clipped to rounded rect */}
+      <image
+        href="/projects/isometric/unreal-postcard.jpg"
+        x="-58" y="-86" width="116" height="80"
+        clipPath="url(#unreal-img-clip)"
+        preserveAspectRatio="xMidYMid slice"
       />
+      {/* Label strip at bottom (covers bottom of image, gives white space for text) */}
+      <rect x="-62" y="-10" width="124" height="25" fill="white" />
+      <text x="0" y="4"
+        textAnchor="middle"
+        fontFamily='"DM Mono", monospace'
+        fontSize="7"
+        letterSpacing="0.1em"
+        fill="rgba(26,24,20,0.40)"
+        style={{ textTransform: 'uppercase' }}
+      >Unreal Engine</text>
     </g>
   );
 }
@@ -355,7 +362,7 @@ const COMPS = {
   'chai-cup':   ChaiCup,
   'football':   Football,
   'luffy-hat':  LuffyHat,
-  'batman':     Batman,
+  'unreal':     UnrealPostcard,
 };
 
 /* ══════════════════════════════════════════════════════
@@ -399,6 +406,9 @@ export default function IsometricCanvas({ heroMode = false }) {
             <path d="M 24 0 L 48 12 L 24 24 L 0 12 Z"
               fill="none" stroke="rgba(26,24,20,0.07)" strokeWidth="0.6" />
           </pattern>
+          <clipPath id="unreal-img-clip">
+            <rect x="-58" y="-86" width="116" height="80" rx="7" ry="7" />
+          </clipPath>
         </defs>
 
         <rect width="1400" height="700" fill="url(#iso-grid-bg)" />
@@ -432,7 +442,47 @@ export default function IsometricCanvas({ heroMode = false }) {
 
       {/* ── Tooltip Cards ── */}
       <AnimatePresence>
-        {hovered && ANCHORS[hovered] && (
+        {hovered === 'unreal' ? (
+          /* Unreal postcard hover — plays video */
+          <motion.div
+            key="unreal-video"
+            initial={{ opacity: 0, y: 8, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              position: 'absolute',
+              left: `${ANCHORS['unreal'].x}%`,
+              top:  `${ANCHORS['unreal'].y}%`,
+              width: 220,
+              background: '#0a0a0a',
+              borderRadius: 12,
+              overflow: 'hidden',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.28)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              pointerEvents: 'none',
+              zIndex: 20,
+            }}
+          >
+            <video
+              src="/projects/isometric/unreal.mp4"
+              autoPlay muted loop playsInline
+              style={{ width: '100%', display: 'block', maxHeight: 130, objectFit: 'cover' }}
+            />
+            <div style={{
+              padding: '7px 11px',
+              display: 'flex', alignItems: 'center', gap: 7,
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: 3, background: '#c8602a', flexShrink: 0 }} />
+              <span style={{
+                fontFamily: '"DM Sans", sans-serif',
+                fontSize: 11, color: 'rgba(255,255,255,0.55)',
+              }}>{ITEMS['unreal'].sub}</span>
+            </div>
+          </motion.div>
+        ) : hovered && ANCHORS[hovered] ? (
+          /* Standard text tooltip */
           <motion.div
             key={hovered}
             initial={{ opacity: 0, y: 6, scale: 0.96 }}
@@ -450,29 +500,40 @@ export default function IsometricCanvas({ heroMode = false }) {
               borderRadius: 10,
               padding: '10px 14px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              minWidth: 190,
+              minWidth: 210,
+              maxWidth: 260,
               display: 'flex',
-              alignItems: 'center',
-              gap: 8,
+              alignItems: 'flex-start',
+              gap: 9,
               pointerEvents: 'none',
               zIndex: 20,
             }}
           >
             <div style={{
               width: 7, height: 7, borderRadius: 4,
-              background: '#c8602a', flexShrink: 0,
+              background: '#c8602a', flexShrink: 0, marginTop: 4,
             }} />
-            <span style={{
-              fontFamily: '"DM Sans", sans-serif',
-              fontSize: 13,
-              color: 'rgba(26,24,20,0.75)',
-              lineHeight: 1.35,
-              whiteSpace: 'nowrap',
-            }}>
-              {ITEMS[hovered]}
-            </span>
+            <div>
+              <div style={{
+                fontFamily: '"DM Sans", sans-serif',
+                fontSize: 13, fontWeight: 600,
+                color: 'rgba(26,24,20,0.88)',
+                lineHeight: 1.3,
+                marginBottom: 3,
+              }}>
+                {ITEMS[hovered]?.title}
+              </div>
+              <div style={{
+                fontFamily: '"DM Sans", sans-serif',
+                fontSize: 11.5,
+                color: 'rgba(26,24,20,0.48)',
+                lineHeight: 1.45,
+              }}>
+                {ITEMS[hovered]?.sub}
+              </div>
+            </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
 
     </div>
