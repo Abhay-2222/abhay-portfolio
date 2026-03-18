@@ -539,50 +539,100 @@ const ImpactGrid = ({ impactStats, accentColor }) => (
 );
 
 const DSSpecimenCard = ({ type, accentColor }) => {
-  const base = { minWidth: 220, background: 'var(--surface-secondary)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, padding: 16, scrollSnapAlign: 'start', flexShrink: 0 };
+  const base = { background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '18px 20px', flexShrink: 0 };
+  const label = (text) => (
+    <div style={{ fontSize: 9, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 14, opacity: 0.45, color: '#1a1814' }}>{text}</div>
+  );
+
   if (type === 'colors') {
-    const swatches = [accentColor + 'ff', accentColor + 'cc', accentColor + '99', accentColor + '66', accentColor + '44', accentColor + '22'];
+    // Actual CareSummarizer brand blue scale (from design system)
+    const scale = [
+      { stop: '50',  hex: '#E8F0FB' },
+      { stop: '200', hex: '#9DB8EC' },
+      { stop: '400', hex: '#4F7BD6' },
+      { stop: '600', hex: '#2044BB' },
+      { stop: '800', hex: '#112247' },
+      { stop: '900', hex: '#0A1836' },
+    ];
     return (
       <div style={base}>
-        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Color Scale</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, height: 40 }}>
-          {swatches.map((s, i) => <div key={i} style={{ background: s, borderRadius: 3 }} />)}
+        {label('ColorScale / Brand')}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, marginBottom: 8 }}>
+          {scale.map((s, i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: '100%', height: 30, background: s.hex, borderRadius: 5, border: i === 0 ? '1px solid rgba(0,0,0,0.08)' : 'none' }} />
+              <div style={{ fontSize: 8, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.38)', textAlign: 'center' }}>{s.stop}</div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
+
   if (type === 'typography') {
+    const rows = [
+      { sample: 'Patient Summary', token: 'display/xl · 24px · 600', size: 20, weight: 600 },
+      { sample: 'Clinical Overview', token: 'heading/md · 16px · 400', size: 14, weight: 400 },
+      { sample: 'PATIENT STATUS', token: 'label/sm · 11px · 500 · mono', size: 10, weight: 500, mono: true },
+    ];
     return (
       <div style={base}>
-        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Typography</div>
-        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, lineHeight: 1 }}>Aa</div>
-        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, marginTop: 8, opacity: 0.6 }}>Body text in DM Sans</div>
-        <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, marginTop: 6, color: accentColor }}>code()</div>
-      </div>
-    );
-  }
-  if (type === 'tokens') {
-    return (
-      <div style={base}>
-        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Tokens</div>
-        {['--surface-primary', '--text-primary', '--accent', '--border-subtle', '--radius-md'].map(t => (
-          <div key={t} style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: accentColor, lineHeight: 2, opacity: 0.8 }}>{t}</div>
-        ))}
-      </div>
-    );
-  }
-  if (type === 'buttons') {
-    return (
-      <div style={base}>
-        <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, opacity: 0.5 }}>Buttons</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ background: accentColor, color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>Primary</div>
-          <div style={{ border: `1.5px solid ${accentColor}`, color: accentColor, borderRadius: 6, padding: '6px 14px', fontSize: 12, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>Secondary</div>
-          <div style={{ color: accentColor, padding: '6px 14px', fontSize: 12, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', opacity: 0.8 }}>Ghost</div>
+        {label('Foundation / Typography')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {rows.map((r, i) => (
+            <div key={i} style={{ borderBottom: i < rows.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none', paddingBottom: i < rows.length - 1 ? 10 : 0 }}>
+              <div style={{ fontSize: r.size, fontWeight: r.weight, fontFamily: r.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', color: '#1a1814', lineHeight: 1.2, letterSpacing: r.mono ? '0.08em' : 0 }}>{r.sample}</div>
+              <div style={{ fontSize: 9, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.32)', marginTop: 3 }}>{r.token}</div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
+
+  if (type === 'status') {
+    const statuses = [
+      { label: 'Authorized', color: '#287A50', bg: '#EDF7F2' },
+      { label: 'Pending',    color: '#a07028', bg: '#FDF4E3' },
+      { label: 'Denied',     color: '#C43C3C', bg: '#FDF0F0' },
+      { label: 'Escalated',  color: '#6B4FD4', bg: '#F3F0FD' },
+      { label: 'Draft',      color: '#5a5248', bg: '#F5F3F0' },
+      { label: 'Brand',      color: accentColor, bg: `${accentColor}12` },
+    ];
+    return (
+      <div style={base}>
+        {label('Status / Clinical States')}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+          {statuses.map((s, i) => (
+            <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, border: `1px solid ${s.color}28`, borderRadius: 100, padding: '4px 10px' }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 10, fontFamily: 'DM Sans, sans-serif', color: s.color, fontWeight: 500 }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'buttons') {
+    const btns = [
+      { label: 'Primary',     bg: accentColor,   color: '#fff',        border: 'none' },
+      { label: 'Secondary',   bg: 'transparent', color: accentColor,   border: `1.5px solid ${accentColor}` },
+      { label: 'Ghost',       bg: 'transparent', color: accentColor,   border: '1.5px solid transparent', opacity: 0.7 },
+      { label: 'Destructive', bg: '#FDF0F0',      color: '#C43C3C',     border: '1.5px solid #C43C3C40' },
+    ];
+    return (
+      <div style={base}>
+        {label('Components / Buttons')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {btns.map((b, i) => (
+            <div key={i} style={{ background: b.bg, color: b.color, border: b.border, borderRadius: 6, padding: '6px 14px', fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textAlign: 'center', opacity: b.opacity || 1 }}>{b.label}</div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return null;
 };
 
@@ -626,7 +676,7 @@ const AuditBlock = ({ auditData, accentColor }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
         <DSSpecimenCard type="colors"     accentColor={accentColor} />
         <DSSpecimenCard type="typography" accentColor={accentColor} />
-        <DSSpecimenCard type="tokens"     accentColor={accentColor} />
+        <DSSpecimenCard type="status"     accentColor={accentColor} />
         <DSSpecimenCard type="buttons"    accentColor={accentColor} />
       </div>
     </div>
@@ -634,48 +684,56 @@ const AuditBlock = ({ auditData, accentColor }) => {
 };
 
 const ProductSteps = ({ steps, accentColor }) => {
-  const cols = steps.length <= 4 ? steps.length : Math.ceil(steps.length / 2);
-  const rows = [steps.slice(0, cols), steps.slice(cols)];
+  // Split into two rows for readability (row 1: first half, row 2: remainder)
+  const half = Math.ceil(steps.length / 2);
+  const rows = steps.length > 4 ? [steps.slice(0, half), steps.slice(half)] : [steps];
+
   return (
     <div style={{ margin: '32px 0' }}>
-      <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.12em', color: accentColor, opacity: 0.7, marginBottom: 16 }}>
-        {steps.length}-Stage Workflow
+      <div style={{ fontSize: 9, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.14em', color: accentColor, opacity: 0.6, marginBottom: 14 }}>
+        {steps.length}-Stage Clinical Workflow
       </div>
-      {rows.filter(r => r.length > 0).map((row, ri) => (
-        <div key={ri} style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: ri < rows.length - 1 ? 1 : 0 }}>
-          {row.map((s, i) => (
-            <React.Fragment key={i}>
-              <div style={{
-                flex: 1,
-                background: '#fff',
-                border: `1px solid rgba(0,0,0,0.07)`,
-                borderRadius: i === 0 ? (ri === 0 ? '12px 0 0 0' : '0 0 0 12px') : (i === row.length - 1 ? (ri === 0 ? '0 12px 0 0' : '0 0 12px 0') : '0'),
-                padding: '20px 20px',
-                position: 'relative',
-              }}>
-                {/* Step number badge */}
+      {rows.map((row, ri) => (
+        <div key={ri} style={{ display: 'flex', alignItems: 'stretch', marginBottom: ri < rows.length - 1 ? 2 : 0 }}>
+          {row.map((s, i) => {
+            const isFirst = i === 0;
+            const isLast  = i === row.length - 1;
+            const tl = ri === 0 && isFirst  ? 10 : ri > 0 && isFirst ? 0 : 0;
+            const tr = ri === 0 && isLast   ? 10 : ri > 0 && isLast  ? 0 : 0;
+            const bl = ri === rows.length - 1 && isFirst ? 10 : 0;
+            const br = ri === rows.length - 1 && isLast  ? 10 : 0;
+            return (
+              <React.Fragment key={i}>
                 <div style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: `${accentColor}18`, color: accentColor,
-                  fontFamily: 'DM Mono, monospace', fontSize: 11, fontWeight: 700,
-                  marginBottom: 10,
-                }}>{s.step}</div>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, lineHeight: 1.3 }}>{s.name}</div>
-                <div style={{ fontSize: 12, opacity: 0.55, lineHeight: 1.55 }}>{s.description}</div>
-                {/* Connector dot on right edge */}
-                {i < row.length - 1 && (
+                  flex: 1,
+                  background: '#fff',
+                  border: '1px solid rgba(0,0,0,0.07)',
+                  borderRight: isLast ? '1px solid rgba(0,0,0,0.07)' : 'none',
+                  borderRadius: `${tl}px ${tr}px ${br}px ${bl}px`,
+                  padding: '18px 16px 16px',
+                }}>
                   <div style={{
-                    position: 'absolute', right: -9, top: '50%', transform: 'translateY(-50%)',
-                    width: 18, height: 18, borderRadius: '50%',
-                    background: '#fff', border: `1px solid rgba(0,0,0,0.10)`,
+                    fontFamily: 'DM Mono, monospace',
+                    fontSize: 20, fontWeight: 700,
+                    color: accentColor, lineHeight: 1,
+                    marginBottom: 10, letterSpacing: '-0.01em',
+                  }}>{s.step}</div>
+                  <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 5, lineHeight: 1.3, color: '#1a1814' }}>{s.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.48)', lineHeight: 1.6 }}>{s.description}</div>
+                </div>
+                {/* Arrow connector between cards */}
+                {!isLast && (
+                  <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 9, color: accentColor, zIndex: 1,
+                    width: 24, flexShrink: 0,
+                    background: 'rgba(0,0,0,0.02)',
+                    border: '1px solid rgba(0,0,0,0.07)', borderLeft: 'none', borderRight: 'none',
+                    color: accentColor, fontSize: 11, opacity: 0.5,
                   }}>→</div>
                 )}
-              </div>
-            </React.Fragment>
-          ))}
+              </React.Fragment>
+            );
+          })}
         </div>
       ))}
     </div>
