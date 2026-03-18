@@ -173,6 +173,26 @@ function parseEpisodeContent(content = []) {
   return { headline, bodyBlocks, subsections };
 }
 
+/** Partner / client logo badge shown in episode or overview header */
+function PartnerBadge({ partner }) {
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8,
+      padding: '6px 12px', background: '#fff',
+    }}>
+      <img src={partner.src} alt={partner.name}
+        style={{ height: 18, objectFit: 'contain' }} />
+      <span style={{
+        fontSize: 10, fontFamily: 'DM Mono, monospace',
+        textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.5,
+      }}>
+        {partner.context}
+      </span>
+    </div>
+  );
+}
+
 /** Build a light overview gradient from the project's accent hex */
 function overviewGradient(accentHex) {
   const hex = accentHex.replace('#', '');
@@ -232,6 +252,8 @@ function deriveSections(project) {
       pillars:      ep.pillars      || null,
       principles:   ep.principles   || null,
       seasons:      ep.seasons      || null,
+      videoUrl:     ep.videoUrl     || null,
+      videoFit:     ep.videoFit     || 'cover',
     };
   });
 
@@ -711,7 +733,7 @@ const AuditBlock = ({ auditData, accentColor }) => {
   return (
     <div style={{ margin: '32px 0' }}>
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${auditData.stats.length}, 1fr)`, gap: 1, background: 'rgba(0,0,0,0.06)', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+      <div className="audit-stats-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${auditData.stats.length}, 1fr)`, gap: 1, background: 'rgba(0,0,0,0.06)', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
         {auditData.stats.map((s, i) => (
           <div key={i} style={{ background: '#fff', padding: '20px 22px' }}>
             <div style={{ fontSize: 38, fontFamily: 'DM Mono, monospace', fontWeight: 700, color: accentColor, lineHeight: 1 }}>{s.number}</div>
@@ -733,7 +755,7 @@ const AuditBlock = ({ auditData, accentColor }) => {
       )}
 
       {/* DS Specimen cards — configurable per project via ds.cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+      <div className="ds-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
         {cards.map(type => (
           <DSSpecimenCard key={type} type={type} accentColor={accentColor} ds={ds} />
         ))}
@@ -800,7 +822,7 @@ const ProductSteps = ({ steps, accentColor }) => {
 };
 
 const PowerMap = ({ powerMap, accentColor }) => (
-  <div style={{ margin: '32px 0' }}>
+  <div style={{ margin: '24px 0 0' }}>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 16, alignItems: 'center', marginBottom: 24 }}>
       <div style={{ background: 'var(--surface-secondary)', borderRadius: 8, padding: 20 }}>
         <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, marginBottom: 8 }}>KNOWS THE MOST</div>
@@ -1067,6 +1089,7 @@ const OVERLAY_CSS = `
     min-width: 0; /* critical — prevents flex child from sizing to content */
     width: 100%;
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
     scroll-behavior: smooth;
   }
@@ -1434,10 +1457,9 @@ const OVERLAY_CSS = `
 
   /* ── Content sections ── */
   .case-study-section {
-    padding: 64px 80px 56px;
+    padding: 48px 80px 48px;
     max-width: 100%;
     width: 100%;
-    min-height: 75vh;
     box-sizing: border-box;
     background: #ffffff;
   }
@@ -1452,7 +1474,7 @@ const OVERLAY_CSS = `
     letter-spacing: 0.14em;
     color: rgba(0, 0, 0, 0.30);
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin: 0 0 10px 0;
   }
 
   .section-ep-meta {
@@ -1710,13 +1732,17 @@ const OVERLAY_CSS = `
     .project-meta { padding: 16px 24px; }
     .meta-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .ia-diagram-container { padding: 32px 24px 40px; }
-    .case-study-section { padding: 32px 24px; min-height: 75svh; }
+    .case-study-section { padding: 32px 24px; }
     .section-image-block {
       width: calc(100% + 48px);
       margin-left: -24px;
       margin-right: -24px;
     }
     .image-caption { padding: 12px 24px 0; }
+    /* Design system cards: single column on mobile */
+    .ds-cards-grid { grid-template-columns: 1fr !important; }
+    /* Stats grid: max 2 columns on mobile, wrap if more */
+    .audit-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
   }
 `;
 
@@ -2033,11 +2059,34 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                 className="case-study-section"
                 style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
               >
-                <p className="section-eyebrow" style={{ color: project.accentColor }}>{sec.eyebrow}</p>
+                {/* Section header row: eyebrow left, client logo right */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <p className="section-eyebrow" style={{ color: project.accentColor, margin: 0 }}>{sec.eyebrow}</p>
+                  {project.clientLogo && (
+                    <img
+                      src={project.clientLogo.src}
+                      alt={project.clientLogo.name}
+                      style={{
+                        height: 44, objectFit: 'contain',
+                        maxWidth: 180, flexShrink: 0,
+                        marginLeft: 16, borderRadius: 12,
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                </div>
+
                 {(sec.ep || sec.readTime) && (
                   <div className="section-ep-meta">
                     {sec.ep && <span className="section-ep-chip" style={{ background: project.accentColor + '12', color: project.accentColor }}>{`EP ${sec.ep}`}</span>}
                     {sec.readTime && <span className="section-ep-chip" style={{ background: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' }}>{sec.readTime} read</span>}
+                  </div>
+                )}
+
+                {/* Overview: partner logo below ep-meta */}
+                {sec.id === 'overview' && project.partnerLogo && (
+                  <div style={{ marginBottom: 16 }}>
+                    <PartnerBadge partner={project.partnerLogo} />
                   </div>
                 )}
 
@@ -2148,17 +2197,81 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                       </div>
                     )}
 
-                    {/* Overview video */}
+                    {/* Episode: partner logo (Instacart ep 02) */}
+                    {sec.id !== 'overview' && project.partnerLogo &&
+                      sec.eyebrow?.toLowerCase().includes('instacart') && (
+                      <PartnerBadge partner={project.partnerLogo} />
+                    )}
+
+                    {/* Overview video + live link */}
                     {sec.id === 'overview' && project.hero?.videoUrl && (
-                      <div style={{ marginTop: 28, borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.10)' }}>
+                      <>
+                        <div style={{ marginTop: 28, display: 'flex', justifyContent: 'center' }}>
+                          <div style={{ width: '100%', maxWidth: 550, borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.10)' }}>
+                            <video
+                              src={project.hero.videoUrl}
+                              autoPlay muted loop playsInline
+                              style={{
+                                width: '100%',
+                                display: 'block',
+                                objectFit: project.hero.videoFit ?? 'cover',
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {project.liveUrl && (
+                          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <a
+                              href={project.liveUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 8,
+                                padding: '10px 20px', borderRadius: 8,
+                                background: project.accentColor,
+                                color: '#fff',
+                                fontFamily: 'DM Sans, system-ui, sans-serif',
+                                fontSize: 13, fontWeight: 500,
+                                textDecoration: 'none',
+                                letterSpacing: '-0.01em',
+                                boxShadow: `0 2px 12px ${project.accentColor}40`,
+                                transition: 'opacity 0.15s ease',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              Try it live
+                            </a>
+                            <span style={{
+                              fontFamily: 'DM Mono, monospace', fontSize: 11,
+                              color: 'rgba(0,0,0,0.35)', letterSpacing: '0.02em',
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220,
+                            }}>
+                              {project.liveUrl.replace(/^https?:\/\//, '')}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Episode video — wrapper hidden via onError if file doesn't exist */}
+                    {sec.videoUrl && (
+                      <div
+                        ref={el => { if (el) el._videoWrapper = el; }}
+                        style={{ marginTop: 28, borderRadius: 14, overflow: 'hidden',
+                          boxShadow: '0 4px 32px rgba(0,0,0,0.10)' }}>
                         <video
-                          src={project.hero.videoUrl}
+                          src={sec.videoUrl}
                           autoPlay muted loop playsInline
-                          style={{
-                            width: '100%',
-                            display: 'block',
-                            objectFit: project.hero.videoFit ?? 'cover',
+                          onError={e => {
+                            const wrapper = e.target.closest('div');
+                            if (wrapper) { wrapper.style.display = 'none'; wrapper.style.marginTop = '0'; }
                           }}
+                          style={{ width: '100%', display: 'block',
+                            objectFit: sec.videoFit ?? 'cover', maxHeight: 520 }}
                         />
                       </div>
                     )}
