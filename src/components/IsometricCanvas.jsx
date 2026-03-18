@@ -339,14 +339,18 @@ function HeroObj({ cfg, active, onEnter, onLeave, onTap, children }) {
         whileHover={{ scale: 1.06, y: -10 }}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
-        onClick={onTap}
+        onPointerDown={(e) => { e.stopPropagation(); onTap(); }}
         style={{
           cursor: 'pointer',
           transformBox: 'fill-box',
           transformOrigin: 'center bottom',
           opacity: isActive ? 1 : undefined,
+          pointerEvents: 'all',
+          touchAction: 'manipulation',
         }}
       >
+        {/* Large transparent hit area ensures touch events register on mobile */}
+        <rect x="-90" y="-310" width="180" height="320" fill="transparent" />
         {children}
       </motion.g>
     </g>
@@ -424,6 +428,12 @@ export default function IsometricCanvas({ heroMode = false }) {
         preserveAspectRatio="xMidYMax meet"
         style={{ display: 'block' }}
         aria-hidden="true"
+        onPointerDown={(e) => {
+          // dismiss if tapping the canvas background (not an object)
+          if (e.target.tagName === 'svg' || e.target.tagName === 'rect' && e.target.getAttribute('fill') === 'url(#iso-grid-bg)') {
+            setActive(null);
+          }
+        }}
       >
         <defs>
           <pattern id="iso-grid-bg" width="48" height="24" patternUnits="userSpaceOnUse">
