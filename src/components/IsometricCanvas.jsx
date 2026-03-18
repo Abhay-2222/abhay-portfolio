@@ -14,7 +14,7 @@
  *   </g>
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /* ─── Tooltip content — title + personal insight ─── */
@@ -320,8 +320,8 @@ function Tree({ r = 12 }) {
    Outer: SVG position + scale (attribute)
    Inner: Framer Motion float + hover (CSS)
 ══════════════════════════════════════════════════════ */
-function HeroObj({ cfg, hovered, onEnter, onLeave, children }) {
-  const isHov = hovered === cfg.id;
+function HeroObj({ cfg, active, onEnter, onLeave, onTap, children }) {
+  const isActive = active === cfg.id;
   return (
     <g
       transform={`translate(${cfg.tx},${cfg.ty}) scale(${cfg.scale})`}
@@ -339,11 +339,12 @@ function HeroObj({ cfg, hovered, onEnter, onLeave, children }) {
         whileHover={{ scale: 1.06, y: -10 }}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
+        onClick={onTap}
         style={{
           cursor: 'pointer',
           transformBox: 'fill-box',
           transformOrigin: 'center bottom',
-          opacity: isHov ? 1 : undefined,
+          opacity: isActive ? 1 : undefined,
         }}
       >
         {children}
@@ -369,7 +370,30 @@ const COMPS = {
    MAIN COMPONENT
 ══════════════════════════════════════════════════════ */
 export default function IsometricCanvas({ heroMode = false }) {
-  const [hovered, setHovered] = useState(null);
+  const [active, setActive] = useState(null);
+  const containerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Dismiss tooltip on outside tap (mobile)
+  useEffect(() => {
+    function dismiss(e) {
+      if (active && containerRef.current && !containerRef.current.contains(e.target)) {
+        setActive(null);
+      }
+    }
+    document.addEventListener('touchstart', dismiss);
+    return () => document.removeEventListener('touchstart', dismiss);
+  }, [active]);
+
+  const handleTap = (id) => setActive(prev => prev === id ? null : id);
+  const hovered = active;
 
   const containerStyle = heroMode
     ? { position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -378,7 +402,7 @@ export default function IsometricCanvas({ heroMode = false }) {
         overflow: 'hidden', borderTop: '1px solid rgba(26,24,20,0.06)' };
 
   return (
-    <div style={containerStyle}>
+    <div ref={containerRef} style={containerStyle}>
 
       {/* Section label — standalone mode only */}
       {!heroMode && (
@@ -430,9 +454,10 @@ export default function IsometricCanvas({ heroMode = false }) {
             <HeroObj
               key={cfg.id}
               cfg={cfg}
-              hovered={hovered}
-              onEnter={() => setHovered(cfg.id)}
-              onLeave={() => setHovered(null)}
+              active={active}
+              onEnter={() => !isMobile && setActive(cfg.id)}
+              onLeave={() => !isMobile && setActive(null)}
+              onTap={() => handleTap(cfg.id)}
             >
               <Comp />
             </HeroObj>
@@ -442,8 +467,85 @@ export default function IsometricCanvas({ heroMode = false }) {
 
       {/* ── Tooltip Cards ── */}
       <AnimatePresence>
-        {hovered === 'unreal' ? (
-          /* Unreal postcard hover — plays video */
+        {/* ── Mobile: centered bottom bar ── */}
+        {isMobile && hovered && ITEMS[hovered] ? (
+          hovered === 'unreal' ? (
+            <motion.div
+              key="mobile-unreal"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: 'absolute',
+                bottom: 16, left: 12, right: 12,
+                background: '#0a0a0a',
+                borderRadius: 14,
+                overflow: 'hidden',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.28)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                pointerEvents: 'none',
+                zIndex: 20,
+              }}
+            >
+              <video
+                src="/projects/isometric/unreal.mp4"
+                autoPlay muted loop playsInline
+                style={{ width: '100%', display: 'block', maxHeight: 110, objectFit: 'cover' }}
+              />
+              <div style={{
+                padding: '9px 13px',
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ width: 7, height: 7, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 3 }} />
+                <div>
+                  <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, marginBottom: 3 }}>
+                    {ITEMS['unreal'].title}
+                  </div>
+                  <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 11.5, color: 'rgba(255,255,255,0.50)', lineHeight: 1.45 }}>
+                    {ITEMS['unreal'].sub}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`mobile-${hovered}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: 'absolute',
+                bottom: 16, left: 12, right: 12,
+                background: 'rgba(255,255,255,0.97)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(26,24,20,0.08)',
+                borderRadius: 14,
+                padding: '12px 16px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                pointerEvents: 'none',
+                zIndex: 20,
+              }}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 4 }} />
+              <div>
+                <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 14, fontWeight: 600, color: 'rgba(26,24,20,0.9)', lineHeight: 1.3, marginBottom: 4 }}>
+                  {ITEMS[hovered]?.title}
+                </div>
+                <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 12.5, color: 'rgba(26,24,20,0.5)', lineHeight: 1.5 }}>
+                  {ITEMS[hovered]?.sub}
+                </div>
+              </div>
+            </motion.div>
+          )
+        ) : !isMobile && hovered === 'unreal' ? (
+          /* Desktop: Unreal video tooltip */
           <motion.div
             key="unreal-video"
             initial={{ opacity: 0, y: 8, scale: 0.94 }}
@@ -475,14 +577,13 @@ export default function IsometricCanvas({ heroMode = false }) {
               borderTop: '1px solid rgba(255,255,255,0.06)',
             }}>
               <div style={{ width: 6, height: 6, borderRadius: 3, background: '#c8602a', flexShrink: 0 }} />
-              <span style={{
-                fontFamily: '"DM Sans", sans-serif',
-                fontSize: 11, color: 'rgba(255,255,255,0.55)',
-              }}>{ITEMS['unreal'].sub}</span>
+              <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
+                {ITEMS['unreal'].sub}
+              </span>
             </div>
           </motion.div>
-        ) : hovered && ANCHORS[hovered] ? (
-          /* Standard text tooltip */
+        ) : !isMobile && hovered && ANCHORS[hovered] ? (
+          /* Desktop: standard text tooltip */
           <motion.div
             key={hovered}
             initial={{ opacity: 0, y: 6, scale: 0.96 }}
@@ -509,26 +610,12 @@ export default function IsometricCanvas({ heroMode = false }) {
               zIndex: 20,
             }}
           >
-            <div style={{
-              width: 7, height: 7, borderRadius: 4,
-              background: '#c8602a', flexShrink: 0, marginTop: 4,
-            }} />
+            <div style={{ width: 7, height: 7, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 4 }} />
             <div>
-              <div style={{
-                fontFamily: '"DM Sans", sans-serif',
-                fontSize: 13, fontWeight: 600,
-                color: 'rgba(26,24,20,0.88)',
-                lineHeight: 1.3,
-                marginBottom: 3,
-              }}>
+              <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 13, fontWeight: 600, color: 'rgba(26,24,20,0.88)', lineHeight: 1.3, marginBottom: 3 }}>
                 {ITEMS[hovered]?.title}
               </div>
-              <div style={{
-                fontFamily: '"DM Sans", sans-serif',
-                fontSize: 11.5,
-                color: 'rgba(26,24,20,0.48)',
-                lineHeight: 1.45,
-              }}>
+              <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 11.5, color: 'rgba(26,24,20,0.48)', lineHeight: 1.45 }}>
                 {ITEMS[hovered]?.sub}
               </div>
             </div>
