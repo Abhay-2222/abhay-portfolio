@@ -457,6 +457,58 @@ const projects = [
         "layout": "split",
         "hasDashboard": true,
         "mockupGradient": "linear-gradient(160deg, #1a3050 0%, #2E6DB4 100%)",
+        "auditData": {
+          "stats": [
+            { "number": "3", "label": "Bottom nav tabs: Schedule / Notifications / Profile" },
+            { "number": "6", "label": "Workflow actions per appointment" },
+            { "number": "48px", "label": "Min tap target — gloved field use" }
+          ],
+          "codeSnippet": "Bottom nav: Schedule · Notifications · Profile — blue underline on active\nInspection tabs: OVERVIEW · DETAILS · FEED · RELATED — dark bar, white underline\nActions sheet: En Route · Running Late · Inspection Complete · Send an Update\nToasts: green=success · orange=warning — stack bottom-right · auto-dismiss",
+          "designSystem": {
+            "cards": ["colors", "typography", "status", "buttons"],
+            "colorScale": {
+              "label": "Mobile Palette / App Shell + Feedback",
+              "stops": [
+                { "stop": "brand",    "hex": "#0070D2" },
+                { "stop": "nav-dark", "hex": "#1A1A1A" },
+                { "stop": "surface",  "hex": "#FFFFFF" },
+                { "stop": "success",  "hex": "#2E7D32" },
+                { "stop": "warning",  "hex": "#E65100" },
+                { "stop": "overlay",  "hex": "#3C3C3C" }
+              ]
+            },
+            "typography": {
+              "label": "Mobile Typography / Nav + Card Hierarchy",
+              "rows": [
+                { "sample": "⚡ Actions", "token": "Sans · 600 · 15px · actions header", "size": 15, "weight": 600 },
+                { "sample": "Schedule   Notifications   Profile", "token": "Sans · 400 · 11px · bottom nav labels", "size": 11, "weight": 400 },
+                { "sample": "OVERVIEW  DETAILS  FEED  RELATED", "token": "Sans · 500 · 11px · tab nav ALL CAPS", "size": 10, "weight": 500, "mono": false },
+                { "sample": "Inspection Type · 8:00", "token": "Sans · 400 · 13px · agenda row", "size": 13, "weight": 400 }
+              ]
+            },
+            "status": {
+              "label": "Workflow States / Inspector Action Sheet",
+              "items": [
+                { "label": "En Route",            "color": "#0070D2", "bg": "#EBF5FB" },
+                { "label": "Running Late",         "color": "#E65100", "bg": "#FBE9E7" },
+                { "label": "Inspection Complete",  "color": "#2E7D32", "bg": "#E8F5E9" },
+                { "label": "Send an Update",       "color": "#0070D2", "bg": "#EBF5FB" },
+                { "label": "Accept Change",        "color": "#5C4A9E", "bg": "#EDE7F6" },
+                { "label": "Toast / Must Select",  "color": "#E65100", "bg": "#FFF3E0" }
+              ]
+            },
+            "buttons": {
+              "label": "Mobile CTAs / Modals + Feed Actions",
+              "items": [
+                { "label": "Update",   "bg": "#0070D2",     "color": "#fff",     "border": "none" },
+                { "label": "Send",     "bg": "#0070D2",     "color": "#fff",     "border": "none" },
+                { "label": "Cancel",   "bg": "transparent", "color": "#0070D2",  "border": "1.5px solid #0070D2" },
+                { "label": "Like",     "bg": "transparent", "color": "#54698D",  "border": "1.5px solid #C8C8C8" },
+                { "label": "Comment",  "bg": "transparent", "color": "#54698D",  "border": "1.5px solid #C8C8C8" }
+              ]
+            }
+          }
+        },
         "content": [
           {
             "type": "p",
@@ -464,7 +516,7 @@ const projects = [
           },
           {
             "type": "p",
-            "text": "Five mobile design decisions defined the field experience. Single-task screens with one action per view, inspectors cannot manage multi-step forms mid-shift. Large 48×48px tap targets for gloved use. Offline-first data sync so a dropped signal never breaks a workflow. Managers create and adjust schedules on desktop; inspectors access routes, details, and real-time updates on mobile."
+            "text": "The mobile component set was built around three navigation layers: a bottom nav (Schedule, Notifications, Profile), inspection-level tabs (Overview, Details, Feed, Related on a dark bar), and notification filters (All, Unread, Read). The actions bottom sheet gives inspectors six workflow steps in sequence — En Route, Running Late, Inspection Complete, Send an Update, Open in Salesforce, Accept Change — each a single tap, no forms. Toast notifications stack bottom-right: green for success, orange for warnings. The calendar view shows the full month with blue dot indicators, tapping a day reveals the day agenda below."
           }
         ]
       },
