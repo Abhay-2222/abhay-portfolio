@@ -59,6 +59,7 @@ export default function HeroScatter() {
     const fixRot      = typeof entry === 'object' && entry.rotation != null ? entry.rotation : null;
     const size        = (typeof entry === 'object' && entry.size) ? entry.size : IMG_W;
     const hoverImage  = (typeof entry === 'object' && entry.hoverImage)  ? entry.hoverImage  : null;
+    const hoverVideo  = (typeof entry === 'object' && entry.hoverVideo)  ? entry.hoverVideo  : null;
     const mobileLabel = (typeof entry === 'object' && entry.mobileLabel) ? entry.mobileLabel : null;
 
     let pctX, pctY, finalSize, rotation;
@@ -87,7 +88,7 @@ export default function HeroScatter() {
       rotation  = fixRot ?? (rand(i * 7 + 2) - 0.5) * 18;
     }
 
-    return { key: i, src: `/hero/${encodeURIComponent(src)}`, hoverSrc: hoverImage ? `/hero/${encodeURIComponent(hoverImage)}` : null, mobileLabel, pctX, pctY, size: finalSize, rotation };
+    return { key: i, src: `/hero/${encodeURIComponent(src)}`, hoverSrc: hoverImage ? `/hero/${encodeURIComponent(hoverImage)}` : null, hoverVideo: hoverVideo ?? null, mobileLabel, pctX, pctY, size: finalSize, rotation };
   });
 
   return (
@@ -96,7 +97,7 @@ export default function HeroScatter() {
       className="hero-scatter"
       style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}
     >
-      {items.map(({ key, src, hoverSrc, mobileLabel, pctX, pctY, size, rotation }) => {
+      {items.map(({ key, src, hoverSrc, hoverVideo, mobileLabel, pctX, pctY, size, rotation }) => {
         const isActive = activeIdx === key;
         return (
           <div
@@ -130,6 +131,46 @@ export default function HeroScatter() {
                   filter:     'drop-shadow(0 6px 16px rgba(0,0,0,0.12))',
                 }}
               />
+            )}
+
+            {/* Desktop: hover video card (replaces hoverImage when hoverVideo is set) */}
+            {!isMobile && hoverVideo && (
+              <div style={{
+                position:   'absolute',
+                bottom:     'calc(100% + 10px)',
+                left:       '50%',
+                transform:  `translateX(-50%) translateY(${isActive ? 0 : 8}px)`,
+                opacity:    isActive ? 1 : 0,
+                transition: 'opacity 0.22s ease, transform 0.22s ease',
+                pointerEvents: 'none',
+                zIndex:     10,
+                width:      220,
+                background: '#0a0a0a',
+                borderRadius: 12,
+                overflow:   'hidden',
+                boxShadow:  '0 12px 40px rgba(0,0,0,0.28)',
+                border:     '1px solid rgba(255,255,255,0.08)',
+              }}>
+                {isActive && (
+                  <video
+                    src={hoverVideo}
+                    autoPlay muted loop playsInline
+                    style={{ width: '100%', display: 'block', maxHeight: 130, objectFit: 'cover' }}
+                  />
+                )}
+                <div style={{
+                  padding: '7px 11px',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: 3, background: '#c8602a', flexShrink: 0 }} />
+                  <span style={{
+                    fontFamily: '"DM Sans", sans-serif',
+                    fontSize: 11, color: 'rgba(255,255,255,0.55)',
+                    whiteSpace: 'nowrap',
+                  }}>Unreal Engine explorer</span>
+                </div>
+              </div>
             )}
 
             {/* Mobile: text label on tap */}

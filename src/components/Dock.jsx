@@ -116,6 +116,19 @@ const DockItem = memo(function DockItem({ project, onProjectClick, onProjectHove
         }}>
           {meta.name}
         </span>
+
+        {/* NDA / In Progress badge */}
+        {project.cardBadge && (
+          <span style={{
+            fontSize: 8, fontFamily: 'DM Mono, monospace',
+            textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: meta.color, opacity: 0.65,
+            background: `${meta.color}12`,
+            border: `1px solid ${meta.color}28`,
+            borderRadius: 4, padding: '1px 5px',
+            marginTop: 2, display: 'block', textAlign: 'center',
+          }}>{project.cardBadge}</span>
+        )}
       </button>
     </div>
   );

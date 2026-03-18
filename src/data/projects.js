@@ -28,6 +28,7 @@ const projects = [
     "route": "/meatinspector",
     "status": "full",
     "liveUrl": null,
+    "clientLogo": { "src": "/logos/ontario.jpg", "name": "Ontario Public Service" },
     "description": "Replaced a legacy Siebel scheduling system used by 600 Ontario meat inspectors with a human-centred Salesforce FSL platform, faster, more reliable, and built for real-world exceptions.",
     "contextStats": [
       {
@@ -454,6 +455,8 @@ const projects = [
         "title": "The Mobile Experience",
         "teaser": "Field inspectors work in slaughterhouses and cold storage, in gloves, on the move. The mobile interface had to work in the most hostile conditions possible.",
         "readTime": "4 min",
+        "videoUrl": "/projects/meatinspector/mobile.mp4",
+        "videoFit": "contain",
         "layout": "split",
         "hasDashboard": true,
         "mockupGradient": "linear-gradient(160deg, #1a3050 0%, #2E6DB4 100%)",
@@ -625,7 +628,13 @@ const projects = [
     "accentColor": "#C4782A",
     "route": "/mealplanner",
     "status": "full",
-    "liveUrl": "https://v0-electron-js-app-mocha.vercel.app/",
+    "liveUrl": "https://wisemeals.vercel.app",
+    "partnerLogo": {
+      "name": "Instacart",
+      "src": "/logos/instacart.webp",
+      "url": "https://www.instacart.com",
+      "context": "Partner · Branded Launch"
+    },
     "description": "A mobile-first meal planning app that connects planning, shopping, budget, and nutrition in one interface. Moving toward a branded Instacart launch as a sole partner product.",
     "contextStats": [
       {
@@ -864,6 +873,8 @@ const projects = [
       "gradient": "linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 100%)",
       "light": true,
       "badge": "Case Study · Consumer Health",
+      "videoUrl": "/projects/mealplanner/mobile.mp4",
+      "videoFit": "contain",
       "tags": [
         "Consumer Mobile",
         "2025",
@@ -1883,6 +1894,8 @@ const projects = [
         "title": "The Trail That Was Lost",
         "teaser": "Spencer Creek Trail once connected forests, bridges, and a century of stories into a single walk. Then the town grew, and the trail quietly fell apart.",
         "readTime": "3 min",
+        "videoUrl": "/projects/trailar/trail-1.mp4",
+        "videoFit": "contain",
         "stats": [
           { "number": "2.5km", "label": "trail, mostly fragmented" },
           { "number": "0", "label": "digital presence" },
@@ -1965,6 +1978,59 @@ const projects = [
         "title": "Designing for the Trail, Not the Screen",
         "teaser": "Every decision came down to one question: does this make the trail experience richer, or does it compete with it?",
         "readTime": "4 min",
+        "videoUrl": "/projects/trailar/trail-2.mp4",
+        "videoFit": "contain",
+        "auditData": {
+          "stats": [
+            { "number": "1-hand", "label": "All interactions operable one-handed" },
+            { "number": "5", "label": "Bottom nav tabs · Trail · Rewards · Map · Gallery · Profile" },
+            { "number": "48px", "label": "Min tap target · gloves + motion use" }
+          ],
+          "codeSnippet": "Primary: #1B998B teal — buttons, active nav, progress\nReward/Challenge CTA: #F5A623 orange — claim, join, start\nBottom tracking bar: dark teal surface, white type\nNav: icon + label · active = teal fill · inactive = muted gray\nCards: white surface · 12px radius · soft drop shadow\nAudio-first at AR markers — text as fallback only",
+          "designSystem": {
+            "cards": ["colors", "typography", "status", "buttons"],
+            "colorScale": {
+              "label": "Palette / Trail + Reward Brand",
+              "stops": [
+                { "stop": "teal",      "hex": "#1B998B" },
+                { "stop": "teal-light","hex": "#D1F0EC" },
+                { "stop": "orange",    "hex": "#F5A623" },
+                { "stop": "surface",   "hex": "#FFFFFF" },
+                { "stop": "dark-bar",  "hex": "#1A3A38" },
+                { "stop": "muted",     "hex": "#9CA3AF" }
+              ]
+            },
+            "typography": {
+              "label": "Foundation / App Typography",
+              "rows": [
+                { "sample": "22.40 Miles", "token": "Sans · 700 · 32px · distance hero", "size": 32, "weight": 700 },
+                { "sample": "SCHT 20 Minute Run Challenge", "token": "Sans · 600 · 18px · challenge title", "size": 18, "weight": 600 },
+                { "sample": "Desjardins Canal", "token": "Sans · 600 · 16px · POI card title", "size": 16, "weight": 600 },
+                { "sample": "TIME  DISTANCE  ELEV. GAIN", "token": "Mono · 400 · 11px · stats bar labels", "size": 11, "weight": 400, "mono": true }
+              ]
+            },
+            "status": {
+              "label": "UI States / Trail + Reward Actions",
+              "items": [
+                { "label": "Active Trail",     "color": "#0F6B5F", "bg": "#D1F0EC" },
+                { "label": "Claim Reward",     "color": "#B36A00", "bg": "#FEF3C7" },
+                { "label": "Start Challenge",  "color": "#0F6B5F", "bg": "#D1F0EC" },
+                { "label": "POI Discovered",   "color": "#1B998B", "bg": "#F0FDFB" },
+                { "label": "SOS / Emergency",  "color": "#DC2626", "bg": "#FEE2E2" },
+                { "label": "Offline Mode",     "color": "#4B5563", "bg": "#F3F4F6" }
+              ]
+            },
+            "buttons": {
+              "label": "Actions / CTA Hierarchy",
+              "items": [
+                { "label": "Next / Start",    "bg": "#1B998B", "color": "#fff",     "border": "none" },
+                { "label": "Join Challenge",  "bg": "#F5A623", "color": "#fff",     "border": "none" },
+                { "label": "Claim Voucher",   "bg": "#F5A623", "color": "#fff",     "border": "none" },
+                { "label": "Skip",            "bg": "transparent", "color": "#1B998B", "border": "none" }
+              ]
+            }
+          }
+        },
         "principles": [
           { "rule": "AR for discovery, not navigation", "why": "The trail is the destination. The phone is the lens." },
           { "rule": "One-handed interaction throughout", "why": "People are moving. Both hands are never available." },
@@ -2091,6 +2157,8 @@ const projects = [
     "accentColor": "#7C4DCC",
     "route": "/vosyn",
     "status": "placeholder",
+    "cardBadge": "Under NDA",
+    "clientLogo": { "src": "/logos/vosyn.jpg", "name": "Vosyn AI" },
     "liveUrl": null,
     "description": "Designing shared presence for remote co-watching, making two people feel like they are in the same room even when they are not. Under NDA.",
     "contextStats": [
@@ -2454,6 +2522,7 @@ const projects = [
     "accentColor": "#C9A84C",
     "route": "/aurora",
     "status": "placeholder",
+    "cardBadge": "In Progress",
     "liveUrl": "https://v0-canadian-investment-apps.vercel.app/login",
     "description": "A Canadian personal wealth management app designed to make financial clarity accessible, turning raw account data into decisions, not just numbers.",
     "contextStats": [
@@ -2843,6 +2912,7 @@ const projects = [
     "accentColor": "#0EA5E9",
     "route": "/autonomous",
     "status": "placeholder",
+    "cardBadge": "In Progress",
     "liveUrl": null,
     "description": "A speculative design project for a near-future that is actively arriving. Passenger and fleet interfaces for autonomous transit that build trust through transparency, not reassurance.",
     "contextStats": [

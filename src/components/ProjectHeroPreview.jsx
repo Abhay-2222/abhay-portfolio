@@ -92,6 +92,40 @@ function ProjectHeroPreview({ project, visible }) {
           {/* Tagline — below name */}
           <p className="hero-preview-tagline">{project.heroTagline}</p>
 
+          {/* Client / partner logo — top right, frosted pill */}
+          {(project.clientLogo || project.partnerLogo) && (
+            <div style={{
+              position: 'absolute', top: 16, right: 16,
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8,
+            }}>
+              {project.clientLogo && (
+                <img
+                  src={project.clientLogo.src}
+                  alt={project.clientLogo.name}
+                  style={{
+                    height: 72, objectFit: 'contain', maxWidth: 260,
+                    borderRadius: 16,
+                    boxShadow: '0 6px 24px rgba(0,0,0,0.30)',
+                    display: 'block',
+                  }}
+                />
+              )}
+              {project.partnerLogo && (
+                <img
+                  src={project.partnerLogo.src}
+                  alt={project.partnerLogo.name}
+                  style={{
+                    height: 72, objectFit: 'contain', maxWidth: 260,
+                    borderRadius: 16,
+                    boxShadow: '0 6px 24px rgba(0,0,0,0.30)',
+                    display: 'block',
+                    background: '#fff', padding: '10px 16px',
+                  }}
+                />
+              )}
+            </div>
+          )}
+
           {/* CTA — bottom right */}
           <div className="hero-preview-cta">
             <span>Click to open</span>

@@ -63,6 +63,17 @@ function ProjectRow({ project, onOpen, soonId }) {
         }}>
           {project.type}{soon ? ' — Soon' : ''}
         </div>
+        {project.cardBadge && !soon && (
+          <span style={{
+            display: 'inline-block', marginTop: 3,
+            fontSize: 8, fontFamily: '"Geist Mono", monospace',
+            textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: m.color, opacity: 0.65,
+            background: `${m.color}12`,
+            border: `1px solid ${m.color}28`,
+            borderRadius: 4, padding: '1px 5px',
+          }}>{project.cardBadge}</span>
+        )}
       </div>
 
       {/* Arrow or ping badge */}

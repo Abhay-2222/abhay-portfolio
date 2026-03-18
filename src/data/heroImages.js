@@ -10,6 +10,6 @@ export const HERO_IMAGES = [
   { file: 'Indiagate-removebg-preview.png',    pctX: 43, pctY: 68, size: 300, hoverImage: 'india_gate_quote-removebg-preview.png',  mobileLabel: 'New Delhi' },
   { file: 'ps_controller-removebg-preview.png',pctX: 57, pctY: 42, size: 180, hoverImage: 'conroller_text-removebg-preview.png',   mobileLabel: 'PS5' },
   { file: 'Old_Trafford-removebg-preview.png', pctX: 68, pctY: 74, size: 325, hoverImage: 'old_trafford_quote-removebg-preview.png',mobileLabel: 'Man Utd' },
-  { file: 'batman_car-removebg-preview.png',   pctX: 79, pctY: 38, size: 237, hoverImage: 'batmobile_text-removebg-preview.png',   mobileLabel: 'Batman' },
+  { file: 'unreal-removebg-preview.png',       pctX: 79, pctY: 38, size: 237, hoverVideo: '/projects/isometric/unreal.mp4',          mobileLabel: 'Unreal' },
   { file: 'Chai-removebg-preview.png',         pctX: 90, pctY: 72, size: 192, hoverImage: 'cahi_quote-removebg-preview.png',       mobileLabel: 'Chai' },
 ];
