@@ -368,6 +368,71 @@ const projects = [
       },
       {
         "ep": "04",
+        "title": "Design System",
+        "teaser": "Working within Salesforce Lightning forced precision. Every component had to meet WCAG 2.1 AA, work in gloves on mobile, and stay consistent with a platform 600 inspectors already knew.",
+        "readTime": "3 min",
+        "auditData": {
+          "stats": [
+            { "number": "WCAG AA", "label": "Enforced at component level" },
+            { "number": "48px", "label": "Min tap target (gloved use)" },
+            { "number": "60%", "label": "Built on FSL native components" }
+          ],
+          "codeSnippet": "ALWAYS use Salesforce Lightning Design System tokens\nNEVER break WCAG 2.1 AA contrast — enforced in component review\nGantt blocks: semantic color only — no decoration\nMobile-first: 48×48px tap targets · offline-first sync",
+          "designSystem": {
+            "cards": ["colors", "typography", "status", "buttons"],
+            "colorScale": {
+              "label": "Palette / Salesforce Lightning + FSL Gantt",
+              "stops": [
+                { "stop": "brand", "hex": "#0070D2" },
+                { "stop": "navy",  "hex": "#16325C" },
+                { "stop": "amber", "hex": "#F4B942" },
+                { "stop": "teal",  "hex": "#3BA755" },
+                { "stop": "violet","hex": "#7B5EA7" },
+                { "stop": "surface","hex": "#F4F6F9" }
+              ]
+            },
+            "typography": {
+              "label": "Foundation / Typography",
+              "rows": [
+                { "sample": "Service Appointment",  "token": "Salesforce Sans · 600 · 18px", "size": 18, "weight": 600 },
+                { "sample": "Inspector name, territory", "token": "Salesforce Sans · 400 · 13px", "size": 13, "weight": 400 },
+                { "sample": "SA-0548 · SCHEDULED", "token": "Monospace · 400 · 10px", "size": 10, "weight": 400, "mono": true }
+              ]
+            },
+            "status": {
+              "label": "Status / Appointment States",
+              "items": [
+                { "label": "Scheduled",  "color": "#0070D2", "bg": "#EBF5FB" },
+                { "label": "Dispatched", "color": "#3BA755", "bg": "#EAF5EA" },
+                { "label": "In Progress","color": "#A87700", "bg": "#FEF9E7" },
+                { "label": "Warning",    "color": "#C23934", "bg": "#FDECEA" },
+                { "label": "Draft",      "color": "#54698D", "bg": "#F4F6F9" }
+              ]
+            },
+            "buttons": {
+              "label": "Components / Actions",
+              "items": [
+                { "label": "Schedule",           "bg": "#0070D2",     "color": "#fff",     "border": "none" },
+                { "label": "Dispatch",           "bg": "#3BA755",     "color": "#fff",     "border": "none" },
+                { "label": "Assign Recommended", "bg": "transparent", "color": "#0070D2",  "border": "1.5px solid #0070D2" },
+                { "label": "Override",           "bg": "transparent", "color": "#54698D",  "border": "1.5px solid transparent", "opacity": 0.75 }
+              ]
+            }
+          }
+        },
+        "content": [
+          {
+            "type": "p",
+            "text": "Designing within Salesforce FSL forced a discipline that custom tools rarely require. Every component had to meet WCAG 2.1 AA contrast ratios, work under gloved hands on mobile, and feel native to a platform 600 inspectors were learning alongside a legacy migration."
+          },
+          {
+            "type": "p",
+            "text": "The gantt chart palette is semantic by rule: amber for active appointments, teal for confirmed dispatches, violet for crew blocks, pink for team assignments. Color carries status, never decoration. Where FSL native components fell short of contrast requirements, they were replaced with custom-built alternatives that matched the platform feel but met the legal threshold."
+          }
+        ]
+      },
+      {
+        "ep": "05",
         "title": "Salesforce FSL Constraints",
         "teaser": "Designing within a platform is harder than designing from scratch. Every decision required negotiating with what Salesforce FSL would and would not allow.",
         "readTime": "4 min",
@@ -383,7 +448,7 @@ const projects = [
         ]
       },
       {
-        "ep": "05",
+        "ep": "06",
         "title": "The Mobile Experience",
         "teaser": "Field inspectors work in slaughterhouses and cold storage, in gloves, on the move. The mobile interface had to work in the most hostile conditions possible.",
         "readTime": "4 min",
@@ -402,7 +467,7 @@ const projects = [
         ]
       },
       {
-        "ep": "06",
+        "ep": "07",
         "title": "The Outcomes",
         "teaser": "40 minutes down to under 3. Not because the work got simpler. Because the tool finally matched the people doing it.",
         "readTime": "4 min",
