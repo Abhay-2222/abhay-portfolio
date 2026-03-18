@@ -135,18 +135,6 @@ export default function DiagramEvolution() {
         <div style={{ marginBottom: '36px' }}>
           <div
             style={{
-              fontFamily: '"Geist Mono", monospace',
-              fontSize: '10px',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(0,0,0,0.08)',
-              marginBottom: '10px',
-            }}
-          >
-            B5 · Design Evolution
-          </div>
-          <div
-            style={{
               fontFamily: '"Geist Sans", system-ui, sans-serif',
               fontStyle: 'italic',
               fontSize: '28px',

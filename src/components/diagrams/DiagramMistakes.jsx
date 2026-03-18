@@ -91,18 +91,6 @@ export default function DiagramMistakes() {
         <div style={{ marginBottom: '40px' }}>
           <div
             style={{
-              fontFamily: '"Geist Mono", monospace',
-              fontSize: '10px',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(0,0,0,0.08)',
-              marginBottom: '10px',
-            }}
-          >
-            B4 · Six Mistakes
-          </div>
-          <div
-            style={{
               fontFamily: '"Geist Sans", system-ui, sans-serif',
               fontStyle: 'italic',
               fontSize: '28px',

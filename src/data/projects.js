@@ -284,6 +284,7 @@ const projects = [
       "gradient": "linear-gradient(160deg, #EFF6FF 0%, #DBEAFE 100%)",
       "light": true,
       "badge": "Case Study · Enterprise Gov",
+      "videoUrl": "/projects/meatinspector/overview.mp4",
       "tags": [
         "Enterprise Gov",
         "2023–2024",
@@ -1166,7 +1167,9 @@ const projects = [
         "Product Designer & Engineer",
         "Solo"
       ],
-      "videoUrl": "/projects/healthcare/Caresummariser%20Overview.mp4"
+      "videoUrl": "/projects/healthcare/Caresummariser%20Overview.mp4",
+      "videoFit": "cover",
+      "videoScale": 1
     },
     "episodes": [
       {

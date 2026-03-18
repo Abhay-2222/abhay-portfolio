@@ -24,9 +24,12 @@ const DIAGRAM_MAP = {
 };
 
 /* ── Scales a fixed 1600×diagramHeight diagram to fill its container width ── */
+const DIAGRAM_PREVIEW_VH = 52; // collapsed preview height in vh
+
 function DiagramWrapper({ component: Diagram, diagramHeight = 900 }) {
-  const wrapperRef = useRef(null);
-  const [scale, setScale] = useState(1);
+  const wrapperRef  = useRef(null);
+  const [scale, setScale]       = useState(1);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!wrapperRef.current) return;
@@ -38,13 +41,78 @@ function DiagramWrapper({ component: Diagram, diagramHeight = 900 }) {
     return () => ro.disconnect();
   }, []);
 
+  const fullH    = diagramHeight * scale;
+  const previewH = Math.min(fullH, window.innerHeight * (DIAGRAM_PREVIEW_VH / 100));
+  const needsToggle = fullH > previewH + 40; // only show toggle if meaningful content is hidden
+
   return (
-    <div ref={wrapperRef} style={{ width: '100%', height: `${diagramHeight * scale}px`, overflow: 'hidden', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})` }}>
-        <Suspense fallback={<div style={{ width: 1600, height: diagramHeight, background: '#f5f5f5' }} />}>
-          <Diagram />
-        </Suspense>
+    <div style={{ position: 'relative' }}>
+      <div
+        ref={wrapperRef}
+        style={{
+          width: '100%',
+          height: expanded ? `${fullH}px` : `${previewH}px`,
+          overflow: 'hidden',
+          position: 'relative',
+          transition: 'height 0.45s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        <div style={{ position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})` }}>
+          <Suspense fallback={<div style={{ width: 1600, height: diagramHeight, background: '#f5f5f5' }} />}>
+            <Diagram />
+          </Suspense>
+        </div>
       </div>
+
+      {/* Fade + toggle */}
+      {needsToggle && !expanded && (
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: 100,
+          background: 'linear-gradient(to bottom, transparent 0%, #ffffff 80%)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          paddingBottom: 12,
+        }}>
+          <button
+            onClick={() => setExpanded(true)}
+            style={{
+              border: '1px solid rgba(0,0,0,0.12)',
+              borderRadius: 20,
+              background: '#fff',
+              padding: '6px 18px',
+              fontSize: 12,
+              fontFamily: 'var(--mono)',
+              letterSpacing: '0.06em',
+              cursor: 'pointer',
+              color: 'rgba(0,0,0,0.55)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}
+          >
+            Show full diagram ↓
+          </button>
+        </div>
+      )}
+      {needsToggle && expanded && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+          <button
+            onClick={() => setExpanded(false)}
+            style={{
+              border: '1px solid rgba(0,0,0,0.12)',
+              borderRadius: 20,
+              background: '#fff',
+              padding: '6px 18px',
+              fontSize: 12,
+              fontFamily: 'var(--mono)',
+              letterSpacing: '0.06em',
+              cursor: 'pointer',
+              color: 'rgba(0,0,0,0.55)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}
+          >
+            Collapse ↑
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -169,8 +237,8 @@ function deriveSections(project) {
 
   const iaSection = project.ia ? {
     id:           'information-architecture',
-    eyebrow:      'STRUCTURE',
-    headline:     'Information Architecture',
+    eyebrow:      'SUMMARY',
+    headline:     'Project Summary',
     body:         '',
     bodyBlocks:   [],
     imageGradient: null,
@@ -241,12 +309,33 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
 
     const baseDelay = { animationDelay: `${i * 55}ms` };
 
-    if (type === 'situation') return (
-      <div key={i} className="bt bt-situation" style={{ ...baseDelay, background: aa(0.05), border: `1px solid ${aa(0.12)}` }}>
-        <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
-        <div className="bt-prose">{lines.map((l,j) => <p key={j} className="bt-line">{l}</p>)}</div>
-      </div>
-    );
+    if (type === 'situation') {
+      /* Parse lines — sentences starting with a number become stat rows */
+      const sitItems = [];
+      for (const line of lines) {
+        const sentences = line.split(/\.\s+/).filter(Boolean);
+        for (const s of sentences) {
+          const m = s.trim().match(/^([\d,]+\+?)\s+(.+)/);
+          if (m) sitItems.push({ kind: 'stat', num: m[1], text: m[2].replace(/\.$/, '') });
+          else if (s.trim()) sitItems.push({ kind: 'prose', text: s.replace(/\.$/, '') });
+        }
+      }
+      return (
+        <div key={i} className="bt bt-situation" style={{ ...baseDelay, background: '#fff', border: `1px solid ${aa(0.12)}` }}>
+          <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
+          <div className="bt-sit-list">
+            {sitItems.map((item, j) => item.kind === 'stat' ? (
+              <div key={j} className="bt-sit-row">
+                <span className="bt-sit-num" style={{ color: accentColor }}>{item.num}</span>
+                <span className="bt-sit-label">{item.text}</span>
+              </div>
+            ) : (
+              <p key={j} className="bt-sit-prose">{item.text}</p>
+            ))}
+          </div>
+        </div>
+      );
+    }
 
     if (type === 'users') return (
       <div key={i} className="bt bt-users" style={{ ...baseDelay, border: '1px solid rgba(0,0,0,0.08)' }}>
@@ -254,10 +343,14 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
         <div className="bt-user-stack">
           {lines.map((line, j) => {
             const p = parseRoleLine(line);
+            const tierOpacity = j === 0 ? 1 : j === 1 ? 0.55 : 0.28;
             return p ? (
-              <div key={j} className="bt-user-row" style={{ borderBottomColor: aa(0.08) }}>
-                <span className="bt-user-role" style={{ color: accentColor }}>{p.role}</span>
-                <span className="bt-user-desc">{p.desc}</span>
+              <div key={j} className="bt-user-row" style={{ borderBottomColor: aa(0.07) }}>
+                <span className="bt-user-tier-dot" style={{ background: accentColor, opacity: tierOpacity }} />
+                <div className="bt-user-text">
+                  <span className="bt-user-role" style={{ color: accentColor }}>{p.role}</span>
+                  <span className="bt-user-desc">{p.desc}</span>
+                </div>
               </div>
             ) : <p key={j} className="bt-line">{line}</p>;
           })}
@@ -269,18 +362,20 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
       <div key={i} className="bt bt-problem" style={{ ...baseDelay, background: `linear-gradient(150deg, ${aa(0.88)} 0%, ${accentColor} 100%)` }}>
         <span className="bt-label bt-label--inv">{sec.label}</span>
         <div className="bt-problem-body">
-          {lines.map((l, j) => <p key={j} className="bt-problem-line">{l}</p>)}
+          {lines.map((l, j) => j === 0
+            ? <p key={j} className="bt-problem-lead">{l}</p>
+            : <p key={j} className="bt-problem-line">{l}</p>
+          )}
         </div>
       </div>
     );
 
     if (type === 'constraints') return (
-      <div key={i} className="bt bt-constraints" style={{ ...baseDelay, background: 'rgba(0,0,0,0.025)', border: '1px solid rgba(0,0,0,0.07)' }}>
+      <div key={i} className="bt bt-constraints" style={{ ...baseDelay, background: '#fff', border: '1px solid rgba(0,0,0,0.08)' }}>
         <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
         <div className="bt-constraint-list">
           {lines.map((l, j) => (
-            <div key={j} className="bt-constraint-row">
-              <span className="bt-c-dot" style={{ background: aa(0.35) }} />
+            <div key={j} className="bt-constraint-row" style={{ borderLeftColor: accentColor }}>
               <span className="bt-c-text">{l}</span>
             </div>
           ))}
@@ -289,7 +384,7 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
     );
 
     if (type === 'process') return (
-      <div key={i} className="bt bt-process" style={{ ...baseDelay, background: aa(0.04), border: `1px solid ${aa(0.10)}` }}>
+      <div key={i} className="bt bt-process" style={{ ...baseDelay, background: '#fff', border: `1px solid ${aa(0.12)}` }}>
         <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
         <div className="bt-process-grid">
           {lines.map((l, j) => (
@@ -307,8 +402,8 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
         <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
         <div className="bt-decisions-grid">
           {lines.map((l, j) => (
-            <div key={j} className="bt-decision-card" style={{ background: aa(0.05), border: `1px solid ${aa(0.12)}` }}>
-              <span className="bt-d-num" style={{ color: aa(0.45) }}>{String(j+1).padStart(2,'0')}</span>
+            <div key={j} className="bt-decision-card" style={{ background: '#fff', border: `1px solid rgba(0,0,0,0.08)` }}>
+              <span className="bt-d-arrow" style={{ color: accentColor }}>→</span>
               <span className="bt-d-text">{l}</span>
             </div>
           ))}
@@ -317,12 +412,12 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
     );
 
     if (type === 'product') return (
-      <div key={i} className="bt bt-product" style={{ ...baseDelay, background: aa(0.05), border: `1px solid ${aa(0.11)}` }}>
+      <div key={i} className="bt bt-product" style={{ ...baseDelay, background: '#fff', border: `1px solid rgba(0,0,0,0.08)` }}>
         <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
         <div className="bt-product-list">
           {lines.map((l, j) => (
             <div key={j} className="bt-product-item">
-              <span className="bt-prod-dot" style={{ background: accentColor }} />
+              <span className="bt-prod-check" style={{ color: accentColor }}>✓</span>
               <span className="bt-prod-text">{l}</span>
             </div>
           ))}
@@ -334,17 +429,20 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
       const stats = lines.filter(isStatLine);
       const prose = lines.filter(l => !isStatLine(l));
       return (
-        <div key={i} className="bt bt-outcome" style={{ ...baseDelay, background: accentColor }}>
+        <div key={i} className="bt bt-outcome" style={{ ...baseDelay, background: `linear-gradient(160deg, ${aa(0.95)} 0%, ${accentColor} 100%)` }}>
           <span className="bt-label bt-label--inv">{sec.label}</span>
           {stats.length > 0 && (
             <div className="bt-stats">
               {stats.map((s, j) => {
                 const parts = s.split(/\s+/);
                 return (
-                  <div key={j} className="bt-stat">
-                    <span className="bt-stat-num">{parts[0]}</span>
-                    {parts.length > 1 && <span className="bt-stat-label">{parts.slice(1).join(' ')}</span>}
-                  </div>
+                  <React.Fragment key={j}>
+                    {j > 0 && <div className="bt-stat-divider" />}
+                    <div className="bt-stat">
+                      <span className="bt-stat-num">{parts[0]}</span>
+                      {parts.length > 1 && <span className="bt-stat-label">{parts.slice(1).join(' ')}</span>}
+                    </div>
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -356,7 +454,7 @@ function IADiagram({ iaText, accentColor = '#0a0a0a' }) {
 
     /* misc / THE PRODUCT fallthrough */
     return (
-      <div key={i} className="bt bt-misc" style={{ ...baseDelay, background: aa(0.04), border: `1px solid ${aa(0.10)}` }}>
+      <div key={i} className="bt bt-misc" style={{ ...baseDelay, background: '#fff', border: `1px solid rgba(0,0,0,0.08)` }}>
         <span className="bt-label" style={{ color: accentColor }}>{sec.label}</span>
         <div className="bt-prose">{lines.map((l,j) => <p key={j} className="bt-line">{l}</p>)}</div>
       </div>
@@ -392,12 +490,36 @@ const StatChipsRow = ({ stats, accentColor }) => (
   </div>
 );
 
-const ProblemPullQuote = ({ body }) => {
-  const firstSentence = body.split('. ')[0] + '.';
+const ProblemPullQuote = ({ body, accentColor = '#c8602a' }) => {
+  const sentences = body.split('. ').filter(Boolean);
+  const lead = sentences[0] + '.';
+  const rest = sentences.slice(1).join('. ').trim();
   return (
-    <p style={{ fontSize: 18, fontWeight: 500, lineHeight: 1.6, opacity: 0.85, margin: '0 0 16px' }}>
-      {firstSentence}
-    </p>
+    <div style={{ margin: '28px 0' }}>
+      {/* Big callout card */}
+      <div style={{
+        background: `linear-gradient(135deg, ${accentColor}0a 0%, ${accentColor}05 100%)`,
+        border: `1px solid ${accentColor}22`,
+        borderLeft: `4px solid ${accentColor}`,
+        borderRadius: '0 14px 14px 0',
+        padding: '28px 32px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', top: -8, left: 28,
+          fontSize: 80, lineHeight: 1, color: accentColor, opacity: 0.08,
+          fontFamily: 'Georgia, serif', fontWeight: 700, userSelect: 'none',
+        }}>"</div>
+        <p style={{
+          fontSize: 19, fontWeight: 500, lineHeight: 1.6,
+          color: '#1a1814', fontStyle: 'italic',
+          margin: 0, position: 'relative', zIndex: 1,
+        }}>{lead}</p>
+      </div>
+      {/* Rest of body as normal prose */}
+      {rest && <p style={{ fontSize: 15, lineHeight: 1.75, opacity: 0.65, margin: '16px 0 0' }}>{rest}</p>}
+    </div>
   );
 };
 
@@ -464,47 +586,101 @@ const DSSpecimenCard = ({ type, accentColor }) => {
   return null;
 };
 
-const AuditBlock = ({ auditData, accentColor }) => (
-  <div style={{ margin: '32px 0' }}>
-    <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-      {auditData.stats.map((s, i) => (
-        <div key={i} style={{ background: accentColor + '10', border: `1px solid ${accentColor}25`, borderRadius: 10, padding: '16px 20px', flex: 1 }}>
-          <div style={{ fontSize: 40, fontFamily: 'DM Mono, monospace', fontWeight: 700, color: accentColor }}>{s.number}</div>
-          <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 6, opacity: 0.6 }}>{s.label}</div>
+const AuditBlock = ({ auditData, accentColor }) => {
+  // Parse codeSnippet lines as individual guardrail rules
+  const rules = (auditData.codeSnippet || '').split('\n').map(l => l.trim()).filter(Boolean);
+  return (
+    <div style={{ margin: '32px 0' }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${auditData.stats.length}, 1fr)`, gap: 1, background: 'rgba(0,0,0,0.06)', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+        {auditData.stats.map((s, i) => (
+          <div key={i} style={{ background: '#fff', padding: '20px 22px' }}>
+            <div style={{ fontSize: 38, fontFamily: 'DM Mono, monospace', fontWeight: 700, color: accentColor, lineHeight: 1 }}>{s.number}</div>
+            <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 8, opacity: 0.5 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Guardrails as tag list */}
+      {rules.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.12em', color: accentColor, marginBottom: 12, opacity: 0.7 }}>Design Guardrails</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {rules.map((r, i) => (
+              <div key={i} style={{
+                background: `${accentColor}0c`,
+                border: `1px solid ${accentColor}25`,
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontFamily: 'DM Mono, monospace',
+                color: '#1a1814',
+                lineHeight: 1.4,
+              }}>{r}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* DS Specimen cards in a 2×2 grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <DSSpecimenCard type="colors"     accentColor={accentColor} />
+        <DSSpecimenCard type="typography" accentColor={accentColor} />
+        <DSSpecimenCard type="tokens"     accentColor={accentColor} />
+        <DSSpecimenCard type="buttons"    accentColor={accentColor} />
+      </div>
+    </div>
+  );
+};
+
+const ProductSteps = ({ steps, accentColor }) => {
+  const cols = steps.length <= 4 ? steps.length : Math.ceil(steps.length / 2);
+  const rows = [steps.slice(0, cols), steps.slice(cols)];
+  return (
+    <div style={{ margin: '32px 0' }}>
+      <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.12em', color: accentColor, opacity: 0.7, marginBottom: 16 }}>
+        {steps.length}-Stage Workflow
+      </div>
+      {rows.filter(r => r.length > 0).map((row, ri) => (
+        <div key={ri} style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: ri < rows.length - 1 ? 1 : 0 }}>
+          {row.map((s, i) => (
+            <React.Fragment key={i}>
+              <div style={{
+                flex: 1,
+                background: '#fff',
+                border: `1px solid rgba(0,0,0,0.07)`,
+                borderRadius: i === 0 ? (ri === 0 ? '12px 0 0 0' : '0 0 0 12px') : (i === row.length - 1 ? (ri === 0 ? '0 12px 0 0' : '0 0 12px 0') : '0'),
+                padding: '20px 20px',
+                position: 'relative',
+              }}>
+                {/* Step number badge */}
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: `${accentColor}18`, color: accentColor,
+                  fontFamily: 'DM Mono, monospace', fontSize: 11, fontWeight: 700,
+                  marginBottom: 10,
+                }}>{s.step}</div>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, lineHeight: 1.3 }}>{s.name}</div>
+                <div style={{ fontSize: 12, opacity: 0.55, lineHeight: 1.55 }}>{s.description}</div>
+                {/* Connector dot on right edge */}
+                {i < row.length - 1 && (
+                  <div style={{
+                    position: 'absolute', right: -9, top: '50%', transform: 'translateY(-50%)',
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: '#fff', border: `1px solid rgba(0,0,0,0.10)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, color: accentColor, zIndex: 1,
+                  }}>→</div>
+                )}
+              </div>
+            </React.Fragment>
+          ))}
         </div>
       ))}
     </div>
-    <div style={{ background: '#0d1117', borderRadius: 8, padding: '20px 24px', marginBottom: 24 }}>
-      <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, marginBottom: 12 }}>GUARDRAILS</div>
-      <pre style={{ margin: 0, fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#e6edf3', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{auditData.codeSnippet}</pre>
-    </div>
-    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8 }}>
-      <DSSpecimenCard type="colors" accentColor={accentColor} />
-      <DSSpecimenCard type="typography" accentColor={accentColor} />
-      <DSSpecimenCard type="tokens" accentColor={accentColor} />
-      <DSSpecimenCard type="buttons" accentColor={accentColor} />
-    </div>
-  </div>
-);
-
-const ProductSteps = ({ steps, accentColor }) => (
-  <div style={{ overflowX: 'auto', margin: '32px 0' }}>
-    <div style={{ display: 'flex', gap: 0, minWidth: 'max-content', alignItems: 'flex-start' }}>
-      {steps.map((s, i) => (
-        <React.Fragment key={i}>
-          <div style={{ minWidth: 140, maxWidth: 160, padding: '0 12px' }}>
-            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 28, fontWeight: 700, color: accentColor, lineHeight: 1 }}>{s.step}</div>
-            <div style={{ fontWeight: 600, fontSize: 13, marginTop: 8, marginBottom: 6 }}>{s.name}</div>
-            <div style={{ fontSize: 12, opacity: 0.6, lineHeight: 1.5 }}>{s.description}</div>
-          </div>
-          {i < steps.length - 1 && (
-            <div style={{ alignSelf: 'flex-start', marginTop: 18, color: accentColor, opacity: 0.4, fontSize: 18, paddingTop: 6 }}>→</div>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 const PowerMap = ({ powerMap, accentColor }) => (
   <div style={{ margin: '32px 0' }}>
@@ -657,6 +833,7 @@ const OVERLAY_CSS = `
     z-index: 1000;
     will-change: opacity, transform;
     cursor: none;
+    --surface-secondary: #f7f7f7;
   }
 
   /* Keep custom cursor active inside overlay */
@@ -840,6 +1017,7 @@ const OVERLAY_CSS = `
   /* ── Project meta ── */
   .project-meta {
     padding: 24px 64px;
+    background: #ffffff;
   }
 
   /* ── Sidebar IA item ── */
@@ -863,19 +1041,19 @@ const OVERLAY_CSS = `
       "problem constraints outcome"
       "problem process process"
       "decisions decisions product";
-    gap: 10px;
-    padding: 0 0 56px;
+    gap: 8px;
+    padding: 0 0 40px;
   }
 
   .bt {
     border-radius: 16px;
-    padding: 22px 24px;
+    padding: 16px 18px;
     opacity: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: 10px;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
     position: relative;
   }
   .bt:hover { box-shadow: 0 6px 30px rgba(0,0,0,0.09); }
@@ -898,87 +1076,133 @@ const OVERLAY_CSS = `
   /* LABEL */
   .bt-label {
     font-family: 'Geist Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    font-weight: 600;
-    opacity: 0.65;
+    font-weight: 700;
+    opacity: 0.55;
     flex-shrink: 0;
   }
-  .bt-label--inv { color: rgba(255,255,255,0.6); opacity: 1; }
+  .bt-label--inv { color: rgba(255,255,255,0.55); opacity: 1; }
 
   /* PROSE */
-  .bt-prose { display: flex; flex-direction: column; gap: 5px; }
+  .bt-prose { display: flex; flex-direction: column; gap: 6px; }
   .bt-line {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12.5px;
-    color: rgba(0,0,0,0.58);
+    font-size: 13px;
+    color: rgba(0,0,0,0.60);
     line-height: 1.65;
     margin: 0;
+  }
+
+  /* SITUATION stat rows */
+  .bt-sit-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .bt-sit-row { display: flex; flex-direction: column; gap: 1px; }
+  .bt-sit-num {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 36px; font-weight: 800;
+    letter-spacing: -0.04em; line-height: 1;
+  }
+  .bt-sit-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px; letter-spacing: 0.10em;
+    text-transform: uppercase; color: rgba(0,0,0,0.45); line-height: 1.4;
+  }
+  .bt-sit-prose {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: rgba(0,0,0,0.50); line-height: 1.6; margin: 4px 0 0;
+    font-style: italic;
   }
 
   /* USERS */
   .bt-user-stack { display: flex; flex-direction: column; gap: 0; flex: 1; }
   .bt-user-row {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 9px 0;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
     border-bottom: 1px solid;
   }
   .bt-user-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .bt-user-tier-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+  }
+  .bt-user-text { display: flex; flex-direction: column; gap: 2px; }
   .bt-user-role {
     font-family: 'Geist Mono', monospace;
-    font-size: 8.5px;
+    font-size: 9px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 700;
   }
   .bt-user-desc {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px;
+    font-size: 12.5px;
     color: rgba(0,0,0,0.50);
     line-height: 1.5;
   }
 
   /* PROBLEM — dark tile */
   .bt-problem { justify-content: space-between; }
-  .bt-problem-body { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .bt-problem-body { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .bt-problem-lead {
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.92);
+    line-height: 1.55;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
   .bt-problem-line {
     font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 12.5px;
-    color: rgba(255,255,255,0.78);
+    color: rgba(255,255,255,0.62);
     line-height: 1.65;
     margin: 0;
   }
 
   /* CONSTRAINTS */
   .bt-constraint-list { display: flex; flex-direction: column; gap: 8px; }
-  .bt-constraint-row { display: flex; align-items: flex-start; gap: 10px; }
-  .bt-c-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    margin-top: 5px; flex-shrink: 0;
+  .bt-constraint-row {
+    display: flex; align-items: flex-start;
+    padding-left: 10px;
+    border-left: 2px solid;
   }
   .bt-c-text {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: rgba(0,0,0,0.55); line-height: 1.55;
+    font-size: 12.5px; font-weight: 500; color: rgba(0,0,0,0.65); line-height: 1.55;
   }
 
   /* PROCESS */
   .bt-process-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 14px 20px;
+    gap: 0;
+    position: relative;
   }
-  .bt-process-item { display: flex; flex-direction: column; gap: 5px; }
+  .bt-process-item {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 0 20px 0 0;
+    position: relative;
+  }
+  .bt-process-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    right: 0;
+    width: 1px;
+    height: 20px;
+    background: rgba(0,0,0,0.10);
+  }
   .bt-p-num {
     font-family: 'Geist Mono', monospace;
-    font-size: 24px; font-weight: 300;
-    letter-spacing: -0.03em; line-height: 1;
+    font-size: 28px; font-weight: 300;
+    letter-spacing: -0.04em; line-height: 1;
   }
   .bt-p-text {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: rgba(0,0,0,0.55); line-height: 1.5;
+    font-size: 12.5px; font-weight: 500; color: rgba(0,0,0,0.62); line-height: 1.5;
   }
 
   /* KEY DECISIONS */
@@ -989,28 +1213,26 @@ const OVERLAY_CSS = `
     flex: 1;
   }
   .bt-decision-card {
-    padding: 12px 14px; border-radius: 10px; border: 1px solid;
-    display: flex; flex-direction: column; gap: 5px;
+    padding: 10px 12px; border-radius: 10px; border: 1px solid;
+    display: flex; flex-direction: row; align-items: flex-start; gap: 8px;
   }
-  .bt-d-num {
-    font-family: 'Geist Mono', monospace;
-    font-size: 10px; letter-spacing: 0.06em;
+  .bt-d-arrow {
+    font-size: 14px; font-weight: 700; flex-shrink: 0; line-height: 1.4;
   }
   .bt-d-text {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: rgba(0,0,0,0.68); line-height: 1.5;
+    font-size: 12px; font-weight: 500; color: rgba(0,0,0,0.68); line-height: 1.5;
   }
 
   /* PRODUCT */
-  .bt-product-list { display: flex; flex-direction: column; gap: 7px; }
-  .bt-product-item { display: flex; align-items: flex-start; gap: 9px; }
-  .bt-prod-dot {
-    width: 4px; height: 4px; border-radius: 50%;
-    margin-top: 6px; flex-shrink: 0;
+  .bt-product-list { display: flex; flex-direction: column; gap: 8px; }
+  .bt-product-item { display: flex; align-items: flex-start; gap: 10px; }
+  .bt-prod-check {
+    font-size: 13px; font-weight: 700; flex-shrink: 0; line-height: 1.5;
   }
   .bt-prod-text {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: rgba(0,0,0,0.62); line-height: 1.55;
+    font-size: 12.5px; font-weight: 500; color: rgba(0,0,0,0.70); line-height: 1.5;
   }
 
   /* OUTCOME — accent tile */
@@ -1019,17 +1241,22 @@ const OVERLAY_CSS = `
   .bt-stat { display: flex; flex-direction: column; gap: 2px; }
   .bt-stat-num {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 28px; font-weight: 500;
-    letter-spacing: -0.04em; color: #fff; line-height: 1;
+    font-size: 44px; font-weight: 800;
+    letter-spacing: -0.04em; color: #fff; line-height: 0.9;
+    text-shadow: 0 2px 24px rgba(255,255,255,0.15);
   }
   .bt-stat-label {
     font-family: 'Geist Mono', monospace;
-    font-size: 9px; letter-spacing: 0.08em;
-    text-transform: uppercase; color: rgba(255,255,255,0.5); line-height: 1.4;
+    font-size: 9px; letter-spacing: 0.10em;
+    text-transform: uppercase; color: rgba(255,255,255,0.55); line-height: 1.4;
+  }
+  .bt-stat-divider {
+    width: 24px; height: 1px; background: rgba(255,255,255,0.20); margin: 1px 0;
   }
   .bt-outcome-prose {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: rgba(255,255,255,0.68); line-height: 1.6; margin: 0;
+    font-size: 12.5px; color: rgba(255,255,255,0.70); line-height: 1.6; margin: 0;
+    font-style: italic;
   }
 
   @media (max-width: 860px) {
@@ -1093,7 +1320,9 @@ const OVERLAY_CSS = `
     padding: 64px 80px 56px;
     max-width: 100%;
     width: 100%;
+    min-height: 75vh;
     box-sizing: border-box;
+    background: #ffffff;
   }
 
   .case-study-section:not(#overview) {
@@ -1192,14 +1421,15 @@ const OVERLAY_CSS = `
     width: 100%;
     margin: 40px 0 32px;
     overflow: hidden;
-    border-radius: 0;
+    border-radius: 12px;
     box-shadow: none;
   }
 
   .section-image-block .image-fill {
     width: 100%;
     aspect-ratio: 21/9;
-    border-radius: 0;
+    object-fit: cover;
+    border-radius: 12px;
   }
 
   .image-caption {
@@ -1363,7 +1593,7 @@ const OVERLAY_CSS = `
     .project-meta { padding: 16px 24px; }
     .meta-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .ia-diagram-container { padding: 32px 24px 40px; }
-    .case-study-section { padding: 32px 24px; }
+    .case-study-section { padding: 32px 24px; min-height: 75svh; }
     .section-image-block {
       width: calc(100% + 48px);
       margin-left: -24px;
@@ -1539,12 +1769,12 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
           {sections.map((sec, i) => (
             <div
               key={sec.id}
-              className={`sidebar-nav-item${i === 0 ? ' active' : ''}${sec.type === 'ia' ? ' sidebar-nav-item--ia' : ''}`}
+              className={`sidebar-nav-item${i === 0 ? ' active' : ''}`}
               data-section={sec.id}
               onClick={() => scrollToSection(sec.id)}
-              title={sec.type === 'ia' ? 'Information Architecture' : undefined}
+              title={sec.type === 'ia' ? 'Project Summary' : undefined}
             >
-              {sec.type === 'ia' ? 'IA' : sidebarLabel(sec.eyebrow)}
+              {sec.type === 'ia' ? 'Summary' : sidebarLabel(sec.eyebrow)}
             </div>
           ))}
 
@@ -1608,6 +1838,33 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
               <p className="hero-meta-line" style={project.hero?.light ? { color: 'rgba(0,0,0,0.50)' } : undefined}>
                 {[meta.timeline, meta.role, meta.team].filter(Boolean).join(' · ')}
               </p>
+              {project.status === 'placeholder' && (
+                <div style={{
+                  display:        'inline-flex',
+                  alignItems:     'center',
+                  gap:            6,
+                  marginTop:      12,
+                  padding:        '4px 10px',
+                  borderRadius:   20,
+                  background:     'rgba(255,255,255,0.10)',
+                  border:         '1px solid rgba(255,255,255,0.20)',
+                  backdropFilter: 'blur(8px)',
+                  fontFamily:     'var(--mono)',
+                  fontSize:       11,
+                  letterSpacing:  '0.06em',
+                  color:          'rgba(255,255,255,0.65)',
+                }}>
+                  <span style={{
+                    width:        6,
+                    height:       6,
+                    borderRadius: '50%',
+                    background:   '#f5a623',
+                    flexShrink:   0,
+                    animation:    'wip-pulse 2s ease-in-out infinite',
+                  }} />
+                  Case study in progress
+                </div>
+              )}
             </div>
           </div>
 
@@ -1644,8 +1901,8 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                   className="case-study-section"
                   style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                 >
-                  <p className="section-eyebrow" style={{ color: project.accentColor }}>STRUCTURE</p>
-                  <h2 className="section-headline" style={{ marginBottom: 32 }}>Information Architecture</h2>
+                  <p className="section-eyebrow" style={{ color: project.accentColor }}>SUMMARY</p>
+                  <h2 className="section-headline" style={{ marginBottom: 32 }}>Project Summary</h2>
                   <IADiagram iaText={project.ia} accentColor={project.accentColor} />
                 </section>
               );
@@ -1677,7 +1934,7 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                       {sec.stats && (
                         <>
                           <StatChipsRow stats={sec.stats} accentColor={project.accentColor} />
-                          {sec.body && <ProblemPullQuote body={sec.body} />}
+                          {sec.body && <ProblemPullQuote body={sec.body} accentColor={project.accentColor} />}
                           {sec.body && (() => {
                             const rest = sec.body.split('. ').slice(1).join('. ');
                             return rest ? <p className="section-body">{rest}</p> : null;
@@ -1744,7 +2001,7 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                         )}
                         {sec.stats ? (
                           <>
-                            {sec.body && <ProblemPullQuote body={sec.body} />}
+                            {sec.body && <ProblemPullQuote body={sec.body} accentColor={project.accentColor} />}
                             {sec.body && (() => {
                               const rest = sec.body.split('. ').slice(1).join('. ');
                               return rest ? <p className="section-body">{rest}</p> : null;
@@ -1776,18 +2033,22 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
 
                     {/* Overview video */}
                     {sec.id === 'overview' && project.hero?.videoUrl && (
-                      <div style={{ marginTop: 28, paddingBottom: 32 }}>
+                      <div style={{ marginTop: 28, borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.10)' }}>
                         <video
                           src={project.hero.videoUrl}
                           autoPlay muted loop playsInline
-                          style={{ width: '100%', display: 'block', borderRadius: 0, boxShadow: 'none', margin: '40px 0' }}
+                          style={{
+                            width: '100%',
+                            display: 'block',
+                            objectFit: project.hero.videoFit ?? 'cover',
+                          }}
                         />
                       </div>
                     )}
 
                     {/* Diagram block */}
                     {sec.diagramKey && DIAGRAM_MAP[sec.diagramKey] && (
-                      <div className="section-image-block" style={{ marginTop: 32 }}>
+                      <div className="section-image-block" style={{ marginTop: 32, borderRadius: 12, overflow: 'hidden' }}>
                         <DiagramWrapper
                           component={DIAGRAM_MAP[sec.diagramKey].component}
                           diagramHeight={DIAGRAM_MAP[sec.diagramKey].height}

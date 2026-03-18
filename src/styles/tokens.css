@@ -9,66 +9,82 @@
 :root,
 [data-theme="dark"],
 [data-theme="light"] {
-  --bg:             #ffffff;
-  --bg-secondary:   #f5f5f5;
-  --glass-bg:       rgba(255, 255, 255, 0.85);
-  --glass-border:   rgba(0, 0, 0, 0.08);
-  --glass-hover:    rgba(0, 0, 0, 0.03);
-  --glass-shine:    rgba(255, 255, 255, 0.80);
+  /* Surfaces — warm off-white with natural depth */
+  --bg:             #faf9f7;
+  --bg-secondary:   #f2f0ec;
+  --bg-tertiary:    #e8e5e0;
+  --glass-bg:       rgba(250, 249, 247, 0.88);
+  --glass-border:   rgba(30, 24, 18, 0.07);
+  --glass-hover:    rgba(30, 24, 18, 0.03);
+  --glass-shine:    rgba(255, 255, 253, 0.80);
 
-  --text-primary:   #0a0a0a;
-  --text-secondary: #4a4a4a;
-  --text-muted:     #8a8a8a;
-  --text-tertiary:  #b0b0b0;
-  --text-faint:     rgba(0, 0, 0, 0.15);
+  /* Text — warm neutral hierarchy */
+  --text-primary:   #1a1612;
+  --text-secondary: #4a4440;
+  --text-muted:     #7a7268;
+  --text-tertiary:  #a09890;
+  --text-faint:     rgba(26, 22, 18, 0.14);
 
-  --border-subtle:  rgba(0, 0, 0, 0.04);
-  --border-default: rgba(0, 0, 0, 0.08);
-  --border-strong:  rgba(0, 0, 0, 0.14);
+  /* Borders */
+  --border-subtle:  rgba(26, 22, 18, 0.05);
+  --border-default: rgba(26, 22, 18, 0.09);
+  --border-strong:  rgba(26, 22, 18, 0.16);
 
-  --dock-bg:        rgba(255, 255, 255, 0.72);
-  --dock-border:    rgba(0, 0, 0, 0.08);
-  --menubar-bg:     rgba(255, 255, 255, 0.88);
+  /* Chrome */
+  --dock-bg:        rgba(250, 249, 247, 0.76);
+  --dock-border:    rgba(26, 22, 18, 0.08);
+  --menubar-bg:     rgba(250, 249, 247, 0.90);
 
-  --accent:         #0a0a0a;
-  --accent-orange:  #0a0a0a;
-  --accent-glow:    rgba(0, 0, 0, 0.06);
-  --accent-soft:    rgba(0, 0, 0, 0.04);
-  --accent-orange-glow: rgba(0, 0, 0, 0.06);
-  --accent-orange-soft: rgba(0, 0, 0, 0.04);
+  /* Accent — terracotta / burnt orange (warm, editorial) */
+  --accent:             #c8602a;
+  --accent-orange:      #c8602a;
+  --accent-glow:        rgba(200, 96, 42, 0.12);
+  --accent-soft:        rgba(200, 96, 42, 0.07);
+  --accent-orange-glow: rgba(200, 96, 42, 0.12);
+  --accent-orange-soft: rgba(200, 96, 42, 0.07);
+  --accent-border:      rgba(200, 96, 42, 0.30);
+  --on-accent:          #ffffff;
 
-  --accent-green:      #2a7a50;
-  --accent-green-glow: rgba(42, 122, 80, 0.15);
-  --accent-purple:     #6b52d1;
-  --accent-gold:       #b08030;
-  --accent-teal:       #2a8a84;
-  --accent-coral:      #cc4444;
-  --accent-border:     rgba(0, 0, 0, 0.25);
-  --on-accent:         #ffffff;
+  /* Brand blue — from CareSummarizer design system */
+  --brand-blue:         #2044BB;
+  --brand-blue-light:   #e8f0fb;
+  --brand-blue-glow:    rgba(32, 68, 187, 0.12);
 
-  --error:          #cc3333;
-  --success:        #2a7a50;
-  --success-glow:   rgba(42, 122, 80, 0.15);
-  --overlay-bg:     rgba(0, 0, 0, 0.30);
-  --overlay-sheet-bg:     rgba(255, 255, 255, 0.96);
-  --overlay-sheet-border: rgba(0, 0, 0, 0.08);
-  --overlay-shadow:       0 0 0 0.5px rgba(0,0,0,0.10),
-                          0 4px 16px rgba(0,0,0,0.08),
-                          0 16px 48px rgba(0,0,0,0.10),
-                          0 48px 96px rgba(0,0,0,0.08);
-  --overlay-card:         rgba(0, 0, 0, 0.02);
-  --overlay-card-hover:   rgba(0, 0, 0, 0.04);
-  --overlay-divider:      rgba(0, 0, 0, 0.06);
-  --overlay-label:        rgba(0, 0, 0, 0.40);
+  /* Semantic accents */
+  --accent-green:      #287a50;
+  --accent-green-glow: rgba(40, 122, 80, 0.14);
+  --accent-purple:     #6b4fd4;
+  --accent-gold:       #a07028;
+  --accent-teal:       #1e8a82;
+  --accent-coral:      #c43c3c;
 
-  --dock-shadow:    0 0 0 0.5px rgba(0,0,0,0.06),
-                    0 8px 32px rgba(0,0,0,0.10),
-                    0 2px 8px rgba(0,0,0,0.06);
+  /* Status */
+  --error:          #c43c3c;
+  --success:        #287a50;
+  --success-glow:   rgba(40, 122, 80, 0.14);
 
-  --shadow:         0 32px 80px rgba(0, 0, 0, 0.12),
-                    0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-sm:      0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-glow:    0 0 40px rgba(0, 0, 0, 0.06);
+  /* Overlay / sheet */
+  --overlay-bg:           rgba(18, 14, 10, 0.36);
+  --overlay-sheet-bg:     rgba(250, 249, 247, 0.97);
+  --overlay-sheet-border: rgba(26, 22, 18, 0.07);
+  --overlay-shadow:       0 0 0 0.5px rgba(26,22,18,0.10),
+                          0 4px 16px rgba(26,22,18,0.07),
+                          0 16px 48px rgba(26,22,18,0.09),
+                          0 48px 96px rgba(26,22,18,0.07);
+  --overlay-card:         rgba(26, 22, 18, 0.025);
+  --overlay-card-hover:   rgba(26, 22, 18, 0.045);
+  --overlay-divider:      rgba(26, 22, 18, 0.06);
+  --overlay-label:        rgba(26, 22, 18, 0.38);
+
+  /* Shadows */
+  --dock-shadow:    0 0 0 0.5px rgba(26,22,18,0.06),
+                    0 8px 32px rgba(26,22,18,0.09),
+                    0 2px 8px rgba(26,22,18,0.05);
+
+  --shadow:         0 32px 80px rgba(26, 22, 18, 0.11),
+                    0 0 0 1px rgba(26, 22, 18, 0.04);
+  --shadow-sm:      0 8px 24px rgba(26, 22, 18, 0.07);
+  --shadow-glow:    0 0 40px rgba(200, 96, 42, 0.08);
 
   --serif:          'Geist Sans', system-ui, sans-serif;
   --sans:           'Geist Sans', system-ui, sans-serif;

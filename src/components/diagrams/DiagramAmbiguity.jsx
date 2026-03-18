@@ -41,18 +41,6 @@ export default function DiagramAmbiguity() {
         <div style={{ padding: '44px 80px 28px', flexShrink: 0 }}>
           <div
             style={{
-              fontFamily: '"Geist Mono", monospace',
-              fontSize: '10px',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(0,0,0,0.35)',
-              marginBottom: '10px',
-            }}
-          >
-            B3 · The Ambiguity
-          </div>
-          <div
-            style={{
               fontFamily: '"Geist Sans", system-ui, sans-serif',
               fontStyle: 'italic',
               fontSize: '28px',

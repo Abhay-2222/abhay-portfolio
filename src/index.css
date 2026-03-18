@@ -303,7 +303,7 @@ button {
 .hero-preview-bg {
   position: absolute;
   inset: 0;
-  background: #ffffff;
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -569,6 +569,11 @@ button {
   100% { background-position:   0px   0px; }
 }
 
+@keyframes wip-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
 /* ═══════════════════════════════════════════════
    MOBILE NAVIGATION  (≤ 768 px)
 ═══════════════════════════════════════════════ */
@@ -652,6 +657,7 @@ button {
     padding-bottom: 90px;   /* floating pill nav height + gap */
     align-items: center;
   }
+
 
   /* ── Tighten hero name spacing ── */
   .hero-line--name { margin-bottom: 16px; }
