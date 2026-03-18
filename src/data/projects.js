@@ -908,7 +908,7 @@ const projects = [
     ],
     "platform": "React · Claude 4 Sonnet · Vercel",
     "icon": "🏥",
-    "accentColor": "#2D6A9F",
+    "accentColor": "#2044BB",
     "route": "/healthcare",
     "status": "full",
     "liveUrl": null,

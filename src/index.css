@@ -303,7 +303,7 @@ button {
 .hero-preview-bg {
   position: absolute;
   inset: 0;
-  background: var(--bg);
+  background: #ffffff;
   overflow: hidden;
 }
 
