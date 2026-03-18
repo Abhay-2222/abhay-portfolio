@@ -797,43 +797,6 @@ const projects = [
       },
       {
         "ep": "03",
-        "title": "The Weekly Planning Interface",
-        "teaser": "Fitting 21 meals on a 375px screen is genuinely hard. A calendar felt wrong. A spreadsheet felt worse. Here is what worked.",
-        "readTime": "3 min",
-        "content": [
-          {
-            "type": "p",
-            "text": "You need to see the whole week to plan it effectively. But a 7x3 grid on a phone screen is too dense to read, and a calendar view imports the wrong mental model entirely. Meals are not events. They do not have start times and attendees."
-          },
-          {
-            "type": "p",
-            "text": "The solution is a horizontally scrollable week where each day shows its meals collapsed. Everything is visible at a glance. Tap a slot to expand and add a meal. No vertical scrolling to see the full week. The information architecture feels obvious once you see it, which means it took a while to find."
-          }
-        ]
-      },
-      {
-        "ep": "04",
-        "title": "Where We Are Now",
-        "teaser": "Live and working. No impact metrics yet because this is still being built. The Instacart path is in early stages. Honest about where we are.",
-        "readTime": "2 min",
-        "impactStats": [
-          { "before": "45 min", "after": "< 10 min", "label": "Weekly planning time", "delta": "−78%" },
-          { "before": "5 tools", "after": "1", "label": "Apps needed", "delta": "−80%" },
-          { "before": "30–40%", "after": "<15%", "label": "Grocery waste", "delta": "target" }
-        ],
-        "content": [
-          {
-            "type": "p",
-            "text": "The app is live as a working prototype. Weekly planning, automatic grocery list generation, budget tracking, and nutrition summaries all function. The live demo is real and available."
-          },
-          {
-            "type": "p",
-            "text": "There are no impact metrics yet. This is still being built. The Instacart partnership is in early conversations. This case study reflects decisions and process to date, not a finished story. That part is still being written."
-          }
-        ]
-      },
-      {
-        "ep": "05",
         "title": "Design System",
         "teaser": "Calm over urgency. No bold, anywhere. A warm neutral palette built around food semantics — sage for fresh, wheat for budget, terracotta for warnings.",
         "readTime": "3 min",
@@ -845,6 +808,7 @@ const projects = [
           ],
           "codeSnippet": "NEVER use font-weight bold — size + color carry hierarchy\nALWAYS use CSS variables — no hardcoded colours\nBorders optional — elevation via warm shadow only\nMotion: t-fast 100ms · t-base 160ms · t-slow 240ms",
           "designSystem": {
+            "cards": ["colors", "typography", "tokens", "buttons"],
             "colorScale": {
               "label": "Palette / Warm Cream + Food Semantics",
               "stops": [
@@ -864,14 +828,16 @@ const projects = [
                 { "sample": "CALORIES 420", "token": "DM Mono · data · 400", "size": 10, "weight": 400, "mono": true }
               ]
             },
-            "status": {
-              "label": "Status / Food Semantics",
+            "tokens": {
+              "label": "Design Tokens",
               "items": [
-                { "label": "Fresh",    "color": "#4d7552", "bg": "#e8f2e9" },
-                { "label": "Planned",  "color": "#6b9fba", "bg": "#e3eef5" },
-                { "label": "Budget OK","color": "#9a6f1a", "bg": "#fdf3d6" },
-                { "label": "Expiring", "color": "#934f2a", "bg": "#f5e8de" },
-                { "label": "Remove",   "color": "#934f2a", "bg": "#f5e8de" }
+                { "name": "--color-sage",      "value": "#7a9e7e",  "dot": "#7a9e7e" },
+                { "name": "--color-wheat",     "value": "#d4a84b",  "dot": "#d4a84b" },
+                { "name": "--color-terra",     "value": "#c17f5a",  "dot": "#c17f5a" },
+                { "name": "--surface-primary", "value": "#fdfaf6",  "dot": "#fdfaf6" },
+                { "name": "--text-body",       "value": "DM Sans · 400", "dot": null },
+                { "name": "--radius-md",       "value": "12px",     "dot": null },
+                { "name": "--t-base",          "value": "160ms",    "dot": null }
               ]
             },
             "buttons": {
@@ -897,6 +863,43 @@ const projects = [
           {
             "type": "p",
             "text": "The typography rule is absolute: weight 400 throughout. Hierarchy comes only from size and colour. This was technically enforced as a global CSS rule and caught in review — not a soft guideline."
+          }
+        ]
+      },
+      {
+        "ep": "04",
+        "title": "The Weekly Planning Interface",
+        "teaser": "Fitting 21 meals on a 375px screen is genuinely hard. A calendar felt wrong. A spreadsheet felt worse. Here is what worked.",
+        "readTime": "3 min",
+        "content": [
+          {
+            "type": "p",
+            "text": "You need to see the whole week to plan it effectively. But a 7x3 grid on a phone screen is too dense to read, and a calendar view imports the wrong mental model entirely. Meals are not events. They do not have start times and attendees."
+          },
+          {
+            "type": "p",
+            "text": "The solution is a horizontally scrollable week where each day shows its meals collapsed. Everything is visible at a glance. Tap a slot to expand and add a meal. No vertical scrolling to see the full week. The information architecture feels obvious once you see it, which means it took a while to find."
+          }
+        ]
+      },
+      {
+        "ep": "05",
+        "title": "Where We Are Now",
+        "teaser": "Live and working. No impact metrics yet because this is still being built. The Instacart path is in early stages. Honest about where we are.",
+        "readTime": "2 min",
+        "impactStats": [
+          { "before": "45 min", "after": "< 10 min", "label": "Weekly planning time", "delta": "−78%" },
+          { "before": "5 tools", "after": "1", "label": "Apps needed", "delta": "−80%" },
+          { "before": "30–40%", "after": "<15%", "label": "Grocery waste", "delta": "target" }
+        ],
+        "content": [
+          {
+            "type": "p",
+            "text": "The app is live as a working prototype. Weekly planning, automatic grocery list generation, budget tracking, and nutrition summaries all function. The live demo is real and available."
+          },
+          {
+            "type": "p",
+            "text": "There are no impact metrics yet. This is still being built. The Instacart partnership is in early conversations. This case study reflects decisions and process to date, not a finished story. That part is still being written."
           }
         ]
       }
@@ -1290,7 +1293,46 @@ const projects = [
             { "number": "39", "label": "Files bypassing token system" },
             { "number": "20%", "label": "Token adoption at audit" }
           ],
-          "codeSnippet": "# CLAUDE.md — Token Enforcement\nALWAYS use CSS variables from tokens.css\nNEVER hardcode hex colors — use --color-[semantic-name]\nComponents: background → var(--surface-primary), text → var(--text-primary)"
+          "codeSnippet": "# CLAUDE.md — Token Enforcement\nALWAYS use CSS variables from tokens.css\nNEVER hardcode hex colors — use --color-[semantic-name]\nComponents: background → var(--surface-primary), text → var(--text-primary)",
+          "designSystem": {
+            "colorScale": {
+              "label": "Palette / Clinical Blue",
+              "stops": [
+                { "stop": "50",  "hex": "#EEF2FC" },
+                { "stop": "200", "hex": "#9DB8EC" },
+                { "stop": "400", "hex": "#4F7BD6" },
+                { "stop": "600", "hex": "#2044BB" },
+                { "stop": "800", "hex": "#112247" },
+                { "stop": "900", "hex": "#0A1836" }
+              ]
+            },
+            "typography": {
+              "label": "Foundation / Typography",
+              "rows": [
+                { "sample": "Patient Summary",   "token": "DM Sans · 600 · 20px", "size": 20, "weight": 600 },
+                { "sample": "Clinical overview",  "token": "DM Sans · 400 · 14px", "size": 14, "weight": 400 },
+                { "sample": "CASE STATUS",        "token": "DM Mono · 400 · 10px", "size": 10, "weight": 400, "mono": true }
+              ]
+            },
+            "status": {
+              "label": "Status / Clinical States",
+              "items": [
+                { "label": "Authorized", "color": "#287A50", "bg": "#EDF7F2" },
+                { "label": "Pending",    "color": "#a07028", "bg": "#FDF4E3" },
+                { "label": "Denied",     "color": "#C43C3C", "bg": "#FDF0F0" },
+                { "label": "Escalated",  "color": "#6B4FD4", "bg": "#F3F0FD" },
+                { "label": "Draft",      "color": "#5a5248", "bg": "#F5F3F0" }
+              ]
+            },
+            "buttons": {
+              "label": "Components / Actions",
+              "items": [
+                { "label": "Authorize Case",  "bg": "#2044BB",     "color": "#fff",     "border": "none" },
+                { "label": "Request Info",    "bg": "transparent", "color": "#2044BB",  "border": "1.5px solid #2044BB" },
+                { "label": "Escalate",        "bg": "#FDF0F0",     "color": "#C43C3C",  "border": "1.5px solid #C43C3C40" }
+              ]
+            }
+          }
         },
         "content": [
           {

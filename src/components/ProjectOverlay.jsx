@@ -540,9 +540,16 @@ const ImpactGrid = ({ impactStats, accentColor }) => (
 
 // DSSpecimenCard is data-driven — each project passes its own ds object from auditData.designSystem
 const DSSpecimenCard = ({ type, accentColor, ds }) => {
-  const base = { background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '18px 20px', flexShrink: 0 };
+  const base = {
+    background: '#fff',
+    border: '1px solid rgba(0,0,0,0.07)',
+    borderRadius: 14,
+    padding: '18px 20px',
+    flexShrink: 0,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)',
+  };
   const lbl = (text) => (
-    <div style={{ fontSize: 9, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 14, opacity: 0.45, color: '#1a1814' }}>{text}</div>
+    <div style={{ fontSize: 8.5, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.13em', marginBottom: 14, opacity: 0.4, color: '#1a1814' }}>{text}</div>
   );
 
   if (type === 'colors') {
@@ -557,11 +564,11 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
     return (
       <div style={base}>
         {lbl(data.label)}
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${data.stops.length}, 1fr)`, gap: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${data.stops.length}, 1fr)`, gap: 5, borderRadius: 8, overflow: 'hidden' }}>
           {data.stops.map((s, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: '100%', height: 30, background: s.hex, borderRadius: 5, border: i === 0 ? '1px solid rgba(0,0,0,0.08)' : 'none' }} />
-              <div style={{ fontSize: 8, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.38)', textAlign: 'center' }}>{s.stop}</div>
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: '100%', aspectRatio: '1 / 1.4', background: s.hex, borderRadius: 5, border: i === 0 ? '1px solid rgba(0,0,0,0.1)' : 'none' }} />
+              <div style={{ fontSize: 7.5, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.35)', textAlign: 'center', lineHeight: 1.2 }}>{s.stop}</div>
             </div>
           ))}
         </div>
@@ -578,14 +585,59 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
         { sample: 'PATIENT STATUS',   token: 'label/sm · 11px · mono',  size: 10, weight: 500, mono: true },
       ],
     };
+    const displayRow = data.rows[0];
+    const displayFont = displayRow?.serif ? 'Georgia, serif' : displayRow?.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif';
     return (
       <div style={base}>
         {lbl(data.label)}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Large "Aa" specimen */}
+        <div style={{
+          fontSize: 42, fontWeight: displayRow?.weight || 400,
+          fontFamily: displayFont,
+          color: '#1a1814', lineHeight: 1, marginBottom: 12,
+          letterSpacing: '-0.01em',
+        }}>Aa</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {data.rows.map((r, i) => (
-            <div key={i} style={{ borderBottom: i < data.rows.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none', paddingBottom: i < data.rows.length - 1 ? 10 : 0 }}>
-              <div style={{ fontSize: r.size, fontWeight: r.weight, fontFamily: r.serif ? 'Georgia, serif' : r.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', color: '#1a1814', lineHeight: 1.2, letterSpacing: r.mono ? '0.08em' : 0 }}>{r.sample}</div>
-              <div style={{ fontSize: 9, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.32)', marginTop: 3 }}>{r.token}</div>
+            <div key={i} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, borderTop: i === 0 ? '1px solid rgba(0,0,0,0.06)' : 'none', paddingTop: i === 0 ? 10 : 0 }}>
+              <div style={{ fontSize: r.size, fontWeight: r.weight, fontFamily: r.serif ? 'Georgia, serif' : r.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', color: '#1a1814', lineHeight: 1.2, letterSpacing: r.mono ? '0.08em' : 0, whiteSpace: 'nowrap' }}>{r.sample}</div>
+              <div style={{ fontSize: 8, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.28)', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.token}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'tokens') {
+    const data = ds?.tokens || {
+      label: 'Design Tokens',
+      items: [
+        { name: '--surface-primary', value: '#fff',        dot: null },
+        { name: '--text-primary',    value: '#1a1814',     dot: '#1a1814' },
+        { name: '--accent',          value: accentColor,   dot: accentColor },
+        { name: '--border-subtle',   value: 'rgba(0,0,0,0.07)', dot: null },
+        { name: '--radius-md',       value: '12px',        dot: null },
+      ],
+    };
+    return (
+      <div style={base}>
+        {lbl(data.label)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {data.items.map((t, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '7px 0',
+              borderBottom: i < data.items.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                {t.dot
+                  ? <div style={{ width: 10, height: 10, borderRadius: '50%', background: t.dot, flexShrink: 0, border: '1px solid rgba(0,0,0,0.1)' }} />
+                  : <div style={{ width: 10, height: 10, borderRadius: 3, background: 'rgba(0,0,0,0.06)', flexShrink: 0 }} />
+                }
+                <span style={{ fontSize: 10.5, fontFamily: 'DM Mono, monospace', color: '#2c2a27', letterSpacing: '0.01em' }}>{t.name}</span>
+              </div>
+              <span style={{ fontSize: 9, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.35)', letterSpacing: '0.02em' }}>{t.value}</span>
             </div>
           ))}
         </div>
@@ -610,9 +662,9 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
         {lbl(data.label)}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
           {data.items.map((s, i) => (
-            <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, border: `1px solid ${s.color}28`, borderRadius: 100, padding: '4px 10px' }}>
+            <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, border: `1px solid ${s.color}28`, borderRadius: 100, padding: '5px 11px' }}>
               <div style={{ width: 5, height: 5, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 10, fontFamily: 'DM Sans, sans-serif', color: s.color, fontWeight: 500 }}>{s.label}</span>
+              <span style={{ fontSize: 10.5, fontFamily: 'DM Sans, sans-serif', color: s.color, fontWeight: 500 }}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -635,7 +687,13 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
         {lbl(data.label)}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {data.items.map((b, i) => (
-            <div key={i} style={{ background: b.bg, color: b.color, border: b.border, borderRadius: 8, padding: '7px 14px', fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textAlign: 'center', opacity: b.opacity || 1 }}>{b.label}</div>
+            <div key={i} style={{
+              background: b.bg, color: b.color, border: b.border,
+              borderRadius: 9, padding: '8px 14px',
+              fontSize: 11.5, fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
+              textAlign: 'center', opacity: b.opacity || 1,
+              letterSpacing: '0.01em',
+            }}>{b.label}</div>
           ))}
         </div>
       </div>
@@ -648,6 +706,8 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
 const AuditBlock = ({ auditData, accentColor }) => {
   const rules = (auditData.codeSnippet || '').split('\n').map(l => l.trim()).filter(Boolean);
   const ds = auditData.designSystem || null; // project-specific DS data
+  // Allow each project to specify its own card set; default to the clinical 4-card layout
+  const cards = ds?.cards || ['colors', 'typography', 'status', 'buttons'];
   return (
     <div style={{ margin: '32px 0' }}>
       {/* Stats row */}
@@ -672,12 +732,11 @@ const AuditBlock = ({ auditData, accentColor }) => {
         </div>
       )}
 
-      {/* DS Specimen cards — data-driven from auditData.designSystem */}
+      {/* DS Specimen cards — configurable per project via ds.cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        <DSSpecimenCard type="colors"     accentColor={accentColor} ds={ds} />
-        <DSSpecimenCard type="typography" accentColor={accentColor} ds={ds} />
-        <DSSpecimenCard type="status"     accentColor={accentColor} ds={ds} />
-        <DSSpecimenCard type="buttons"    accentColor={accentColor} ds={ds} />
+        {cards.map(type => (
+          <DSSpecimenCard key={type} type={type} accentColor={accentColor} ds={ds} />
+        ))}
       </div>
     </div>
   );
