@@ -76,8 +76,10 @@ function DesktopView() {
   const activeProject  = searchParams.get('p')  ?? null;
   const playgroundOpen = searchParams.get('pg') === '1';
 
-  const [originRect,     setOriginRect]     = useState(null);
-  const [hoveredProject, setHoveredProject] = useState(null);
+  const [originRect,       setOriginRect]       = useState(null);
+  const [hoveredProject,   setHoveredProject]   = useState(null);
+  const [gameMode,         setGameMode]         = useState(false);
+  const [gameCursorColor,  setGameCursorColor]  = useState(null);
   const overlayCloseRef = useRef(null);
 
   /* ── Open project overlay ── */
@@ -127,7 +129,7 @@ function DesktopView() {
 
       <div id="desktop-content">
         {/* Cursor + CornerButtons + DockHints live OUTSIDE portfolio-world so blur never affects them */}
-        <CustomCursor />
+        <CustomCursor color={gameCursorColor} />
         <div className="corner-buttons-desktop">
           <CornerButtons onLogoClick={handleLogoClick} />
         </div>
@@ -142,17 +144,23 @@ function DesktopView() {
         {/* portfolio-world is blurred when an overlay is open */}
         <div className="portfolio-world">
           <div className={hoveredProject && !activeProject ? 'desktop-preview-active' : 'desktop-preview-idle'}>
-            <Desktop />
+            <Desktop
+              gameMode={gameMode}
+              onGameModeChange={setGameMode}
+              onNextColor={setGameCursorColor}
+            />
           </div>
           <Dock
             onProjectClick={handleProjectClick}
             onProjectHover={setHoveredProject}
             activeProjectId={activeProject}
             onPlaygroundClick={openPlayground}
+            hidden={gameMode}
           />
           <MobileNav
             onProjectClick={handleProjectClick}
             onPlaygroundClick={openPlayground}
+            hidden={gameMode}
           />
         </div>
 

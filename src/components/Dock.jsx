@@ -4,9 +4,10 @@
  * No emoji. No spring magnification. Simple hover translateY.
  */
 
-import { useState, memo } from 'react';
+import { useState, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import projects from '../data/projects.js';
+import { INTRO_DURATION } from './IntroSequence.jsx';
 
 /* ─── Short names + accent colours per project ─── */
 const DOCK_META = {
@@ -84,7 +85,7 @@ const DockItem = memo(function DockItem({ project, onProjectClick, onProjectHove
           borderRadius:   10,
           cursor:         'pointer',
           border:         'none',
-          background:     hovered ? 'rgba(0,0,0,0.05)' : 'transparent',
+          background:     hovered ? 'rgba(0,0,0,0.04)' : 'transparent',
           transform:      hovered ? 'translateY(-3px)' : 'translateY(0)',
           transition:     'background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
           boxShadow:      isActive
@@ -179,25 +180,29 @@ function PlaygroundButton({ onClick }) {
 }
 
 /* ─── Main Dock ─── */
-function Dock({ onProjectClick, onProjectHover, activeProjectId, onPlaygroundClick }) {
+function Dock({ onProjectClick, onProjectHover, activeProjectId, onPlaygroundClick, hidden }) {
+  const enteredRef = useRef(false);
+  // After the first entrance animation completes, skip the intro delay on subsequent shows
+  const introDelay = enteredRef.current ? 0 : INTRO_DURATION + 0.1;
+  if (!hidden) enteredRef.current = true;
+
   return (
     <motion.div
       className="dock-layer"
       initial={{ y: 80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      animate={{ y: hidden ? 80 : 0, opacity: hidden ? 0 : 1 }}
+      transition={{ duration: hidden ? 0.35 : 0.5, delay: hidden ? 0 : introDelay, ease: [0.22, 1, 0.36, 1] }}
+      style={{ pointerEvents: hidden ? 'none' : 'auto' }}
     >
       <div style={{
         display:             'flex',
         alignItems:          'center',
         gap:                 2,
-        background:          'rgba(255,255,255,0.75)',
-        backdropFilter:      'blur(32px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-        border:              '1px solid rgba(0,0,0,0.08)',
-        borderRadius:        14,
+        background:          '#f7f5f0',
+        border:              '1px solid rgba(0,0,0,0.10)',
+        borderRadius:        999,
         padding:             '6px 16px',
-        boxShadow:           '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06)',
+        boxShadow:           '0 2px 16px rgba(0,0,0,0.06)',
       }}>
         {projects.map((project) => (
           <DockItem

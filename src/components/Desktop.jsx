@@ -6,11 +6,12 @@
  * Click / touch anywhere in the hero spawns a ball that falls under gravity.
  * Same-color same-size balls merge into the next level.
  */
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import gsap from 'gsap';
-import DotGrid   from './DotGrid.jsx';
-import BallGame  from './BallGame.jsx';
-import AbhayMark from './AbhayMark.jsx';
+import DotGrid      from './DotGrid.jsx';
+import BallGame     from './BallGame.jsx';
+import AbhayMark    from './AbhayMark.jsx';
+import HeroScatter  from './HeroScatter.jsx';
 import { INTRO_DURATION } from './IntroSequence.jsx';
 
 /* ══════════════════════════════════════════════════════
@@ -64,8 +65,7 @@ function BallIcon({ active }) {
 /* ══════════════════════════════════════════════════════
    ROOT
 ══════════════════════════════════════════════════════ */
-export default function Desktop() {
-  const [gameMode, setGameMode] = useState(false);
+export default function Desktop({ gameMode, onGameModeChange, onNextColor }) {
   const heroRef = useRef(null);
 
   /* B key toggle */
@@ -73,24 +73,27 @@ export default function Desktop() {
     function onKey(e) {
       if (e.key !== 'b' && e.key !== 'B') return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      setGameMode(g => !g);
+      onGameModeChange(g => !g);
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [onGameModeChange]);
 
   return (
     <div
       ref={heroRef}
       className="homepage-hero"
       aria-label="Portfolio — Abhay Sharma, Product Designer"
-      style={{ background: '#f7f5f0', position: 'relative', overflow: 'hidden' }}
+      style={{ background: '#ffffff', position: 'relative', overflow: 'hidden' }}
     >
-      {/* z-index 0 — dot grid background */}
+      {/* z-index 0 — isometric grid background */}
       <DotGrid gameMode={gameMode} />
 
+      {/* z-index 1 — scattered photos (hidden in game mode) */}
+      {!gameMode && <HeroScatter />}
+
       {/* z-index 2 — physics ball game (canvas, pointer-events:none; container handles clicks) */}
-      <BallGame active={gameMode} containerRef={heroRef} />
+      <BallGame active={gameMode} containerRef={heroRef} onNextColor={onNextColor} />
 
       {/* z-index 4 — film grain */}
       <div className="grain-layer" aria-hidden="true" style={{ zIndex: 4 }} />
@@ -103,7 +106,7 @@ export default function Desktop() {
 
       {/* Ball game toggle — bottom right */}
       <button
-        onClick={() => setGameMode(g => !g)}
+        onClick={() => onGameModeChange(g => !g)}
         title={gameMode ? 'Exit ball game (B)' : 'Play ball game (B)'}
         style={{
           position: 'absolute', bottom: 104, right: 24,

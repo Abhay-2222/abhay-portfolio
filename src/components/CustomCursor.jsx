@@ -11,7 +11,7 @@ import { motion, useMotionValue } from 'framer-motion';
 const HOVER_SELECTORS = 'a, button, [role="button"], [data-cursor-hover]';
 const ORANGE = '#F97316';
 
-function CustomCursor() {
+function CustomCursor({ color }) {
   const [isHovering, setIsHovering] = useState(false);
   const [isVisible,  setIsVisible]  = useState(false);
   const [isTouch,    setIsTouch]    = useState(false);
@@ -62,10 +62,11 @@ function CustomCursor() {
           left: 0;
           border-radius: 50%;
           pointer-events: none;
-          background: ${ORANGE};
+          background: ${color || ORANGE};
           transform: translate(-50%, -50%);
           will-change: transform;
           z-index: 99999;
+          transition: background 0.25s ease;
         }
       `}</style>
 

@@ -1,215 +1,245 @@
-/**
- * IntroSequence.jsx — Gradient bouncing ball loader
- *
- * Ball has a moving internal gradient using the exact
- * sky-blue palette from the Desktop Scene 1 background,
- * so the final expansion blends seamlessly into the homepage.
- *
- * 5 bounces, growing each cycle → expands to fill screen → dissolve.
- */
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
 
-import { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
+const BG            = '#ffffff';
+const GRID_STEP     = 44;           // spacing between iso-grid lines
+const LINE_COLOR    = [200, 196, 190];
+const LINE_OPACITY  = 0.22;         // max opacity of a fully-revealed line
+export const INTRO_DURATION = 5.2;
 
-// Very light pastel — almost white, barely blue
-const GRADIENT = `linear-gradient(
-  135deg,
-  #FFFFFF  0%,
-  #F0F9FF 18%,
-  #E0F2FE 36%,
-  #BAE6FD 55%,
-  #93C5FD 74%,
-  #E0F2FE 88%,
-  #F0F9FF 100%
-)`
+const WAVE_DURATION = 3.5;
+const FADE_DUR      = 0.5;
 
-// 5 bounces: [diameter px, apex px]
-const BOUNCES = [
-  [18,  66],
-  [26,  80],
-  [35,  94],
-  [45, 108],
-  [56, 122],
-]
+/* Greetings in each language with palette colour */
+const GREETINGS = [
+  { text: '안녕하세요', color: '#2E6DB4' }, // Korean
+  { text: 'สวัสดี',    color: '#C4782A' }, // Thai
+  { text: 'नमस्ते',    color: '#2D6A45' }, // Hindi
+  { text: 'مرحباً',    color: '#0EA5E9' }, // Arabic
+  { text: 'Cześć',     color: '#7C4DCC' }, // Polish
+  { text: 'Ahoj',      color: '#C9A84C' }, // Czech
+  { text: 'Hello',     color: '#c8602a' }, // English — last
+];
 
-const UP   = 0.34
-const DOWN = 0.26
-const REC  = 0.12
+const INTERVAL = 0.48;
+const FADE_IN  = 0.22;
+const FADE_OUT = 0.22;
 
 export default function IntroSequence() {
-  const overlayRef = useRef()
-  const sizerRef   = useRef()
-  const ballRef    = useRef()
-  const shadowRef  = useRef()
-  const labelRef   = useRef()
-  const [done, setDone] = useState(false)
+  const overlayRef = useRef();
+  const bgRef      = useRef();
+  const rafRef     = useRef();
+  const greetRefs  = useRef(GREETINGS.map(() => null));
+  const nameRef    = useRef();
+  const [done, setDone] = useState(false);
 
+  /* ── Size canvas ── */
+  useLayoutEffect(() => {
+    const canvas = bgRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = window.innerWidth  * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.getContext('2d').scale(dpr, dpr);
+  }, []);
+
+  /* ── Dot ripple ── */
   useEffect(() => {
-    const overlay = overlayRef.current
-    const sizer   = sizerRef.current
-    const ball    = ballRef.current
-    const shadow  = shadowRef.current
-    const label   = labelRef.current
-    if (!overlay || !ball) return
+    const canvas = bgRef.current;
+    if (!canvas) return;
+    const dpr  = window.devicePixelRatio || 1;
+    const W    = canvas.width  / dpr;
+    const H    = canvas.height / dpr;
+    const cx   = W / 2, cy = H / 2;
+    const maxD = Math.hypot(cx, cy);
+    const ctx  = canvas.getContext('2d');
+    const startMs = performance.now();
+    const stopMs  = (INTRO_DURATION - 0.55) * 1000;
 
-    let mounted = true
-    gsap.set('#desktop-content', { opacity: 0 })
-    gsap.set(ball, { transformOrigin: '50% 100%' })
+    /* ── Returns wave-based alpha for a point (px, py) ── */
+    function ptAlpha(px, py, elapsed) {
+      const norm = Math.hypot(px - cx, py - cy) / maxD;
+      return Math.min(1, Math.max(0, (elapsed - norm * WAVE_DURATION) / FADE_DUR));
+    }
 
-    const main = gsap.timeline({
-      onComplete: () => { if (mounted) setDone(true) },
-    })
+    function drawFrame() {
+      const elapsed = (performance.now() - startMs) / 1000;
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1;
 
-    /* ── 5 bounces, each larger ── */
-    let t = 0
+      /* Isometric grid: two families of lines
+         D1: y = 0.5·x + k1·STEP  (slope +0.5)
+         D2: y = −0.5·x + k2·STEP (slope −0.5)
+         Intersections: ix = (k2−k1)·S, iy = (k1+k2)·S/2
 
-    BOUNCES.forEach(([size, apex]) => {
-      // Grow to this bounce's diameter
-      main.to(sizer, { width: size, height: size, duration: 0.10, ease: 'power1.out' }, t)
+         Draw segments connecting adjacent intersections.
+         Each segment fades in based on its MIDPOINT's distance from screen centre
+         — identical wave behaviour to the original dots. */
 
-      // Rise — stretch
-      main.to(ball,   { y: -apex, scaleX: 0.76, scaleY: 1.30, duration: UP,   ease: 'power2.out' }, t)
-      main.to(shadow, { scaleX: 0.18, opacity: 0.05,           duration: UP,   ease: 'power2.out' }, t)
-      t += UP
+      const S     = GRID_STEP;
+      /* k-range to cover the whole viewport */
+      const kMin  = -3;
+      const kMaxK = Math.ceil(Math.max(W, H * 2) / S) + 3;
 
-      // Land — squash
-      main.to(ball,   { y: 0, scaleX: 1.40, scaleY: 0.60, duration: DOWN, ease: 'power3.in'  }, t)
-      main.to(shadow, { scaleX: 1,  opacity: 0.55,          duration: DOWN, ease: 'power3.in'  }, t)
-      t += DOWN
+      for (let k1 = kMin; k1 <= kMaxK; k1++) {
+        for (let k2 = kMin; k2 <= kMaxK; k2++) {
+          const ix = (k2 - k1) * S;
+          const iy = (k1 + k2) * S / 2;
+          /* Skip intersection points far outside canvas */
+          if (ix < -S || ix > W + S || iy < -S || iy > H + S) continue;
 
-      // Spring back
-      main.to(ball, { scaleX: 1, scaleY: 1, duration: REC, ease: 'back.out(3.5)' }, t)
-      t += REC
-    })
+          /* ── Segment along D1 direction: (k1,k2) → (k1,k2+1) ── */
+          {
+            const ix2 = ix + S;
+            const iy2 = iy + S / 2;
+            const mid = ptAlpha((ix + ix2) / 2, (iy + iy2) / 2, elapsed);
+            if (mid > 0.002) {
+              ctx.strokeStyle = `rgba(${LINE_COLOR[0]},${LINE_COLOR[1]},${LINE_COLOR[2]},${(mid * LINE_OPACITY).toFixed(3)})`;
+              ctx.beginPath();
+              ctx.moveTo(ix,  iy);
+              ctx.lineTo(ix2, iy2);
+              ctx.stroke();
+            }
+          }
 
-    /* ── Counter: 0 → 100 over the full bounce phase ── */
-    const proxy = { val: 0 }
-    main.to(proxy, {
-      val: 100,
-      duration: t,
-      ease: 'power1.inOut',
-      onUpdate() { if (label) label.textContent = Math.round(proxy.val) },
-    }, 0)
+          /* ── Segment along D2 direction: (k1,k2) → (k1+1,k2) ── */
+          {
+            const ix2 = ix - S;
+            const iy2 = iy + S / 2;
+            const mid = ptAlpha((ix + ix2) / 2, (iy + iy2) / 2, elapsed);
+            if (mid > 0.002) {
+              ctx.strokeStyle = `rgba(${LINE_COLOR[0]},${LINE_COLOR[1]},${LINE_COLOR[2]},${(mid * LINE_OPACITY).toFixed(3)})`;
+              ctx.beginPath();
+              ctx.moveTo(ix,  iy);
+              ctx.lineTo(ix2, iy2);
+              ctx.stroke();
+            }
+          }
+        }
+      }
 
-    /* ── Expansion: ball swells to fill viewport ── */
-    const fill = Math.max(window.innerWidth, window.innerHeight) * 3.0
+      if (performance.now() - startMs < stopMs) {
+        rafRef.current = requestAnimationFrame(drawFrame);
+      }
+    }
 
-    main.set(ball, { scaleX: 1, scaleY: 1 }, t)
+    rafRef.current = requestAnimationFrame(drawFrame);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
 
-    // Fade counter + shadow
-    main.to([label, shadow], { opacity: 0, duration: 0.15 }, t)
+  /* ── Greeting sequence + overlay fade ── */
+  useEffect(() => {
+    if (!overlayRef.current) return;
+    let mounted = true;
 
-    // Swell
-    main.to(sizer, {
-      width:    fill,
-      height:   fill,
-      duration: 0.72,
-      ease:     'power3.in',
-    }, t)
+    gsap.set('#desktop-content', { opacity: 0 });
 
-    // Dissolve overlay once screen is filled
-    main.to(overlay, {
-      opacity:  0,
-      duration: 0.28,
-      ease:     'power2.inOut',
-    }, t + 0.56)
+    const els = greetRefs.current.filter(Boolean);
+    gsap.set(els, { opacity: 0, y: 12 });
+    if (nameRef.current) gsap.set(nameRef.current, { opacity: 0, y: 10 });
 
-    // Reveal homepage
-    main.to('#desktop-content', { opacity: 1, duration: 0 }, t + 0.84)
+    const tl = gsap.timeline({
+      onComplete: () => { if (mounted) setDone(true); },
+    });
+
+    GREETINGS.forEach((_, i) => {
+      const el    = greetRefs.current[i];
+      if (!el) return;
+      const start = 0.2 + i * INTERVAL;
+      tl.to(el, { opacity: 1, y: 0, duration: FADE_IN, ease: 'power2.out' }, start);
+      tl.to(el, { opacity: 0, y: -8, duration: FADE_OUT, ease: 'power2.in' }, start + FADE_IN);
+    });
+
+    /* "Abhay." rises after final greeting */
+    const nameStart = 0.2 + GREETINGS.length * INTERVAL + 0.1;
+    if (nameRef.current) {
+      tl.to(nameRef.current,
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' },
+        nameStart,
+      );
+    }
+
+    tl.to(overlayRef.current,
+      { opacity: 0, duration: 0.4, ease: 'power1.inOut' },
+      INTRO_DURATION - 0.45,
+    );
+    tl.to('#desktop-content', { opacity: 1, duration: 0 }, INTRO_DURATION);
 
     return () => {
-      mounted = false
-      main.kill()
-      gsap.set('#desktop-content', { clearProps: 'opacity' })
-    }
-  }, [])
+      mounted = false;
+      tl.kill();
+      gsap.set('#desktop-content', { clearProps: 'opacity' });
+    };
+  }, []);
 
-  if (done) return null
+  if (done) return null;
 
   return (
-    <>
-      {/* Keyframes for the internal gradient shimmer */}
-      <style>{`
-        @keyframes ballShimmer {
-          0%   { background-position: 0%   50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0%   50%; }
-        }
-        .intro-ball {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background: ${GRADIENT};
-          background-size: 300% 300%;
-          animation: ballShimmer 1.8s ease-in-out infinite;
-          box-shadow:
-            0 0 12px rgba(224, 242, 254, 0.90),
-            0 0 32px rgba(186, 230, 253, 0.40);
-        }
-      `}</style>
+    <div
+      ref={overlayRef}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: BG, overflow: 'hidden',
+      }}
+    >
+      <canvas
+        ref={bgRef}
+        aria-hidden="true"
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          display: 'block', pointerEvents: 'none',
+        }}
+      />
 
       <div
-        ref={overlayRef}
+        aria-hidden="true"
         style={{
-          position:       'fixed',
-          inset:          0,
-          zIndex:         9999,
-          background:     '#ffffff',
-          overflow:       'hidden',
-          display:        'flex',
-          alignItems:     'center',
-          justifyContent: 'center',
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
         }}
       >
-        <div style={{
-          display:       'flex',
-          flexDirection: 'column',
-          alignItems:    'center',
-          paddingTop:    140,
-        }}>
-
-          {/* Sizer — only width/height, no visual styles */}
-          <div
-            ref={sizerRef}
-            style={{ width: BOUNCES[0][0], height: BOUNCES[0][0], flexShrink: 0 }}
-          >
-            {/* Ball — squash/stretch + gradient shimmer */}
-            <div ref={ballRef} className="intro-ball" />
-          </div>
-
-          {/* Shadow — ground projection */}
-          <div
-            ref={shadowRef}
+        {/* Greetings */}
+        {GREETINGS.map((g, i) => (
+          <span
+            key={i}
+            ref={el => { greetRefs.current[i] = el; }}
             style={{
-              width:           BOUNCES[0][0],
-              height:          5,
-              marginTop:       4,
-              borderRadius:    '50%',
-              background:      'rgba(30,70,120,0.28)',
-              filter:          'blur(4px)',
-              transformOrigin: '50% 50%',
-            }}
-          />
-
-          {/* Counter */}
-          <div
-            ref={labelRef}
-            style={{
-              marginTop:     22,
-              fontFamily:    'var(--mono, monospace)',
-              fontSize:      '12px',
-              letterSpacing: '0.08em',
-              color:         'rgba(10,10,10,0.35)',
-              userSelect:    'none',
-              minWidth:      '2ch',
-              textAlign:     'center',
+              position: 'absolute',
+              fontFamily: 'new-spirit, "Playfair Display", Georgia, serif',
+              fontSize: 'clamp(52px, 8vw, 88px)',
+              fontWeight: 300,
+              fontStyle: 'italic',
+              color: g.color,
+              letterSpacing: '-0.02em',
+              whiteSpace: 'nowrap',
+              willChange: 'opacity, transform',
+              userSelect: 'none',
             }}
           >
-            0
-          </div>
+            {g.text}
+          </span>
+        ))}
 
-        </div>
+        {/* "Abhay." — appears after all greetings */}
+        <span
+          ref={nameRef}
+          style={{
+            position: 'absolute',
+            fontFamily: 'new-spirit, "Playfair Display", Georgia, serif',
+            fontSize: 'clamp(64px, 9vw, 96px)',
+            fontWeight: 300,
+            color: 'rgba(26,24,20,0.78)',
+            letterSpacing: '-0.02em',
+            whiteSpace: 'nowrap',
+            willChange: 'opacity, transform',
+            userSelect: 'none',
+          }}
+        >
+          Abhay.
+        </span>
       </div>
-    </>
-  )
+    </div>
+  );
 }

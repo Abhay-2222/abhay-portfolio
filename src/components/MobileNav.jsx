@@ -85,7 +85,7 @@ function ProjectRow({ project, onOpen, soonId }) {
 }
 
 /* ── Main component ── */
-export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
+export default function MobileNav({ onProjectClick, onPlaygroundClick, hidden }) {
   const navigate = useNavigate();
   const [workOpen, setWorkOpen] = useState(false);
   const [soonId,   setSoonId]   = useState(null);
@@ -190,8 +190,9 @@ export default function MobileNav({ onProjectClick, onPlaygroundClick }) {
         className="mobile-nav"
         aria-label="Site navigation"
         initial={{ y: 80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.55, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        animate={{ y: hidden ? 80 : 0, opacity: hidden ? 0 : 1 }}
+        transition={{ duration: hidden ? 0.3 : 0.55, delay: hidden ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
+        style={{ pointerEvents: hidden ? 'none' : 'auto' }}
       >
         <div className="mobile-nav-inner">
 

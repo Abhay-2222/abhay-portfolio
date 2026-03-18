@@ -1422,51 +1422,69 @@ export default function PlaygroundOverlay({onClose}){
   return(
     <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} transition={{duration:.28,ease:[.22,1,.36,1]}}
       style={{position:'fixed',inset:0,zIndex:1000,background:'#fafafa',display:'flex',flexDirection:'column',fontFamily:'"Geist Sans",system-ui,sans-serif'}}>
-      {/* Nav — two-row layout, never overlaps at any width */}
+      {/* Nav — single row: label | pill tabs | close */}
+      {(()=>{const mob=typeof window!=='undefined'&&window.innerWidth<640;return(
       <div style={{
-        flexShrink:0,
+        flexShrink:0, height:48,
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding: mob ? '0 12px' : '0 24px',
         background:'rgba(255,255,255,0.92)',
-        backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
+        backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)',
         borderBottom:'1px solid rgba(0,0,0,0.06)',
+        gap: 8,
       }}>
-        {/* Row 1 — title + close (mirrors MenuBar exactly) */}
+        {/* Left — label (hidden on mobile) */}
+        {!mob && <span style={{
+          fontFamily:'"Geist Sans",system-ui,sans-serif',
+          fontSize:13, fontWeight:400, letterSpacing:'-0.01em',
+          color:'rgba(0,0,0,0.40)', flexShrink:0, minWidth:80,
+        }}>Playground</span>}
+
+        {/* Centre — pill tab group */}
         <div style={{
-          height:44,display:'flex',alignItems:'center',justifyContent:'space-between',
-          padding:'0 24px',
-        }}>
-          <span style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:600,letterSpacing:'0.06em',color:'rgba(0,0,0,0.70)'}}>
-            Playground
-          </span>
-          <button onClick={onClose} data-cursor-hover aria-label="Close playground"
-            style={{fontFamily:'"Geist Sans",system-ui,sans-serif',fontSize:13,fontWeight:400,
-              color:'rgba(0,0,0,0.45)',background:'none',border:'none',cursor:'pointer',
-              transition:'color .15s',padding:'4px 0',lineHeight:1,minWidth:44,textAlign:'right'}}
-            onMouseEnter={e=>e.currentTarget.style.color='#0A0A0A'}
-            onMouseLeave={e=>e.currentTarget.style.color='rgba(0,0,0,0.45)'}>
-            Close
-          </button>
-        </div>
-        {/* Row 2 — tabs, full width, centered */}
-        <div style={{
-          display:'flex',justifyContent:'center',gap:4,
-          padding:'0 16px 8px',
+          display:'flex', alignItems:'center', flex: mob ? 1 : 'unset',
+          background:'rgba(0,0,0,0.05)', borderRadius:10, padding:3, gap:2,
         }}>
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setActiveTab(t.id)} data-cursor-hover
               style={{
-                padding:'6px 16px',borderRadius:8,border:'none',
-                background:activeTab===t.id?'rgba(0,0,0,0.07)':'transparent',
-                color:activeTab===t.id?'rgba(0,0,0,0.82)':'rgba(0,0,0,0.38)',
-                fontSize:13,fontFamily:'"Geist Sans",system-ui',
-                fontWeight:activeTab===t.id?500:400,
-                cursor:'pointer',transition:'all .15s',letterSpacing:'-0.01em',
-                flexShrink:0,
+                padding: mob ? '5px 0' : '5px 15px',
+                flex: mob ? 1 : 'unset',
+                borderRadius:7, border:'none',
+                background: activeTab===t.id ? '#fff' : 'transparent',
+                boxShadow: activeTab===t.id ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
+                color: activeTab===t.id ? 'rgba(0,0,0,0.82)' : 'rgba(0,0,0,0.38)',
+                fontSize: mob ? 12 : 13, fontFamily:'"Geist Sans",system-ui',
+                fontWeight: activeTab===t.id ? 500 : 400,
+                cursor:'pointer', transition:'all .15s', letterSpacing:'-0.01em',
+                flexShrink: mob ? 1 : 0, lineHeight:1, textAlign:'center',
               }}>
               {t.label}
             </button>
           ))}
         </div>
+
+        {/* Right — close */}
+        <div style={{flexShrink:0, display:'flex', justifyContent:'flex-end', minWidth: mob ? 'unset' : 80}}>
+          <button onClick={onClose} data-cursor-hover aria-label="Close playground"
+            style={{
+              width:32, height:32,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              borderRadius:'50%', border:'none',
+              background:'rgba(0,0,0,0.06)',
+              color:'rgba(0,0,0,0.50)',
+              fontSize:14, lineHeight:1,
+              cursor:'pointer',
+              transition:'background .15s, color .15s',
+              flexShrink:0,
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background='rgba(0,0,0,0.12)';e.currentTarget.style.color='rgba(0,0,0,0.82)';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='rgba(0,0,0,0.06)';e.currentTarget.style.color='rgba(0,0,0,0.50)';}}>
+            ✕
+          </button>
+        </div>
       </div>
+      );})()}
       {/* Content */}
       <div style={{flex:1,overflow:'hidden',position:'relative'}}>
         <AnimatePresence mode="wait">

@@ -1,121 +1,174 @@
 /**
- * DotGrid.jsx — cursor-reactive dot grid background
- * Each dot has a latent colour from the project palette; hovering reveals it.
- * In game mode: dots render at base size only (clean substrate for minesweeper).
+ * DotGrid.jsx — Isometric grid background
+ * Two sets of diagonal lines (slope ±0.5) form a diamond/isometric pattern.
+ * Near the cursor: lines brighten and intersection points glow with palette colours.
+ * In game mode: static lines only (clean substrate for the ball game).
  */
 import { useEffect, useRef } from 'react';
 
-const SPACING    = 24;
-const DOT_BASE   = 1.5;
-const DOT_HOVER  = 4;
-const RADIUS     = 110;
-const LERP_SPEED = 0.1;
+const STEP         = 44;   // spacing between parallel lines (y-intercept units)
+const ALPHA_BASE   = 0.07;
+const ALPHA_HOVER  = 0.26;
+const LINE_RADIUS  = 160;  // px — brightening reach
+const DOT_RADIUS   = 110;  // px — intersection dot reveal reach
+const DOT_SIZE     = 2.2;
+const LERP_LINE    = 0.09;
+const LERP_DOT     = 0.10;
+
+/* sqrt(1 + 0.5²) — denominator for perpendicular distance to slope-0.5 lines */
+const SQRT_1_25 = Math.sqrt(1.25);
 
 const COLOR_BASE = [237, 234, 229];
 
-/* Project gradient colours — light pastels from preview cards */
 const PALETTE = [
-  [200, 96,  42],   // accent orange  #c8602a
-  [46,  109, 180],  // blue           #2E6DB4
-  [124, 77,  204],  // purple         #7C4DCC
-  [45,  106, 69],   // green          #2D6A45
-  [14,  165, 233],  // sky            #0EA5E9
-  [201, 168, 76],   // gold           #C9A84C
+  [200, 96,  42],
+  [46,  109, 180],
+  [124, 77,  204],
+  [45,  106, 69],
+  [14,  165, 233],
+  [201, 168, 76],
 ];
 
-function lerpRGB(a, b, t) {
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * t),
-    Math.round(a[1] + (b[1] - a[1]) * t),
-    Math.round(a[2] + (b[2] - a[2]) * t),
-  ];
-}
-
-/**
- * Assign a stable colour to each dot based on its grid position.
- * Uses overlapping sine waves so colours flow organically across the canvas.
- */
-function dotPaletteIndex(col, row) {
-  const v = Math.sin(col * 0.37 + row * 0.21) * 0.5
-          + Math.sin(col * 0.13 - row * 0.44) * 0.5;
-  const norm = (v + 1) / 2; // 0 → 1
-  return Math.floor(norm * PALETTE.length) % PALETTE.length;
-}
-
 export default function DotGrid({ style, gameMode }) {
-  const canvasRef   = useRef(null);
-  const mouse       = useRef({ x: -9999, y: -9999 });
-  const radii       = useRef(null);
-  const alphas      = useRef(null); // per-dot colour reveal progress
-  const gameModeRef = useRef(gameMode);
+  const canvasRef    = useRef(null);
+  const mouse        = useRef({ x: -9999, y: -9999 });
+  const gameModeRef  = useRef(gameMode);
   gameModeRef.current = gameMode;
+
+  /* Per-line alpha lerp state — rebuilt on resize */
+  const lineAlphas1  = useRef(null); // D1: y = 0.5x + c
+  const lineAlphas2  = useRef(null); // D2: y = -0.5x + c
+  /* Per-intersection alpha — keyed by (k1,k2) in a flat array */
+  const dotAlphas    = useRef(null);
+  const gridInfo     = useRef({ W: 0, H: 0, c1Start: 0, c1Count: 0, c2Start: 0, c2Count: 0, dotRange: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let animId;
-    let cols = 0, rows = 0;
-    let dotColors = null; // pre-computed colour per dot
 
+    /* ── Build grid metadata & allocate lerp arrays ── */
     function buildGrid() {
-      const W = canvas.offsetWidth;
-      const H = canvas.offsetHeight;
-      canvas.width  = W * window.devicePixelRatio;
-      canvas.height = H * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      cols = Math.ceil(W / SPACING) + 1;
-      rows = Math.ceil(H / SPACING) + 1;
-      const count = cols * rows;
-      radii.current  = new Float32Array(count).fill(DOT_BASE);
-      alphas.current = new Float32Array(count).fill(0);
-      dotColors = new Array(count);
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          dotColors[r * cols + c] = PALETTE[dotPaletteIndex(c, r)];
-        }
-      }
+      const dpr = window.devicePixelRatio || 1;
+      const W   = canvas.offsetWidth;
+      const H   = canvas.offsetHeight;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      ctx.scale(dpr, dpr);
+
+      /* D1: y = 0.5x + c
+         At x=0: y=c; at x=W: y=0.5W+c
+         Visible when c in [-H, 0.5W+H] */
+      const c1Start = Math.floor(-H / STEP) * STEP;
+      const c1End   = 0.5 * W + H + STEP;
+      const c1Count = Math.ceil((c1End - c1Start) / STEP) + 1;
+
+      /* D2: y = -0.5x + c
+         At x=0: y=c; at x=W: y=c-0.5W
+         Visible when c in [-H, 0.5W+H] (same range) */
+      const c2Start = c1Start;
+      const c2Count = c1Count;
+
+      lineAlphas1.current = new Float32Array(c1Count).fill(ALPHA_BASE);
+      lineAlphas2.current = new Float32Array(c2Count).fill(ALPHA_BASE);
+
+      /* Intersection dots — we scan a local grid around cursor each frame.
+         Pre-allocate a 2-D array indexed by (k1, k2) relative to some origin;
+         too dynamic to pre-size, so we use a Map keyed by `k1,k2` strings, reset on rebuild. */
+      dotAlphas.current = new Map();
+
+      gridInfo.current = { W, H, c1Start, c1Count, c2Start, c2Count };
     }
 
+    /* ── Main draw loop ── */
     function draw() {
-      const W  = canvas.width  / window.devicePixelRatio;
-      const H  = canvas.height / window.devicePixelRatio;
-      const gm = gameModeRef.current;
+      const { W, H, c1Start, c1Count, c2Start, c2Count } = gridInfo.current;
+      if (!W || !H) { animId = requestAnimationFrame(draw); return; }
+
       ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1;
 
       const mx = mouse.current.x;
       const my = mouse.current.y;
+      const gm = gameModeRef.current;
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const idx = r * cols + c;
-          const x   = c * SPACING;
-          const y   = r * SPACING;
+      /* ── Direction 1: y = 0.5x + c ── */
+      for (let i = 0; i < c1Count; i++) {
+        const c   = c1Start + i * STEP;
+        /* perpendicular distance from cursor to this line: |0.5·mx - my + c| / √1.25 */
+        const d   = gm ? Infinity : Math.abs(0.5 * mx - my + c) / SQRT_1_25;
+        const t   = d < LINE_RADIUS ? (1 - d / LINE_RADIUS) ** 2 : 0;
+        const tgt = ALPHA_BASE + (ALPHA_HOVER - ALPHA_BASE) * t;
+        lineAlphas1.current[i] += (tgt - lineAlphas1.current[i]) * LERP_LINE;
 
-          let targetR     = DOT_BASE;
-          let targetAlpha = 0;
+        ctx.strokeStyle = `rgba(0,0,0,${lineAlphas1.current[i].toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(0,   c);
+        ctx.lineTo(W,   0.5 * W + c);
+        ctx.stroke();
+      }
 
-          if (!gm) {
-            const dx   = x - mx, dy = y - my;
+      /* ── Direction 2: y = -0.5x + c ── */
+      for (let i = 0; i < c2Count; i++) {
+        const c   = c2Start + i * STEP;
+        /* perpendicular distance: |0.5·mx + my - c| / √1.25 */
+        const d   = gm ? Infinity : Math.abs(0.5 * mx + my - c) / SQRT_1_25;
+        const t   = d < LINE_RADIUS ? (1 - d / LINE_RADIUS) ** 2 : 0;
+        const tgt = ALPHA_BASE + (ALPHA_HOVER - ALPHA_BASE) * t;
+        lineAlphas2.current[i] += (tgt - lineAlphas2.current[i]) * LERP_LINE;
+
+        ctx.strokeStyle = `rgba(0,0,0,${lineAlphas2.current[i].toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(0,   c);
+        ctx.lineTo(W,   c - 0.5 * W);
+        ctx.stroke();
+      }
+
+      /* ── Intersection glow dots (skipped in game mode) ── */
+      if (!gm) {
+        /* Intersections of D1 and D2:
+           D1: y = 0.5x + k1·STEP   →  c1 = k1·STEP
+           D2: y = -0.5x + k2·STEP  →  c2 = k2·STEP
+           Solving: ix = (k2-k1)·STEP,  iy = (k1+k2)·STEP/2  */
+
+        const k1_center = (my - mx / 2) / STEP;
+        const k2_center = (my + mx / 2) / STEP;
+        const range     = Math.ceil(DOT_RADIUS / STEP) + 2;
+
+        /* Decay dots outside the cursor area */
+        for (const [key, val] of dotAlphas.current) {
+          const newVal = val + (0 - val) * LERP_DOT;
+          if (newVal < 0.005) dotAlphas.current.delete(key);
+          else dotAlphas.current.set(key, newVal);
+        }
+
+        for (let k1 = Math.floor(k1_center) - range; k1 <= Math.ceil(k1_center) + range; k1++) {
+          for (let k2 = Math.floor(k2_center) - range; k2 <= Math.ceil(k2_center) + range; k2++) {
+            const ix = (k2 - k1) * STEP;
+            const iy = (k1 + k2) * STEP / 2;
+            if (ix < -10 || ix > W + 10 || iy < -10 || iy > H + 10) continue;
+
+            const dx   = ix - mx, dy = iy - my;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const t    = dist < RADIUS ? 1 - dist / RADIUS : 0;
-            // ease the falloff for a softer edge
+            const t    = dist < DOT_RADIUS ? 1 - dist / DOT_RADIUS : 0;
             const tSmooth = t * t * (3 - 2 * t);
-            targetR     = DOT_BASE + (DOT_HOVER - DOT_BASE) * tSmooth;
-            targetAlpha = tSmooth;
+
+            const key    = `${k1},${k2}`;
+            const curVal = dotAlphas.current.get(key) ?? 0;
+            const tgt    = 0.65 * tSmooth;
+            const newVal = curVal + (tgt - curVal) * LERP_DOT;
+            if (newVal > 0.005) dotAlphas.current.set(key, newVal);
+
+            if (newVal > 0.005) {
+              const palIdx = (((k1 * 3 + k2 * 7) % PALETTE.length) + PALETTE.length) % PALETTE.length;
+              const [r, g, b] = PALETTE[palIdx];
+              ctx.beginPath();
+              ctx.arc(ix, iy, DOT_SIZE * (0.5 + 0.5 * tSmooth), 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(${r},${g},${b},${newVal.toFixed(3)})`;
+              ctx.fill();
+            }
           }
-
-          radii.current[idx]  += (targetR     - radii.current[idx])  * LERP_SPEED;
-          alphas.current[idx] += (targetAlpha - alphas.current[idx]) * LERP_SPEED;
-
-          const a   = alphas.current[idx];
-          const col = dotColors ? dotColors[idx] : COLOR_BASE;
-          const [fr, fg, fb] = lerpRGB(COLOR_BASE, col, a);
-
-          ctx.beginPath();
-          ctx.arc(x, y, radii.current[idx], 0, Math.PI * 2);
-          ctx.fillStyle = `rgb(${fr},${fg},${fb})`;
-          ctx.fill();
         }
       }
 

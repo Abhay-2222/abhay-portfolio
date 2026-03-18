@@ -189,59 +189,51 @@ function PhotoGallery({ onClose }) {
       {/* Header */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
-        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        padding: '28px 56px 24px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '20px 32px',
         background: '#f7f4ef',
       }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
-          <span style={{
-            fontFamily: 'var(--serif)',
-            fontSize: 'clamp(20px, 2vw, 30px)',
-            fontWeight: 400,
-            fontStyle: 'italic',
-            letterSpacing: '-0.02em',
-            color: 'var(--text-primary)',
-          }}>
-            Shots
-          </span>
-          {count > 0 && (
-            <span style={{
-              fontFamily: 'var(--mono)', fontSize: 10,
-              letterSpacing: '0.12em', textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-            }}>
-              {count} shot{count !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
+        <span style={{
+          fontFamily: 'var(--serif)',
+          fontSize: 'clamp(20px, 2vw, 28px)',
+          fontWeight: 400,
+          fontStyle: 'italic',
+          letterSpacing: '-0.02em',
+          color: 'var(--text-primary)',
+        }}>
+          Gallery
+        </span>
         <button
           onClick={onClose}
           data-cursor-hover
+          aria-label="Close gallery"
           style={{
-            fontFamily: 'var(--mono)', fontSize: 10,
-            letterSpacing: '0.10em', textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            background: 'transparent',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 20, padding: '7px 16px',
+            width: 32, height: 32,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '50%',
+            background: 'rgba(0,0,0,0.06)',
+            border: 'none',
             cursor: 'pointer',
-            transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+            fontSize: 14, lineHeight: 1,
+            color: 'rgba(0,0,0,0.50)',
+            transition: 'background 0.15s, color 0.15s',
+            flexShrink: 0,
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.borderColor = 'var(--text-primary)';
+            e.currentTarget.style.background = 'rgba(0,0,0,0.12)';
+            e.currentTarget.style.color = 'rgba(0,0,0,0.82)';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.color = 'var(--text-muted)';
-            e.currentTarget.style.borderColor = 'var(--border-strong)';
+            e.currentTarget.style.background = 'rgba(0,0,0,0.06)';
+            e.currentTarget.style.color = 'rgba(0,0,0,0.50)';
           }}
         >
-          ✕ Close
+          ✕
         </button>
       </div>
 
       {/* Thin rule under header */}
-      <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 56px' }} />
+      <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 32px' }} />
 
       {/* Empty state */}
       {count === 0 && (
@@ -671,7 +663,7 @@ export default function About() {
           data-cursor-hover
           {...fadeUp(0.04)}
         >
-          Shots
+          Gallery
         </motion.button>
 
         {/* Hero */}

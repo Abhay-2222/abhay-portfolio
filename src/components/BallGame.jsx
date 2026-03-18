@@ -170,23 +170,34 @@ function render(ctx, balls, W, H) {
 }
 
 /* ── Component ───────────────────────────────────────── */
-export default function BallGame({ active, containerRef }) {
-  const canvasRef = useRef(null);
-  const balls     = useRef([]);
-  const animId    = useRef(null);
+export default function BallGame({ active, containerRef, onNextColor }) {
+  const canvasRef    = useRef(null);
+  const balls        = useRef([]);
+  const animId       = useRef(null);
+  const nextLevelRef = useRef(Math.floor(Math.random() * 3));
 
-  // Pick random starting level (0–2) so it's always small balls to begin
-  function randomLevel() { return Math.floor(Math.random() * 3); }
+  // Notify parent of initial color when game starts / clear when game ends
+  useEffect(() => {
+    if (active) {
+      onNextColor?.(LEVELS[nextLevelRef.current].color);
+    } else {
+      onNextColor?.(null);
+      nextLevelRef.current = Math.floor(Math.random() * 3);
+    }
+  }, [active]); // eslint-disable-line
 
   const spawnBall = useCallback((clientX) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (balls.current.length >= MAX_BALLS) return;
-    const rect = canvas.getBoundingClientRect();
-    const x    = Math.max(30, Math.min(rect.width - 30, clientX - rect.left));
-    const b    = makeBall(x, 20, randomLevel());
+    const rect  = canvas.getBoundingClientRect();
+    const x     = Math.max(30, Math.min(rect.width - 30, clientX - rect.left));
+    const b     = makeBall(x, 20, nextLevelRef.current);
     balls.current = [...balls.current, b];
-  }, []);
+    // Pre-queue next ball and tell the cursor
+    nextLevelRef.current = Math.floor(Math.random() * 3);
+    onNextColor?.(LEVELS[nextLevelRef.current].color);
+  }, [onNextColor]);
 
   // Attach pointer events to the container
   useEffect(() => {
