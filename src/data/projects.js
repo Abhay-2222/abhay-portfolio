@@ -831,6 +831,74 @@ const projects = [
             "text": "There are no impact metrics yet. This is still being built. The Instacart partnership is in early conversations. This case study reflects decisions and process to date, not a finished story. That part is still being written."
           }
         ]
+      },
+      {
+        "ep": "05",
+        "title": "Design System",
+        "teaser": "Calm over urgency. No bold, anywhere. A warm neutral palette built around food semantics — sage for fresh, wheat for budget, terracotta for warnings.",
+        "readTime": "3 min",
+        "auditData": {
+          "stats": [
+            { "number": "400", "label": "Font weight, always" },
+            { "number": "40+", "label": "UI components built" },
+            { "number": "3", "label": "CVEs patched in production" }
+          ],
+          "codeSnippet": "NEVER use font-weight bold — size + color carry hierarchy\nALWAYS use CSS variables — no hardcoded colours\nBorders optional — elevation via warm shadow only\nMotion: t-fast 100ms · t-base 160ms · t-slow 240ms",
+          "designSystem": {
+            "colorScale": {
+              "label": "Palette / Warm Cream + Food Semantics",
+              "stops": [
+                { "stop": "cream", "hex": "#fdfaf6" },
+                { "stop": "sage-l", "hex": "#e8f2e9" },
+                { "stop": "sage", "hex": "#7a9e7e" },
+                { "stop": "wheat", "hex": "#d4a84b" },
+                { "stop": "terra", "hex": "#c17f5a" },
+                { "stop": "stone", "hex": "#2c251e" }
+              ]
+            },
+            "typography": {
+              "label": "Foundation / Typography",
+              "rows": [
+                { "sample": "Weekly Planner", "token": "Lora · display · 400", "size": 20, "weight": 400, "serif": true },
+                { "sample": "Grilled Salmon", "token": "DM Sans · body · 400", "size": 14, "weight": 400 },
+                { "sample": "CALORIES 420", "token": "DM Mono · data · 400", "size": 10, "weight": 400, "mono": true }
+              ]
+            },
+            "status": {
+              "label": "Status / Food Semantics",
+              "items": [
+                { "label": "Fresh",    "color": "#4d7552", "bg": "#e8f2e9" },
+                { "label": "Planned",  "color": "#6b9fba", "bg": "#e3eef5" },
+                { "label": "Budget OK","color": "#9a6f1a", "bg": "#fdf3d6" },
+                { "label": "Expiring", "color": "#934f2a", "bg": "#f5e8de" },
+                { "label": "Remove",   "color": "#934f2a", "bg": "#f5e8de" }
+              ]
+            },
+            "buttons": {
+              "label": "Components / Buttons",
+              "items": [
+                { "label": "Add to Plan",    "bg": "#4d7552",     "color": "#fff",     "border": "none" },
+                { "label": "Generate List",  "bg": "transparent", "color": "#4d7552",  "border": "1.5px solid #4d7552" },
+                { "label": "Skip Week",      "bg": "transparent", "color": "#4d7552",  "border": "1.5px solid transparent", "opacity": 0.7 },
+                { "label": "Remove Item",    "bg": "#f5e8de",     "color": "#934f2a",  "border": "1.5px solid #934f2a40" }
+              ]
+            }
+          }
+        },
+        "content": [
+          {
+            "type": "p",
+            "text": "The design system started from a philosophical constraint: eating is calm, the app must feel calm. That ruled out urgency signals — no bold text, no high-contrast alerts, no progress bars implying you are behind on a target."
+          },
+          {
+            "type": "p",
+            "text": "The palette is built around food semantics rather than generic UI conventions. Sage means fresh and healthy. Wheat signals budget and resources. Terracotta marks warnings. Every colour has a food-world meaning the user already understands."
+          },
+          {
+            "type": "p",
+            "text": "The typography rule is absolute: weight 400 throughout. Hierarchy comes only from size and colour. This was technically enforced as a global CSS rule and caught in review — not a soft guideline."
+          }
+        ]
       }
     ],
     "artefacts": [
