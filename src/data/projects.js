@@ -377,43 +377,43 @@ const projects = [
             { "number": "48px", "label": "Min tap target (gloved use)" },
             { "number": "60%", "label": "Built on FSL native components" }
           ],
-          "codeSnippet": "ALWAYS use Salesforce Lightning Design System tokens\nNEVER break WCAG 2.1 AA contrast — enforced in component review\nGantt blocks: semantic color only — no decoration\nMobile-first: 48×48px tap targets · offline-first sync",
+          "codeSnippet": "ALWAYS use Salesforce Lightning Design System tokens\nNEVER break WCAG 2.1 AA contrast — enforced in component review\nGantt: gold=Scheduled · pink=Unscheduled · purple=InProgress · blue=Completed · slate=Break\nMobile-first: 48×48px tap targets · offline-first sync",
           "designSystem": {
             "cards": ["colors", "typography", "status", "buttons"],
             "colorScale": {
-              "label": "Palette / Salesforce Lightning + FSL Gantt",
+              "label": "Gantt Block Legend / Color-Coded Shift States",
               "stops": [
-                { "stop": "brand", "hex": "#0070D2" },
-                { "stop": "navy",  "hex": "#16325C" },
-                { "stop": "amber", "hex": "#F4B942" },
-                { "stop": "teal",  "hex": "#3BA755" },
-                { "stop": "violet","hex": "#7B5EA7" },
-                { "stop": "surface","hex": "#F4F6F9" }
+                { "stop": "scheduled",    "hex": "#D4AA50" },
+                { "stop": "unscheduled",  "hex": "#F08080" },
+                { "stop": "in-progress",  "hex": "#A67FC4" },
+                { "stop": "completed",    "hex": "#42A5F5" },
+                { "stop": "break",        "hex": "#546E7A" },
+                { "stop": "brand",        "hex": "#0070D2" }
               ]
             },
             "typography": {
               "label": "Foundation / Typography",
               "rows": [
-                { "sample": "Service Appointment",  "token": "Salesforce Sans · 600 · 18px", "size": 18, "weight": 600 },
+                { "sample": "Service Appointment",       "token": "Salesforce Sans · 600 · 18px", "size": 18, "weight": 600 },
                 { "sample": "Inspector name, territory", "token": "Salesforce Sans · 400 · 13px", "size": 13, "weight": 400 },
-                { "sample": "SA-0548 · SCHEDULED", "token": "Monospace · 400 · 10px", "size": 10, "weight": 400, "mono": true }
+                { "sample": "SA-0548 · SCHEDULED",       "token": "Monospace · 400 · 10px",      "size": 10, "weight": 400, "mono": true }
               ]
             },
             "status": {
-              "label": "Status / Appointment States",
+              "label": "Status / Gantt Shift Block Meanings",
               "items": [
-                { "label": "Scheduled",  "color": "#0070D2", "bg": "#EBF5FB" },
-                { "label": "Dispatched", "color": "#3BA755", "bg": "#EAF5EA" },
-                { "label": "In Progress","color": "#A87700", "bg": "#FEF9E7" },
-                { "label": "Warning",    "color": "#C23934", "bg": "#FDECEA" },
-                { "label": "Draft",      "color": "#54698D", "bg": "#F4F6F9" }
+                { "label": "Scheduled",    "color": "#A07A20", "bg": "#F5EDD0" },
+                { "label": "Unscheduled",  "color": "#C43C3C", "bg": "#FCE8E8" },
+                { "label": "In Progress",  "color": "#7B52A8", "bg": "#F0EAF8" },
+                { "label": "Completed",    "color": "#1565C0", "bg": "#E3F2FD" },
+                { "label": "Break/Holiday","color": "#37474F", "bg": "#ECEFF1" }
               ]
             },
             "buttons": {
               "label": "Components / Actions",
               "items": [
                 { "label": "Schedule",           "bg": "#0070D2",     "color": "#fff",     "border": "none" },
-                { "label": "Dispatch",           "bg": "#3BA755",     "color": "#fff",     "border": "none" },
+                { "label": "Dispatch",           "bg": "#546E7A",     "color": "#fff",     "border": "none" },
                 { "label": "Assign Recommended", "bg": "transparent", "color": "#0070D2",  "border": "1.5px solid #0070D2" },
                 { "label": "Override",           "bg": "transparent", "color": "#54698D",  "border": "1.5px solid transparent", "opacity": 0.75 }
               ]
