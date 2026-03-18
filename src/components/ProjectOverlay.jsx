@@ -622,8 +622,8 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {data.rows.map((r, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, borderTop: i === 0 ? '1px solid rgba(0,0,0,0.06)' : 'none', paddingTop: i === 0 ? 10 : 0 }}>
-              <div style={{ fontSize: r.size, fontWeight: r.weight, fontFamily: r.serif ? 'Georgia, serif' : r.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', color: '#1a1814', lineHeight: 1.2, letterSpacing: r.mono ? '0.08em' : 0, whiteSpace: 'nowrap' }}>{r.sample}</div>
-              <div style={{ fontSize: 8, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.28)', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.token}</div>
+              <div style={{ fontSize: r.size, fontWeight: r.weight, fontFamily: r.serif ? 'Georgia, serif' : r.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', color: '#1a1814', lineHeight: 1.2, letterSpacing: r.mono ? '0.08em' : 0, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.sample}</div>
+              <div style={{ fontSize: 8, fontFamily: 'DM Mono, monospace', color: 'rgba(0,0,0,0.28)', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>{r.token}</div>
             </div>
           ))}
         </div>
@@ -725,9 +725,10 @@ const DSSpecimenCard = ({ type, accentColor, ds }) => {
   return null;
 };
 
-const AuditBlock = ({ auditData, accentColor }) => {
+const AuditBlock = ({ auditData, accentColor, projectId }) => {
   const rules = (auditData.codeSnippet || '').split('\n').map(l => l.trim()).filter(Boolean);
   const ds = auditData.designSystem || null; // project-specific DS data
+  const showGuardrails = rules.length > 0 && (projectId === 'mealplanner' || projectId === 'healthcare');
   // Allow each project to specify its own card set; default to the clinical 4-card layout
   const cards = ds?.cards || ['colors', 'typography', 'status', 'buttons'];
   return (
@@ -742,8 +743,8 @@ const AuditBlock = ({ auditData, accentColor }) => {
         ))}
       </div>
 
-      {/* Guardrail rules as pill tags */}
-      {rules.length > 0 && (
+      {/* Guardrail rules as pill tags — AI projects only */}
+      {showGuardrails && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.12em', color: accentColor, marginBottom: 12, opacity: 0.7 }}>Design Guardrails</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -2287,7 +2288,7 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                     )}
 
                     {/* New visual components — rendered after body/diagram */}
-                    {sec.auditData    && <AuditBlock    auditData={sec.auditData}       accentColor={project.accentColor} />}
+                    {sec.auditData    && <AuditBlock    auditData={sec.auditData}       accentColor={project.accentColor} projectId={project.id} />}
                     {sec.productSteps && <ProductSteps  steps={sec.productSteps}        accentColor={project.accentColor} />}
                     {sec.impactStats  && <ImpactGrid    impactStats={sec.impactStats}   accentColor={project.accentColor} />}
                     {sec.powerMap     && <PowerMap      powerMap={sec.powerMap}         accentColor={project.accentColor} />}
