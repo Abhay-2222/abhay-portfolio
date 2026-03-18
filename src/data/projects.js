@@ -377,45 +377,47 @@ const projects = [
             { "number": "48px", "label": "Min tap target (gloved use)" },
             { "number": "60%", "label": "Built on FSL native components" }
           ],
-          "codeSnippet": "ALWAYS use Salesforce Lightning Design System tokens\nNEVER break WCAG 2.1 AA contrast — enforced in component review\nGantt: gold=Scheduled · pink=Unscheduled · purple=InProgress · blue=Completed · slate=Break\nMobile-first: 48×48px tap targets · offline-first sync",
+          "codeSnippet": "ALWAYS use Salesforce Lightning Design System tokens\nNEVER break WCAG 2.1 AA contrast — enforced in component review\nGantt: gold=Scheduled · pink=Unscheduled · purple=InProgress · blue=Completed · slate=Break\nTab nav: ALL CAPS + letter-spacing + lime green active underline\nMobile: 48×48px targets · offline-first sync · single-action screens",
           "designSystem": {
             "cards": ["colors", "typography", "status", "buttons"],
             "colorScale": {
-              "label": "Gantt Block Legend / Color-Coded Shift States",
+              "label": "Palette / FSL Gantt Blocks + Brand",
               "stops": [
-                { "stop": "scheduled",    "hex": "#D4AA50" },
-                { "stop": "unscheduled",  "hex": "#F08080" },
-                { "stop": "in-progress",  "hex": "#A67FC4" },
-                { "stop": "completed",    "hex": "#42A5F5" },
-                { "stop": "break",        "hex": "#546E7A" },
-                { "stop": "brand",        "hex": "#0070D2" }
+                { "stop": "scheduled",   "hex": "#D4AA50" },
+                { "stop": "unscheduled", "hex": "#F08080" },
+                { "stop": "in-progress", "hex": "#A67FC4" },
+                { "stop": "completed",   "hex": "#42A5F5" },
+                { "stop": "break",       "hex": "#546E7A" },
+                { "stop": "active-tab",  "hex": "#4CAF50" }
               ]
             },
             "typography": {
-              "label": "Foundation / Typography",
+              "label": "Foundation / Card & Nav Typography",
               "rows": [
-                { "sample": "Service Appointment",       "token": "Salesforce Sans · 600 · 18px", "size": 18, "weight": 600 },
-                { "sample": "Inspector name, territory", "token": "Salesforce Sans · 400 · 13px", "size": 13, "weight": 400 },
-                { "sample": "SA-0548 · SCHEDULED",       "token": "Monospace · 400 · 10px",      "size": 10, "weight": 400, "mono": true }
+                { "sample": "SA-0542  In Progress", "token": "Sans · 700 · 16px · card header", "size": 16, "weight": 700 },
+                { "sample": "Facility · Work Type ID", "token": "Sans · 600 · 13px · field label", "size": 13, "weight": 600 },
+                { "sample": "Gord's Abattoir Inc.", "token": "Sans · 400 · 13px · field value", "size": 13, "weight": 400 },
+                { "sample": "SKILLS  RESOURCES  UTILIZATION", "token": "Sans · 400 · 11px · tab nav ALL CAPS", "size": 10, "weight": 400, "mono": false }
               ]
             },
             "status": {
-              "label": "Status / Gantt Shift Block Meanings",
+              "label": "Status / All Six Appointment States",
               "items": [
                 { "label": "Scheduled",    "color": "#A07A20", "bg": "#F5EDD0" },
                 { "label": "Unscheduled",  "color": "#C43C3C", "bg": "#FCE8E8" },
                 { "label": "In Progress",  "color": "#7B52A8", "bg": "#F0EAF8" },
                 { "label": "Completed",    "color": "#1565C0", "bg": "#E3F2FD" },
-                { "label": "Break/Holiday","color": "#37474F", "bg": "#ECEFF1" }
+                { "label": "Break/Holiday","color": "#37474F", "bg": "#ECEFF1" },
+                { "label": "Draft",        "color": "#006D77", "bg": "#E0F5F5" }
               ]
             },
             "buttons": {
-              "label": "Components / Actions",
+              "label": "Action Bar / Appointment Context Menu",
               "items": [
-                { "label": "Schedule",           "bg": "#0070D2",     "color": "#fff",     "border": "none" },
-                { "label": "Dispatch",           "bg": "#546E7A",     "color": "#fff",     "border": "none" },
-                { "label": "Assign Recommended", "bg": "transparent", "color": "#0070D2",  "border": "1.5px solid #0070D2" },
-                { "label": "Override",           "bg": "transparent", "color": "#54698D",  "border": "1.5px solid transparent", "opacity": 0.75 }
+                { "label": "Schedule",       "bg": "transparent", "color": "#0070D2", "border": "1.5px solid #0070D2" },
+                { "label": "Get Candidates", "bg": "transparent", "color": "#0070D2", "border": "1.5px solid #0070D2" },
+                { "label": "Edit",           "bg": "transparent", "color": "#3C3C3C", "border": "1.5px solid #C8C8C8" },
+                { "label": "Unschedule",     "bg": "transparent", "color": "#C43C3C", "border": "1.5px solid #C43C3C40", "opacity": 0.85 }
               ]
             }
           }
@@ -427,7 +429,7 @@ const projects = [
           },
           {
             "type": "p",
-            "text": "The gantt chart palette is semantic by rule: amber for active appointments, teal for confirmed dispatches, violet for crew blocks, pink for team assignments. Color carries status, never decoration. Where FSL native components fell short of contrast requirements, they were replaced with custom-built alternatives that matched the platform feel but met the legal threshold."
+            "text": "The gantt chart palette is semantic by rule: gold for scheduled appointments, salmon for unscheduled crew blocks, lavender for in-progress tasks, sky blue for completed, slate for breaks and holidays. A lime green active tab underline carries the navigation state. Color carries status, never decoration. Each SA card surfaces a 13-action context menu — Flag, Reschedule, Check Rules, Get Candidates, Change Status, Reshuffle, Map, Pin, Unschedule — that had to be reachable in two taps on mobile."
           }
         ]
       },
