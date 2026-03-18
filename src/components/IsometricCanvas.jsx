@@ -320,8 +320,8 @@ function Tree({ r = 12 }) {
    Outer: SVG position + scale (attribute)
    Inner: Framer Motion float + hover (CSS)
 ══════════════════════════════════════════════════════ */
-function HeroObj({ cfg, active, onEnter, onLeave, onTap, children }) {
-  const isActive = active === cfg.id;
+function HeroObj({ cfg, active, hovered, onEnter, onLeave, children }) {
+  const isActive = active === cfg.id || hovered === cfg.id;
   return (
     <g
       transform={`translate(${cfg.tx},${cfg.ty}) scale(${cfg.scale})`}
@@ -339,18 +339,14 @@ function HeroObj({ cfg, active, onEnter, onLeave, onTap, children }) {
         whileHover={{ scale: 1.06, y: -10 }}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
-        onPointerDown={(e) => { e.stopPropagation(); onTap(); }}
         style={{
           cursor: 'pointer',
           transformBox: 'fill-box',
           transformOrigin: 'center bottom',
           opacity: isActive ? 1 : undefined,
-          pointerEvents: 'all',
-          touchAction: 'manipulation',
+          pointerEvents: 'none', // HTML overlay buttons handle interaction
         }}
       >
-        {/* Large transparent hit area ensures touch events register on mobile */}
-        <rect x="-90" y="-310" width="180" height="320" fill="transparent" />
         {children}
       </motion.g>
     </g>
@@ -373,9 +369,33 @@ const COMPS = {
 /* ══════════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════════ */
+/* ─── Convert SVG viewBox coords → container % for overlay buttons ─── */
+function useSvgTransform(containerRef) {
+  const [t, setT] = useState({ scale: 1, ox: 0, oy: 0, cw: 0, ch: 480 });
+  useEffect(() => {
+    function compute() {
+      if (!containerRef.current) return;
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      const scale = Math.min(width / 1400, height / 700);
+      const rw = 1400 * scale;
+      const rh = 700 * scale;
+      const ox = (width - rw) / 2;   // xMid
+      const oy = height - rh;         // YMax
+      setT({ scale, ox, oy, cw: width, ch: height });
+    }
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [containerRef]);
+  return t;
+}
+
 export default function IsometricCanvas({ heroMode = false }) {
   const [active, setActive] = useState(null);
+  const [hovered, setHovered] = useState(null);
   const containerRef = useRef(null);
+  const svgT = useSvgTransform(containerRef);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -385,19 +405,7 @@ export default function IsometricCanvas({ heroMode = false }) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Dismiss tooltip on outside tap (mobile)
-  useEffect(() => {
-    function dismiss(e) {
-      if (active && containerRef.current && !containerRef.current.contains(e.target)) {
-        setActive(null);
-      }
-    }
-    document.addEventListener('touchstart', dismiss);
-    return () => document.removeEventListener('touchstart', dismiss);
-  }, [active]);
-
   const handleTap = (id) => setActive(prev => prev === id ? null : id);
-  const hovered = active;
 
   const containerStyle = heroMode
     ? { position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -465,9 +473,9 @@ export default function IsometricCanvas({ heroMode = false }) {
               key={cfg.id}
               cfg={cfg}
               active={active}
-              onEnter={() => !isMobile && setActive(cfg.id)}
-              onLeave={() => !isMobile && setActive(null)}
-              onTap={() => handleTap(cfg.id)}
+              hovered={hovered}
+              onEnter={() => setHovered(cfg.id)}
+              onLeave={() => setHovered(null)}
             >
               <Comp />
             </HeroObj>
@@ -475,11 +483,39 @@ export default function IsometricCanvas({ heroMode = false }) {
         })}
       </svg>
 
+      {/* ── HTML overlay buttons — reliable touch targets on mobile ── */}
+      {OBJECTS.map(cfg => {
+        const bw = 160 * svgT.scale;
+        const bh = 320 * svgT.scale;
+        const bx = svgT.ox + (cfg.tx - 80) * svgT.scale;
+        const by = svgT.oy + (cfg.ty - 300) * svgT.scale;
+        return (
+          <button
+            key={`btn-${cfg.id}`}
+            onClick={() => handleTap(cfg.id)}
+            onMouseEnter={() => setHovered(cfg.id)}
+            onMouseLeave={() => setHovered(null)}
+            aria-label={ITEMS[cfg.id]?.title}
+            style={{
+              position: 'absolute',
+              left: bx, top: by,
+              width: bw, height: bh,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              zIndex: 5,
+              padding: 0,
+              touchAction: 'manipulation',
+            }}
+          />
+        );
+      })}
+
       {/* ── Tooltip Cards ── */}
       <AnimatePresence>
-        {/* ── Mobile: centered bottom bar ── */}
-        {isMobile && hovered && ITEMS[hovered] ? (
-          hovered === 'unreal' ? (
+        {/* ── Mobile: centered bottom bar (shown on tap) ── */}
+        {isMobile && active && ITEMS[active] ? (
+          active === 'unreal' ? (
             <motion.div
               key="mobile-unreal"
               initial={{ opacity: 0, y: 16 }}
@@ -521,7 +557,7 @@ export default function IsometricCanvas({ heroMode = false }) {
             </motion.div>
           ) : (
             <motion.div
-              key={`mobile-${hovered}`}
+              key={`mobile-${active}`}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
@@ -546,10 +582,10 @@ export default function IsometricCanvas({ heroMode = false }) {
               <div style={{ width: 8, height: 8, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 4 }} />
               <div>
                 <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 14, fontWeight: 600, color: 'rgba(26,24,20,0.9)', lineHeight: 1.3, marginBottom: 4 }}>
-                  {ITEMS[hovered]?.title}
+                  {ITEMS[active]?.title}
                 </div>
                 <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 12.5, color: 'rgba(26,24,20,0.5)', lineHeight: 1.5 }}>
-                  {ITEMS[hovered]?.sub}
+                  {ITEMS[active]?.sub}
                 </div>
               </div>
             </motion.div>
