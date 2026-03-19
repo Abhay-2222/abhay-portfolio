@@ -392,18 +392,10 @@ function useSvgTransform(containerRef) {
 }
 
 export default function IsometricCanvas({ heroMode = false }) {
-  const [active, setActive] = useState(null);
-  const [hovered, setHovered] = useState(null);
+  const [active, setActive] = useState(null);   // set by click/tap → bottom bar
+  const [hovered, setHovered] = useState(null); // set by mouseenter → desktop anchor tooltip
   const containerRef = useRef(null);
   const svgT = useSvgTransform(containerRef);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   const handleTap = (id) => setActive(prev => prev === id ? null : id);
 
@@ -436,12 +428,6 @@ export default function IsometricCanvas({ heroMode = false }) {
         preserveAspectRatio="xMidYMax meet"
         style={{ display: 'block' }}
         aria-hidden="true"
-        onPointerDown={(e) => {
-          // dismiss if tapping the canvas background (not an object)
-          if (e.target.tagName === 'svg' || e.target.tagName === 'rect' && e.target.getAttribute('fill') === 'url(#iso-grid-bg)') {
-            setActive(null);
-          }
-        }}
       >
         <defs>
           <pattern id="iso-grid-bg" width="48" height="24" patternUnits="userSpaceOnUse">
@@ -512,26 +498,29 @@ export default function IsometricCanvas({ heroMode = false }) {
       })}
 
       {/* ── Tooltip Cards ── */}
-      <AnimatePresence>
-        {/* ── Mobile: centered bottom bar (shown on tap) ── */}
-        {isMobile && active && ITEMS[active] ? (
+      <AnimatePresence mode="wait">
+
+        {/* BOTTOM BAR — shown on tap/click, any device, always reliable */}
+        {active ? (
           active === 'unreal' ? (
             <motion.div
-              key="mobile-unreal"
-              initial={{ opacity: 0, y: 16 }}
+              key="bar-unreal"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
+              exit={{ opacity: 0, y: 14 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              onClick={() => setActive(null)}
               style={{
                 position: 'absolute',
-                bottom: 16, left: 12, right: 12,
+                bottom: 14, left: 12, right: 12,
                 background: '#0a0a0a',
                 borderRadius: 14,
                 overflow: 'hidden',
                 boxShadow: '0 12px 40px rgba(0,0,0,0.28)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                pointerEvents: 'none',
+                pointerEvents: 'auto',
                 zIndex: 20,
+                cursor: 'pointer',
               }}
             >
               <video
@@ -539,44 +528,42 @@ export default function IsometricCanvas({ heroMode = false }) {
                 autoPlay muted loop playsInline
                 style={{ width: '100%', display: 'block', maxHeight: 110, objectFit: 'cover' }}
               />
-              <div style={{
-                padding: '9px 13px',
-                display: 'flex', alignItems: 'flex-start', gap: 8,
-                borderTop: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <div style={{ width: 7, height: 7, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 3 }} />
+              <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 9, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 4 }} />
                 <div>
                   <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, marginBottom: 3 }}>
-                    {ITEMS['unreal'].title}
+                    {ITEMS.unreal.title}
                   </div>
-                  <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 11.5, color: 'rgba(255,255,255,0.50)', lineHeight: 1.45 }}>
-                    {ITEMS['unreal'].sub}
+                  <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.48)', lineHeight: 1.5 }}>
+                    {ITEMS.unreal.sub}
                   </div>
                 </div>
               </div>
             </motion.div>
           ) : (
             <motion.div
-              key={`mobile-${active}`}
-              initial={{ opacity: 0, y: 16 }}
+              key={`bar-${active}`}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
+              exit={{ opacity: 0, y: 14 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              onClick={() => setActive(null)}
               style={{
                 position: 'absolute',
-                bottom: 16, left: 12, right: 12,
+                bottom: 14, left: 12, right: 12,
                 background: 'rgba(255,255,255,0.97)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 border: '1px solid rgba(26,24,20,0.08)',
                 borderRadius: 14,
-                padding: '12px 16px',
+                padding: '13px 16px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 10,
-                pointerEvents: 'none',
+                pointerEvents: 'auto',
                 zIndex: 20,
+                cursor: 'pointer',
               }}
             >
               <div style={{ width: 8, height: 8, borderRadius: 4, background: '#c8602a', flexShrink: 0, marginTop: 4 }} />
@@ -590,18 +577,19 @@ export default function IsometricCanvas({ heroMode = false }) {
               </div>
             </motion.div>
           )
-        ) : !isMobile && hovered === 'unreal' ? (
-          /* Desktop: Unreal video tooltip */
+
+        /* DESKTOP HOVER ANCHOR TOOLTIP — only when nothing is tapped */
+        ) : hovered === 'unreal' ? (
           <motion.div
-            key="unreal-video"
+            key="hover-unreal"
             initial={{ opacity: 0, y: 8, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             style={{
               position: 'absolute',
-              left: `${ANCHORS['unreal'].x}%`,
-              top:  `${ANCHORS['unreal'].y}%`,
+              left: `${ANCHORS.unreal.x}%`,
+              top:  `${ANCHORS.unreal.y}%`,
               width: 220,
               background: '#0a0a0a',
               borderRadius: 12,
@@ -612,26 +600,18 @@ export default function IsometricCanvas({ heroMode = false }) {
               zIndex: 20,
             }}
           >
-            <video
-              src="/projects/isometric/unreal.mp4"
-              autoPlay muted loop playsInline
-              style={{ width: '100%', display: 'block', maxHeight: 130, objectFit: 'cover' }}
-            />
-            <div style={{
-              padding: '7px 11px',
-              display: 'flex', alignItems: 'center', gap: 7,
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-            }}>
+            <video src="/projects/isometric/unreal.mp4" autoPlay muted loop playsInline
+              style={{ width: '100%', display: 'block', maxHeight: 130, objectFit: 'cover' }} />
+            <div style={{ padding: '7px 11px', display: 'flex', alignItems: 'center', gap: 7, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ width: 6, height: 6, borderRadius: 3, background: '#c8602a', flexShrink: 0 }} />
               <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-                {ITEMS['unreal'].sub}
+                {ITEMS.unreal.sub}
               </span>
             </div>
           </motion.div>
-        ) : !isMobile && hovered && ANCHORS[hovered] ? (
-          /* Desktop: standard text tooltip */
+        ) : hovered && ANCHORS[hovered] ? (
           <motion.div
-            key={hovered}
+            key={`hover-${hovered}`}
             initial={{ opacity: 0, y: 6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
@@ -647,11 +627,8 @@ export default function IsometricCanvas({ heroMode = false }) {
               borderRadius: 10,
               padding: '10px 14px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              minWidth: 210,
-              maxWidth: 260,
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 9,
+              minWidth: 210, maxWidth: 260,
+              display: 'flex', alignItems: 'flex-start', gap: 9,
               pointerEvents: 'none',
               zIndex: 20,
             }}
@@ -667,6 +644,7 @@ export default function IsometricCanvas({ heroMode = false }) {
             </div>
           </motion.div>
         ) : null}
+
       </AnimatePresence>
 
     </div>
