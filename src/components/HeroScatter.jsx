@@ -1,9 +1,9 @@
 /**
  * HeroScatter.jsx
  * Desktop: explicit pctX/pctY positions, hover image on mouseenter.
- * Mobile:  equal-spaced 2-row grid, tap shows 1-2 word text label.
+ * Mobile:  equal-spaced 2-row grid, tap scales image + shows label pill.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HERO_IMAGES } from '../data/heroImages.js';
 
 const STEP   = 44;
@@ -31,24 +31,45 @@ function snapToIso(px, py) {
   return { x: Math.round(px / STEP) * STEP, y: Math.round((py * 2) / STEP) * STEP / 2 };
 }
 
-/* Mobile equal-spacing: 3 top, 4 bottom */
+/* Mobile grid: 3 top (row 1), 4 bottom (row 2)
+   row 1 images are larger; row 2 smaller to fit 4 across.
+   Sizes are dynamic: 27vw capped at 110px (row 1), 22vw capped at 85px (row 2). */
 const MOBILE_POSITIONS = [
-  { pctX: 17, pctY: 34 },
-  { pctX: 50, pctY: 34 },
-  { pctX: 83, pctY: 34 },
-  { pctX: 12, pctY: 68 },
-  { pctX: 37, pctY: 68 },
-  { pctX: 63, pctY: 68 },
-  { pctX: 88, pctY: 68 },
+  { pctX: 17, pctY: 36, row: 1 },
+  { pctX: 50, pctY: 36, row: 1 },
+  { pctX: 83, pctY: 36, row: 1 },
+  { pctX: 12, pctY: 65, row: 2 },
+  { pctX: 37, pctY: 65, row: 2 },
+  { pctX: 63, pctY: 65, row: 2 },
+  { pctX: 88, pctY: 65, row: 2 },
 ];
-
-const MOBILE_SIZE = 90; /* px — consistent small size on mobile */
 
 export default function HeroScatter() {
   const [activeIdx, setActiveIdx] = useState(null);
+
+  /* Reactive mobile detection — updates on orientation change / resize */
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768,
+  );
+  const [mobileVW, setMobileVW] = useState(
+    () => typeof window !== 'undefined' ? window.innerWidth : 375,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = () => {
+      setIsMobile(mq.matches);
+      setMobileVW(window.innerWidth);
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   if (!HERO_IMAGES.length) return null;
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  /* Per-row dynamic sizes — scale with vw so they fit 320px→428px */
+  const mobileRow1Size = Math.min(110, Math.floor(mobileVW * 0.27));
+  const mobileRow2Size = Math.min(85,  Math.floor(mobileVW * 0.22));
 
   /* Desktop scale for tablet */
   const vw    = typeof window !== 'undefined' ? window.innerWidth : 1440;
@@ -68,7 +89,7 @@ export default function HeroScatter() {
       const pos = MOBILE_POSITIONS[i] ?? MOBILE_POSITIONS[MOBILE_POSITIONS.length - 1];
       pctX      = pos.pctX;
       pctY      = pos.pctY;
-      finalSize = MOBILE_SIZE;
+      finalSize = pos.row === 1 ? mobileRow1Size : mobileRow2Size;
       rotation  = 0;
     } else {
       let rawX, rawY;
@@ -173,28 +194,29 @@ export default function HeroScatter() {
               </div>
             )}
 
-            {/* Mobile: text label on tap */}
+            {/* Mobile: label pill on tap */}
             {isMobile && mobileLabel && (
               <div
                 style={{
                   position:   'absolute',
-                  bottom:     'calc(100% + 4px)',
+                  bottom:     'calc(100% + 6px)',
                   left:       '50%',
-                  transform:  `translateX(-50%) translateY(${isActive ? 0 : 4}px)`,
+                  transform:  `translateX(-50%) translateY(${isActive ? 0 : 6}px)`,
                   opacity:    isActive ? 1 : 0,
                   transition: 'opacity 0.18s ease, transform 0.18s ease',
                   pointerEvents: 'none',
                   whiteSpace: 'nowrap',
                   fontFamily: '"DM Sans", sans-serif',
-                  fontSize:   11,
+                  fontSize:   12,
                   fontWeight: 600,
-                  color:      'rgba(26,24,20,0.82)',
-                  background: 'rgba(255,255,255,0.92)',
-                  border:     '1px solid rgba(0,0,0,0.08)',
+                  color:      'rgba(26,24,20,0.85)',
+                  background: 'rgba(255,255,255,0.96)',
+                  border:     '1px solid rgba(0,0,0,0.09)',
                   borderRadius: 20,
-                  padding:    '3px 9px',
+                  padding:    '4px 11px',
                   zIndex:     10,
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow:  '0 2px 10px rgba(0,0,0,0.08)',
                 }}
               >
                 {mobileLabel}
@@ -209,8 +231,12 @@ export default function HeroScatter() {
               style={{
                 width:      '100%',
                 height:     'auto',
-                transform:  `rotate(${rotation}deg)`,
-                filter:     'drop-shadow(0 4px 14px rgba(0,0,0,0.10))',
+                transform:  isMobile
+                  ? `scale(${isActive ? 1.14 : 1})`
+                  : `rotate(${rotation}deg)`,
+                filter:     isMobile && isActive
+                  ? 'drop-shadow(0 8px 22px rgba(0,0,0,0.18))'
+                  : 'drop-shadow(0 4px 14px rgba(0,0,0,0.10))',
                 userSelect: 'none',
                 transition: 'transform 0.22s ease, filter 0.22s ease',
                 display:    'block',
