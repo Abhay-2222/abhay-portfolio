@@ -77,9 +77,10 @@ export default function IntroSequence() {
          — identical wave behaviour to the original dots. */
 
       const S     = GRID_STEP;
-      /* k-range to cover the whole viewport */
-      const kMin  = -3;
+      /* k-range to cover the whole viewport (including top-right corner).
+         Top-right requires k1 ≈ -W/(2·S), so derive kMin from viewport width. */
       const kMaxK = Math.ceil(Math.max(W, H * 2) / S) + 3;
+      const kMin  = -Math.ceil(W / (2 * S)) - 3;
 
       for (let k1 = kMin; k1 <= kMaxK; k1++) {
         for (let k2 = kMin; k2 <= kMaxK; k2++) {
