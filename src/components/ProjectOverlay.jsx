@@ -1922,9 +1922,28 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
             </div>
           ))}
 
+          {project.id === 'autonomous' && project.route && (
+            <div
+              className="sidebar-nav-item"
+              onClick={() => scrollToSection('proto-demo')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#818CF8', flexShrink: 0 }} />
+              Demo
+            </div>
+          )}
           <div className="sidebar-back-bottom" onClick={handleClose}>
             ← All Projects
           </div>
+          {project.id === 'autonomous' && project.route && (
+            <div
+              className="sidebar-back-bottom"
+              onClick={() => { window.location.href = project.route; }}
+              style={{ marginTop: 8, borderTop: 'none', paddingTop: 0, color: '#818CF8', fontWeight: 600 }}
+            >
+              Open prototype →
+            </div>
+          )}
           <div
             className="sidebar-back-bottom"
             onClick={() => navigate('/about')}
@@ -2008,6 +2027,31 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                   }} />
                   Case study in progress
                 </div>
+              )}
+              {project.id === 'autonomous' && project.route && (
+                <button
+                  onClick={() => { window.location.href = project.route; }}
+                  style={{
+                    display:        'inline-flex',
+                    alignItems:     'center',
+                    gap:            8,
+                    marginTop:      16,
+                    padding:        '11px 22px',
+                    borderRadius:   9999,
+                    background:     'rgba(129,140,248,0.15)',
+                    border:         '1px solid rgba(129,140,248,0.40)',
+                    backdropFilter: 'blur(12px)',
+                    fontFamily:     'var(--sans)',
+                    fontSize:       13,
+                    fontWeight:     600,
+                    color:          '#818CF8',
+                    cursor:         'pointer',
+                    letterSpacing:  '-0.1px',
+                  }}
+                >
+                  View interactive prototype
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>→</span>
+                </button>
               )}
             </div>
           </div>
@@ -2208,17 +2252,33 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
                     {sec.id === 'overview' && project.hero?.videoUrl && (
                       <>
                         <div style={{ marginTop: 28, display: 'flex', justifyContent: 'center' }}>
-                          <div style={{ width: '100%', maxWidth: 550, borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.10)' }}>
-                            <video
-                              src={project.hero.videoUrl}
-                              autoPlay muted loop playsInline
-                              style={{
-                                width: '100%',
-                                display: 'block',
-                                objectFit: project.hero.videoFit ?? 'cover',
-                              }}
-                            />
-                          </div>
+                          {project.id === 'mealplanner' ? (
+                            /* Phone frame for portrait mobile videos */
+                            <div style={{
+                              width: 260,
+                              borderRadius: 36,
+                              overflow: 'hidden',
+                              boxShadow: '0 24px 64px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
+                              border: '8px solid #1a1a1a',
+                              aspectRatio: '9/19',
+                              background: '#000',
+                              position: 'relative',
+                            }}>
+                              <video
+                                src={project.hero.videoUrl}
+                                autoPlay muted loop playsInline
+                                style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ width: '100%', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.10)' }}>
+                              <video
+                                src={project.hero.videoUrl}
+                                autoPlay muted loop playsInline
+                                style={{ width: '100%', display: 'block', objectFit: project.hero.videoFit ?? 'cover' }}
+                              />
+                            </div>
+                          )}
                         </div>
                         {project.liveUrl && (
                           <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -2310,6 +2370,133 @@ export default function ProjectOverlay({ projectId, originRect, onClose, onNext,
               </section>
             );
           })}
+
+          {/* ── Demo section — ARIA only ── */}
+          {project.id === 'autonomous' && project.route && (
+            <section
+              id="proto-demo"
+              style={{
+                padding: 'clamp(40px,5vw,72px) clamp(24px,5vw,64px)',
+                borderTop: '0.5px solid var(--border)',
+                background: 'var(--bg)',
+              }}
+            >
+              <p style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16 }}>Interactive prototype</p>
+              <h2 style={{ fontSize: 'clamp(22px,3vw,34px)', fontWeight: 700, fontFamily: 'var(--serif)', color: 'var(--text)', marginBottom: 12, letterSpacing: '-0.5px' }}>
+                16 screens. 3 states. Fully interactive.
+              </h2>
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.65, maxWidth: 520, marginBottom: 36 }}>
+                Tap through the complete ARIA passenger journey — onboarding to dual rating, including edge cases and new features.
+              </p>
+
+              {/* Phone strip */}
+              <div style={{ display: 'flex', gap: 20, marginBottom: 36, overflowX: 'auto', paddingBottom: 4 }}>
+                {[
+                  { label: 'Full Journey', accent: '#34D399', screens: '12 screens', desc: 'Onboarding · Home · Tracking · Handoff · Rating' },
+                  { label: 'Edge States',  accent: '#FBBF24', screens: '4 screens',  desc: 'PIN fail · Blocked approach · Ride failure · Mid-trip' },
+                  { label: 'New Features', accent: '#818CF8', screens: '2 screens',  desc: 'Intent feed · Co-authored pickup' },
+                ].map(tab => (
+                  <div
+                    key={tab.label}
+                    onClick={() => { window.location.href = project.route; }}
+                    style={{
+                      width: 160, flexShrink: 0, cursor: 'pointer',
+                      borderRadius: 16, overflow: 'hidden',
+                      border: `1.5px solid var(--border)`,
+                      background: 'var(--surface)',
+                      transition: 'transform 0.15s ease, border-color 0.15s ease',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = tab.accent; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                  >
+                    {/* Mini phone */}
+                    <div style={{ height: 100, background: '#0F1219', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 10px' }}>
+                        <span style={{ fontSize: 7, fontWeight: 600, color: 'rgba(241,243,249,0.7)', fontFamily: 'monospace' }}>9:41</span>
+                        <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+                          {[3,4,5,6].map(h => <div key={h} style={{ width: 2, height: h, background: 'rgba(241,243,249,0.7)', borderRadius: 1 }} />)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${tab.accent}20`, border: `1.5px solid ${tab.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: tab.accent }} />
+                        </div>
+                        <span style={{ fontSize: 8, color: tab.accent, fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.04em' }}>ARIA</span>
+                      </div>
+                      {/* Bottom nav strip */}
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 18, background: '#1A1F2E', borderTop: '0.5px solid #2E3548', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
+                        {['◎','□','◻','○'].map((icon, i) => (
+                          <span key={i} style={{ fontSize: 7, color: i === 0 ? tab.accent : '#5C6478' }}>{icon}</span>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Card label */}
+                    <div style={{ padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: tab.accent }} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', fontFamily: 'var(--sans)' }}>{tab.label}</span>
+                      </div>
+                      <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--mono)', marginBottom: 6 }}>{tab.screens}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{tab.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => { window.location.href = project.route; }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                    padding: '14px 28px', borderRadius: 12,
+                    background: '#6366F1', color: '#fff', border: 'none',
+                    fontFamily: 'var(--sans)', fontSize: 15, fontWeight: 600,
+                    cursor: 'pointer', letterSpacing: '-0.1px',
+                    boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
+                  }}
+                >
+                  Launch interactive prototype
+                  <span style={{ fontSize: 16 }}>→</span>
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--mono)' }}>Full screen · live interactions · no signup</span>
+              </div>
+            </section>
+          )}
+
+          {/* ── View full case study CTA — all other routed projects ── */}
+          {project.id !== 'autonomous' && project.route && project.status === 'full' && (
+            <section
+              style={{
+                padding: 'clamp(32px,4vw,56px) clamp(24px,5vw,64px)',
+                borderTop: '0.5px solid var(--border)',
+                background: 'var(--bg)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                onClick={() => { window.location.href = project.route; }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 10,
+                  padding: '13px 26px', borderRadius: 12,
+                  background: project.accentColor, color: '#fff', border: 'none',
+                  fontFamily: 'var(--sans)', fontSize: 14, fontWeight: 600,
+                  cursor: 'pointer', letterSpacing: '-0.1px',
+                  boxShadow: `0 6px 24px ${project.accentColor}40`,
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+              >
+                View full case study
+                <span style={{ fontSize: 16 }}>→</span>
+              </button>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--mono)' }}>Full write-up · process · outcomes</span>
+            </section>
+          )}
 
           {/* Bottom navigation */}
           <div className="overlay-bottom-nav">

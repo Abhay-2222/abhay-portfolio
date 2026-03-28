@@ -399,11 +399,14 @@ export default function IsometricCanvas({ heroMode = false }) {
 
   const handleTap = (id) => setActive(prev => prev === id ? null : id);
 
+  const isoBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24'%3E%3Cpath d='M 24 0 L 48 12 L 24 24 L 0 12 Z' fill='none' stroke='%231a1814' stroke-opacity='0.07' stroke-width='0.6'/%3E%3C/svg%3E")`;
   const containerStyle = heroMode
     ? { position: 'absolute', inset: 0, width: '100%', height: '100%',
-        zIndex: 0, overflow: 'hidden', pointerEvents: 'auto' }
-    : { width: '100%', background: '#f7f5f0', position: 'relative',
-        overflow: 'hidden', borderTop: '1px solid rgba(26,24,20,0.06)' };
+        zIndex: 0, overflow: 'hidden', pointerEvents: 'auto',
+        backgroundColor: 'transparent', backgroundImage: isoBg, backgroundSize: '48px 24px' }
+    : { width: '100%', backgroundColor: '#f7f5f0', position: 'relative',
+        overflow: 'hidden', borderTop: '1px solid rgba(26,24,20,0.06)',
+        backgroundImage: isoBg, backgroundSize: '48px 24px' };
 
   return (
     <div ref={containerRef} style={containerStyle}>
@@ -430,16 +433,10 @@ export default function IsometricCanvas({ heroMode = false }) {
         aria-hidden="true"
       >
         <defs>
-          <pattern id="iso-grid-bg" width="48" height="24" patternUnits="userSpaceOnUse">
-            <path d="M 24 0 L 48 12 L 24 24 L 0 12 Z"
-              fill="none" stroke="rgba(26,24,20,0.07)" strokeWidth="0.6" />
-          </pattern>
           <clipPath id="unreal-img-clip">
             <rect x="-58" y="-86" width="116" height="80" rx="7" ry="7" />
           </clipPath>
         </defs>
-
-        <rect width="1400" height="700" fill="url(#iso-grid-bg)" />
 
         {/* ── Decorative trees ── */}
         <g transform="translate(148, 590)" style={{ opacity: 0.45 }}><Tree r={11} /></g>

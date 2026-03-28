@@ -873,7 +873,7 @@ const projects = [
       "gradient": "linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 100%)",
       "light": true,
       "badge": "Case Study · Consumer Health",
-      "videoUrl": "/projects/mealplanner/mobile.mp4",
+      "videoUrl": "/projects/mealplanner/MealP.mp4",
       "videoFit": "contain",
       "tags": [
         "Consumer Mobile",
@@ -2911,8 +2911,8 @@ const projects = [
     "icon": "🚌",
     "accentColor": "#0EA5E9",
     "route": "/autonomous",
-    "status": "placeholder",
-    "cardBadge": "In Progress",
+    "status": "full",
+    "cardBadge": "New",
     "liveUrl": null,
     "description": "A speculative design project for a near-future that is actively arriving. Passenger and fleet interfaces for autonomous transit that build trust through transparency, not reassurance.",
     "contextStats": [

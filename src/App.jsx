@@ -30,8 +30,9 @@ const PlaygroundOverlay = lazy(() => import('./components/PlaygroundOverlay.jsx'
 const MeatInspectorPage = lazy(() => import('./pages/MeatInspector.jsx'));
 const HealthcarePage    = lazy(() => import('./pages/Healthcare.jsx'));
 const TrailARPage       = lazy(() => import('./pages/TrailAR.jsx'));
-const MealPlannerPage   = lazy(() => import('./pages/MealPlanner.jsx'));
-const AboutPage         = lazy(() => import('./pages/About.jsx'));
+const MealPlannerPage       = lazy(() => import('./pages/MealPlanner.jsx'));
+const AutonomousVehiclePage = lazy(() => import('./pages/AutonomousVehicle.jsx'));
+const AboutPage             = lazy(() => import('./pages/About.jsx'));
 
 /* ─── Placeholder route page (for non-full projects) ─── */
 function PlaceholderPage() {
@@ -221,6 +222,14 @@ function App() {
           element={
             <Suspense fallback={<div style={{ background: 'var(--bg)', minHeight: '100vh' }} />}>
               <TrailARPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/autonomous"
+          element={
+            <Suspense fallback={<div style={{ background: 'var(--bg)', minHeight: '100vh' }} />}>
+              <AutonomousVehiclePage />
             </Suspense>
           }
         />
